@@ -115,6 +115,34 @@
   .empty-col { text-align: center; padding: 48px 20px; color: var(--gray-400); font-size: 14px; }
   .empty-col svg { margin-bottom: 12px; }
 
+  /* ── Task Library ── */
+  .library-section { margin-bottom: 28px; }
+  .library-section h2 { font-size: 17px; margin-bottom: 4px; }
+  .library-section .lib-sub { font-size: 13px; color: var(--gray-500); margin-bottom: 14px; }
+  .library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .lib-card {
+    background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius);
+    padding: 18px 20px; box-shadow: var(--shadow); transition: all .15s; cursor: pointer;
+    position: relative; overflow: hidden;
+  }
+  .lib-card:hover { box-shadow: var(--shadow-md); border-color: var(--primary); }
+  .lib-card.loaded { border-color: var(--success); }
+  .lib-card .lib-lang {
+    display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px;
+  }
+  .lib-card .lib-lang.python { background: #dbeafe; color: #1d4ed8; }
+  .lib-card .lib-lang.java { background: #fee2e2; color: #991b1b; }
+  .lib-card .lib-lang.multi { background: #ede9fe; color: #5b21b6; }
+  .lib-card .lib-lang.general { background: #d1fae5; color: #065f46; }
+  .lib-card .lib-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .lib-card .lib-desc { font-size: 12px; color: var(--gray-500); margin-bottom: 10px; line-height: 1.4; }
+  .lib-card .lib-meta { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--gray-400); }
+  .lib-card .lib-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .lib-card .lib-badge.ready { background: var(--primary-light); color: var(--primary); }
+  .lib-card .lib-badge.active { background: var(--success-light); color: #065f46; }
+  .lib-divider { border: none; border-top: 1px solid var(--gray-200); margin: 24px 0; }
+
   /* ── Task view layout ── */
   .task-view { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 60px); }
   .sidebar { background: #fff; border-right: 1px solid var(--gray-200); padding: 20px 0; overflow-y: auto; max-height: calc(100vh - 60px); position: sticky; top: 60px; }
@@ -382,6 +410,25 @@ const LS = {
   remove(k) { localStorage.removeItem('rlhf_' + k); }
 };
 
+const TASK_CATALOG = [
+  { file: 'tasks/debugging-exercises-python.json', name: 'Python Debugging', language: 'python', langLabel: 'Python', taskCount: 9, description: 'Debug common Python pitfalls: mutable defaults, scope issues, integer caching, and more.' },
+  { file: 'tasks/debugging-exercises-java.json', name: 'Java Debugging', language: 'java', langLabel: 'Java', taskCount: 9, description: 'Debug classic Java bugs: == vs .equals(), null handling, concurrency, and type casting.' },
+  { file: 'tasks/code-review-comparisons.json', name: 'Code Review', language: 'multi', langLabel: 'Multi-lang', taskCount: 4, description: 'Evaluate code review quality across Python, React, REST API design, and git practices.' },
+  { file: 'tasks/safety-alignment.json', name: 'Safety & Alignment', language: 'general', langLabel: 'General', taskCount: 3, description: 'Evaluate AI safety: medical advice handling, refusal quality, and bias detection.' },
+];
+let activePackFile = null;
+
+function loadFromCatalog(file) {
+  fetch(file)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(data => {
+      activePackFile = file;
+      loadTasks(data);
+      toast('Loaded: ' + TASK_CATALOG.find(c => c.file === file)?.name);
+    })
+    .catch(() => toast('Failed to load task file. Make sure you are running from a web server.'));
+}
+
 /* ══════════════════════════════════════════════════
    DEMO TASKS
    ══════════════════════════════════════════════════ */
@@ -481,11 +528,31 @@ function renderDashboard() {
       <div class="dash-header">
         <h1>Annotation Dashboard</h1>
         <div class="dash-actions">
-          <button class="btn btn-sm btn-primary" onclick="loadDemoTasks()">Load Demo Tasks</button>
-          <button class="btn btn-sm btn-outline" onclick="document.getElementById('fileInput').click()">Upload JSON</button>
+          <button class="btn btn-sm btn-outline" onclick="document.getElementById('fileInput').click()">Upload Custom JSON</button>
           <button class="btn btn-sm btn-outline" onclick="showExportModal()">Export</button>
         </div>
       </div>
+
+      <div class="library-section">
+        <h2>Task Library</h2>
+        <p class="lib-sub">Pick a task pack by language to start annotating</p>
+        <div class="library-grid">
+          ${TASK_CATALOG.map(c => {
+            const isActive = activePackFile === c.file && tasks.length > 0;
+            return `<div class="lib-card ${isActive ? 'loaded' : ''}" onclick="loadFromCatalog('${c.file}')">
+              <span class="lib-lang ${c.language}">${c.langLabel}</span>
+              <div class="lib-name">${escHtml(c.name)}</div>
+              <div class="lib-desc">${escHtml(c.description)}</div>
+              <div class="lib-meta">
+                <span>${c.taskCount} tasks</span>
+                <span class="lib-badge ${isActive ? 'active' : 'ready'}">${isActive ? 'Loaded' : 'Click to load'}</span>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <hr class="lib-divider">
 
       <div class="dash-stats">
         <div class="dash-stat"><div class="num slate">${total}</div><div class="lbl">Total Tasks</div></div>
