@@ -30,160 +30,30 @@
     --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
     --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-    background: var(--gray-50);
-    color: var(--gray-800);
-    line-height: 1.6;
+    background: var(--gray-50); color: var(--gray-800); line-height: 1.6;
   }
 
   /* ── Top bar ── */
   .topbar {
-    background: #fff;
-    border-bottom: 1px solid var(--gray-200);
-    padding: 0 24px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: var(--shadow);
+    background: #fff; border-bottom: 1px solid var(--gray-200); padding: 0 24px;
+    height: 56px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
   }
-  .topbar-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--primary);
-  }
+  .topbar-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--primary); cursor: pointer; }
   .topbar-brand svg { width: 28px; height: 28px; }
-  .topbar-meta {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    font-size: 13px;
-    color: var(--gray-500);
-  }
-  .topbar-meta .badge {
-    background: var(--primary-light);
-    color: var(--primary);
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 12px;
-  }
-
-  /* ── Progress bar ── */
-  .progress-strip {
-    height: 4px;
-    background: var(--gray-200);
-  }
-  .progress-fill {
-    height: 100%;
-    background: var(--primary);
-    transition: width .4s ease;
-  }
-
-  /* ── Layout ── */
-  .app-layout {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    min-height: calc(100vh - 60px);
-  }
-
-  /* ── Sidebar ── */
-  .sidebar {
-    background: #fff;
-    border-right: 1px solid var(--gray-200);
-    padding: 20px 0;
-    overflow-y: auto;
-    max-height: calc(100vh - 60px);
-    position: sticky;
-    top: 60px;
-  }
-  .sidebar-section { padding: 0 16px; margin-bottom: 24px; }
-  .sidebar-section h3 {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    color: var(--gray-400);
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-  .task-list { list-style: none; }
-  .task-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-size: 13px;
-    transition: background .15s;
-    margin-bottom: 2px;
-  }
-  .task-item:hover { background: var(--gray-100); }
-  .task-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
-  .task-item .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .task-item .dot.pending { background: var(--gray-300); }
-  .task-item .dot.done { background: var(--success); }
-  .task-item .dot.active { background: var(--primary); }
-  .task-item .dot.skipped { background: var(--warning); }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .stat-card {
-    background: var(--gray-50);
-    border-radius: var(--radius);
-    padding: 12px;
-    text-align: center;
-  }
-  .stat-card .num { font-size: 22px; font-weight: 700; color: var(--gray-800); }
-  .stat-card .label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .05em; }
-
-  /* ── Main area ── */
-  .main-area { padding: 28px 32px; max-width: 1200px; }
-
-  /* ── Welcome / onboarding screen ── */
-  .welcome {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 80px 24px;
-  }
-  .welcome h1 { font-size: 28px; margin-bottom: 12px; }
-  .welcome p { color: var(--gray-500); max-width: 520px; margin-bottom: 32px; font-size: 15px; }
-  .welcome .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .topbar-meta { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--gray-500); }
+  .topbar-meta .badge { background: var(--primary-light); color: var(--primary); padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 12px; }
+  .user-pill { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 20px; background: var(--gray-100); }
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .user-pill .uname { font-size: 13px; font-weight: 600; color: var(--gray-700); }
+  .progress-strip { height: 4px; background: var(--gray-200); }
+  .progress-fill { height: 100%; background: var(--primary); transition: width .4s ease; }
 
   /* ── Buttons ── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 18px;
-    border-radius: var(--radius);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all .15s;
-  }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all .15s; }
   .btn-primary { background: var(--primary); color: #fff; }
   .btn-primary:hover { background: var(--primary-hover); }
   .btn-outline { background: #fff; color: var(--gray-700); border-color: var(--gray-300); }
@@ -194,1014 +64,524 @@
   .btn-danger:hover { background: #dc2626; }
   .btn-sm { padding: 5px 12px; font-size: 13px; }
   .btn-lg { padding: 12px 28px; font-size: 15px; }
+  .btn[disabled] { opacity: .5; cursor: not-allowed; }
 
-  /* ── Task header ── */
-  .task-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-  .task-header h2 { font-size: 20px; }
-  .task-type-badge {
-    font-size: 12px;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-  }
+  /* ── Auth screen ── */
+  .auth-screen { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); padding: 40px 20px; }
+  .auth-card { background: #fff; border-radius: 16px; box-shadow: var(--shadow-lg); padding: 48px 40px; max-width: 440px; width: 100%; text-align: center; }
+  .auth-card svg { margin-bottom: 16px; }
+  .auth-card h1 { font-size: 24px; margin-bottom: 6px; }
+  .auth-card .subtitle { color: var(--gray-500); font-size: 14px; margin-bottom: 32px; }
+  .auth-field { text-align: left; margin-bottom: 18px; }
+  .auth-field label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
+  .auth-field input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 15px; font-family: inherit; transition: border-color .15s; }
+  .auth-field input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+  .auth-card .btn { width: 100%; justify-content: center; margin-top: 8px; }
+
+  /* ── Dashboard ── */
+  .dashboard { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+  .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .dash-header h1 { font-size: 22px; }
+  .dash-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .dash-stat { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 16px; text-align: center; box-shadow: var(--shadow); }
+  .dash-stat .num { font-size: 28px; font-weight: 700; }
+  .dash-stat .num.indigo { color: var(--primary); }
+  .dash-stat .num.green { color: var(--success); }
+  .dash-stat .num.amber { color: var(--warning); }
+  .dash-stat .num.slate { color: var(--gray-600); }
+  .dash-stat .lbl { font-size: 12px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+  .dash-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--gray-200); margin-bottom: 20px; }
+  .dash-tab { padding: 10px 20px; font-size: 14px; font-weight: 600; color: var(--gray-500); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+  .dash-tab:hover { color: var(--gray-700); }
+  .dash-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .dash-tab .tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; border-radius: 10px; font-size: 11px; padding: 0 6px; margin-left: 6px; font-weight: 700; }
+  .dash-tab.active .tab-count { background: var(--primary-light); color: var(--primary); }
+  .dash-tab:not(.active) .tab-count { background: var(--gray-200); color: var(--gray-600); }
+
+  .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .dash-task-card { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); transition: box-shadow .15s, border-color .15s; }
+  .dash-task-card:hover { box-shadow: var(--shadow-md); border-color: var(--gray-300); }
+  .dash-task-card .dtc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .dash-task-card .dtc-title { font-weight: 600; font-size: 15px; color: var(--gray-800); }
+  .dash-task-card .dtc-prompt { font-size: 13px; color: var(--gray-500); margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
+  .dash-task-card .dtc-footer { display: flex; align-items: center; justify-content: space-between; }
+  .dash-task-card .dtc-meta { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--gray-400); }
+  .task-type-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
   .task-type-badge.comparison { background: #dbeafe; color: #1d4ed8; }
   .task-type-badge.rating { background: #fce7f3; color: #be185d; }
   .task-type-badge.ranking { background: #d1fae5; color: #065f46; }
+  .empty-col { text-align: center; padding: 48px 20px; color: var(--gray-400); font-size: 14px; }
+  .empty-col svg { margin-bottom: 12px; }
 
-  /* ── Guidelines panel ── */
-  .guidelines-toggle {
-    margin-bottom: 16px;
-  }
-  .guidelines-panel {
-    background: #fffbeb;
-    border: 1px solid #fcd34d;
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    display: none;
-  }
+  /* ── Task view layout ── */
+  .task-view { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 60px); }
+  .sidebar { background: #fff; border-right: 1px solid var(--gray-200); padding: 20px 0; overflow-y: auto; max-height: calc(100vh - 60px); position: sticky; top: 60px; }
+  .sidebar-section { padding: 0 16px; margin-bottom: 24px; }
+  .sidebar-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-400); margin-bottom: 10px; font-weight: 600; }
+  .task-list { list-style: none; }
+  .task-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--radius); cursor: pointer; font-size: 13px; transition: background .15s; margin-bottom: 2px; }
+  .task-item:hover { background: var(--gray-100); }
+  .task-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+  .task-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .task-item .dot.pending { background: var(--gray-300); }
+  .task-item .dot.done { background: var(--success); }
+  .task-item .dot.active { background: var(--primary); }
+  .task-item .dot.skipped { background: var(--warning); }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { background: var(--gray-50); border-radius: var(--radius); padding: 12px; text-align: center; }
+  .stat-card .num { font-size: 22px; font-weight: 700; color: var(--gray-800); }
+  .stat-card .label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .05em; }
+  .main-area { padding: 28px 32px; max-width: 1200px; }
+
+  /* ── Task header ── */
+  .task-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .task-header h2 { font-size: 20px; }
+
+  /* ── Guidelines ── */
+  .guidelines-toggle { margin-bottom: 16px; }
+  .guidelines-panel { background: #fffbeb; border: 1px solid #fcd34d; border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; font-size: 14px; display: none; }
   .guidelines-panel.open { display: block; }
   .guidelines-panel h4 { color: #92400e; margin-bottom: 8px; font-size: 14px; }
   .guidelines-panel ul { padding-left: 20px; color: #78350f; }
   .guidelines-panel li { margin-bottom: 4px; }
 
   /* ── Prompt box ── */
-  .prompt-box {
-    background: #fff;
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow);
-  }
-  .prompt-box .label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    color: var(--gray-400);
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  .prompt-box .prompt-text {
-    font-size: 15px;
-    color: var(--gray-800);
-    white-space: pre-wrap;
-  }
+  .prompt-box { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+  .prompt-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-400); font-weight: 600; margin-bottom: 8px; }
+  .prompt-box .prompt-text { font-size: 15px; color: var(--gray-800); white-space: pre-wrap; }
 
-  /* ── Response cards (side-by-side) ── */
-  .responses-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 24px;
-  }
-  .response-card {
-    background: #fff;
-    border: 2px solid var(--gray-200);
-    border-radius: var(--radius);
-    overflow: hidden;
-    transition: border-color .2s, box-shadow .2s;
-    box-shadow: var(--shadow);
-  }
+  /* ── Response cards ── */
+  .responses-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .response-card { background: #fff; border: 2px solid var(--gray-200); border-radius: var(--radius); overflow: hidden; transition: border-color .2s, box-shadow .2s; box-shadow: var(--shadow); }
   .response-card.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
-  .response-card-header {
-    padding: 12px 20px;
-    background: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--gray-600);
-  }
-  .response-card-header .header-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .response-card-header .model-tag {
-    font-size: 11px;
-    background: var(--gray-200);
-    color: var(--gray-600);
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-weight: 500;
-  }
-  .copy-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    border: 1px solid var(--gray-300);
-    border-radius: 6px;
-    background: #fff;
-    color: var(--gray-500);
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all .15s;
-    white-space: nowrap;
-  }
+  .response-card-header { padding: 12px 20px; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 14px; color: var(--gray-600); }
+  .response-card-header .header-right { display: flex; align-items: center; gap: 8px; }
+  .response-card-header .model-tag { font-size: 11px; background: var(--gray-200); color: var(--gray-600); padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+  .copy-btn { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1px solid var(--gray-300); border-radius: 6px; background: #fff; color: var(--gray-500); font-size: 11px; font-weight: 500; cursor: pointer; transition: all .15s; white-space: nowrap; }
   .copy-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
   .copy-btn.copied { border-color: var(--success); color: var(--success); background: var(--success-light); }
   .copy-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
-  .response-card-body {
-    padding: 20px;
-    font-size: 14px;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    max-height: 420px;
-    overflow-y: auto;
-    color: var(--gray-700);
-  }
-  .response-card-body code {
-    background: var(--gray-100);
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-size: 13px;
-  }
-  .response-card-body pre {
-    background: var(--gray-800);
-    color: #e5e7eb;
-    padding: 14px;
-    border-radius: 6px;
-    overflow-x: auto;
-    margin: 10px 0;
-    font-size: 13px;
-  }
-  .response-card-body pre code {
-    background: none;
-    padding: 0;
-    color: inherit;
-  }
+  .response-card-body { padding: 20px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; max-height: 420px; overflow-y: auto; color: var(--gray-700); }
+  .response-card-body code { background: var(--gray-100); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  .response-card-body pre { background: var(--gray-800); color: #e5e7eb; padding: 14px; border-radius: 6px; overflow-x: auto; margin: 10px 0; font-size: 13px; }
+  .response-card-body pre code { background: none; padding: 0; color: inherit; }
 
-  /* ── Preference selector ── */
-  .preference-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  .pref-btn {
-    padding: 10px 28px;
-    border-radius: var(--radius);
-    border: 2px solid var(--gray-300);
-    background: #fff;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all .15s;
-    color: var(--gray-600);
-  }
+  /* ── Preference / rating / ranking ── */
+  .preference-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 24px; }
+  .pref-btn { padding: 10px 28px; border-radius: var(--radius); border: 2px solid var(--gray-300); background: #fff; cursor: pointer; font-size: 14px; font-weight: 600; transition: all .15s; color: var(--gray-600); }
   .pref-btn:hover { border-color: var(--primary); color: var(--primary); }
   .pref-btn.chosen { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-
-  /* ── Rating dimensions ── */
   .dimensions-section { margin-bottom: 24px; }
   .dimensions-section h3 { font-size: 16px; margin-bottom: 14px; color: var(--gray-700); }
-  .dimension-row {
-    background: #fff;
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 10px;
-    box-shadow: var(--shadow);
-  }
-  .dimension-row .dim-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
+  .dimension-row { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .dimension-row .dim-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .dimension-row .dim-name { font-weight: 600; font-size: 14px; }
   .dimension-row .dim-value { font-weight: 700; color: var(--primary); font-size: 14px; min-width: 24px; text-align: right; }
   .dimension-row .dim-desc { font-size: 12px; color: var(--gray-500); margin-bottom: 10px; }
-  .likert-scale {
-    display: flex;
-    gap: 0;
-    width: 100%;
-  }
-  .likert-option {
-    flex: 1;
-    text-align: center;
-    padding: 8px 4px;
-    border: 1px solid var(--gray-200);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all .15s;
-    background: #fff;
-    color: var(--gray-600);
-  }
+  .likert-scale { display: flex; gap: 0; width: 100%; }
+  .likert-option { flex: 1; text-align: center; padding: 8px 4px; border: 1px solid var(--gray-200); cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; background: #fff; color: var(--gray-600); }
   .likert-option:first-child { border-radius: var(--radius) 0 0 var(--radius); }
   .likert-option:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
   .likert-option:hover { background: var(--gray-50); }
   .likert-option.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
-  .likert-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: var(--gray-400);
-    margin-top: 4px;
-    padding: 0 2px;
-  }
-
-  /* ── Justification ── */
+  .likert-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray-400); margin-top: 4px; padding: 0 2px; }
   .justification-section { margin-bottom: 24px; }
   .justification-section h3 { font-size: 16px; margin-bottom: 10px; color: var(--gray-700); }
-  .justification-section textarea {
-    width: 100%;
-    min-height: 120px;
-    padding: 14px;
-    border: 1px solid var(--gray-300);
-    border-radius: var(--radius);
-    font-family: inherit;
-    font-size: 14px;
-    line-height: 1.6;
-    resize: vertical;
-    transition: border-color .15s;
-  }
-  .justification-section textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(99,102,241,.1);
-  }
+  .justification-section textarea { width: 100%; min-height: 120px; padding: 14px; border: 1px solid var(--gray-300); border-radius: var(--radius); font-family: inherit; font-size: 14px; line-height: 1.6; resize: vertical; transition: border-color .15s; }
+  .justification-section textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
   .justification-section .hint { font-size: 12px; color: var(--gray-400); margin-top: 6px; }
-
-  /* ── Action bar ── */
-  .action-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 0;
-    border-top: 1px solid var(--gray-200);
-    margin-top: 12px;
-  }
-  .action-bar .left { display: flex; gap: 8px; }
-  .action-bar .right { display: flex; gap: 8px; }
-
-  /* ── Single response (for rating tasks) ── */
-  .single-response {
-    margin-bottom: 24px;
-  }
-
-  /* ── Ranking UI ── */
-  .ranking-list {
-    margin-bottom: 24px;
-  }
-  .ranking-item {
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
-    background: #fff;
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius);
-    margin-bottom: 8px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    transition: box-shadow .15s;
-  }
+  .action-bar { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; border-top: 1px solid var(--gray-200); margin-top: 12px; }
+  .action-bar .left, .action-bar .right { display: flex; gap: 8px; }
+  .single-response { margin-bottom: 24px; }
+  .ranking-list { margin-bottom: 24px; }
+  .ranking-item { display: flex; align-items: stretch; gap: 12px; background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); margin-bottom: 8px; box-shadow: var(--shadow); overflow: hidden; transition: box-shadow .15s; }
   .ranking-item:hover { box-shadow: var(--shadow-md); }
-  .ranking-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    background: var(--gray-50);
-    border-right: 1px solid var(--gray-200);
-    cursor: grab;
-    color: var(--gray-400);
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-  .ranking-rank {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    width: 48px;
-    padding: 8px 0;
-    flex-shrink: 0;
-  }
-  .ranking-rank button {
-    background: none;
-    border: 1px solid var(--gray-300);
-    border-radius: 4px;
-    width: 28px;
-    height: 22px;
-    cursor: pointer;
-    font-size: 12px;
-    color: var(--gray-500);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all .15s;
-  }
+  .ranking-handle { display: flex; align-items: center; justify-content: center; width: 44px; background: var(--gray-50); border-right: 1px solid var(--gray-200); cursor: grab; color: var(--gray-400); font-size: 18px; flex-shrink: 0; }
+  .ranking-rank { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 48px; padding: 8px 0; flex-shrink: 0; }
+  .ranking-rank button { background: none; border: 1px solid var(--gray-300); border-radius: 4px; width: 28px; height: 22px; cursor: pointer; font-size: 12px; color: var(--gray-500); display: flex; align-items: center; justify-content: center; transition: all .15s; }
   .ranking-rank button:hover { border-color: var(--primary); color: var(--primary); }
   .ranking-rank .rank-num { font-weight: 700; font-size: 16px; color: var(--primary); }
-  .ranking-content {
-    flex: 1;
-    padding: 16px;
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--gray-700);
-    max-height: 200px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-  }
-  .ranking-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--gray-500);
-    margin-bottom: 6px;
-  }
+  .ranking-content { flex: 1; padding: 16px; font-size: 14px; line-height: 1.6; color: var(--gray-700); max-height: 200px; overflow-y: auto; white-space: pre-wrap; }
+  .ranking-label { font-size: 12px; font-weight: 600; color: var(--gray-500); margin-bottom: 6px; }
 
-  /* ── Toast ── */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: var(--gray-800);
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: var(--radius);
-    font-size: 14px;
-    box-shadow: var(--shadow-lg);
-    transform: translateY(80px);
-    opacity: 0;
-    transition: all .3s ease;
-    z-index: 200;
-  }
+  /* ── Toast / Modal ── */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-800); color: #fff; padding: 12px 20px; border-radius: var(--radius); font-size: 14px; box-shadow: var(--shadow-lg); transform: translateY(80px); opacity: 0; transition: all .3s ease; z-index: 200; }
   .toast.show { transform: translateY(0); opacity: 1; }
-
-  /* ── Modal overlay ── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.4);
-    z-index: 150;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .2s;
-  }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 150; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal {
-    background: #fff;
-    border-radius: 12px;
-    padding: 32px;
-    max-width: 560px;
-    width: 90%;
-    box-shadow: var(--shadow-lg);
-  }
+  .modal { background: #fff; border-radius: 12px; padding: 32px; max-width: 560px; width: 90%; box-shadow: var(--shadow-lg); }
   .modal h2 { margin-bottom: 16px; }
   .modal p { color: var(--gray-600); font-size: 14px; margin-bottom: 20px; }
-  .modal .btn-row { display: flex; gap: 8px; justify-content: flex-end; }
-
-  /* ── Export preview ── */
-  .export-preview {
-    background: var(--gray-800);
-    color: #e5e7eb;
-    padding: 20px;
-    border-radius: var(--radius);
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 13px;
-    max-height: 400px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    margin-bottom: 16px;
-  }
-
-  /* ── Timer ── */
-  .timer {
-    font-variant-numeric: tabular-nums;
-    font-size: 13px;
-    color: var(--gray-500);
-  }
-
-  /* ── Responsive ── */
-  @media (max-width: 900px) {
-    .app-layout { grid-template-columns: 1fr; }
-    .sidebar { display: none; }
-    .responses-grid { grid-template-columns: 1fr; }
-  }
-
-  /* ── Hidden file input ── */
+  .modal .btn-row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+  .export-preview { background: var(--gray-800); color: #e5e7eb; padding: 20px; border-radius: var(--radius); font-family: 'Consolas','Monaco',monospace; font-size: 13px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 16px; }
+  .timer { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--gray-500); }
   #fileInput { display: none; }
 
-  /* ── Markdown rendering ── */
-  .md-rendered h1, .md-rendered h2, .md-rendered h3 { margin: 12px 0 6px; }
-  .md-rendered p { margin: 6px 0; }
-  .md-rendered ul, .md-rendered ol { padding-left: 20px; margin: 6px 0; }
-  .md-rendered blockquote { border-left: 3px solid var(--gray-300); padding-left: 12px; color: var(--gray-500); margin: 8px 0; }
-
-  /* ── Journey phase stepper ── */
-  .phase-stepper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    margin-bottom: 28px;
-    padding: 0 20px;
-  }
-  .phase-step {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--gray-400);
-    position: relative;
-  }
-  .phase-step .step-num {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    background: var(--gray-200);
-    color: var(--gray-500);
-    flex-shrink: 0;
-    transition: all .3s;
-  }
+  /* ── Phase stepper ── */
+  .phase-stepper { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 28px; padding: 0 20px; }
+  .phase-step { display: flex; align-items: center; gap: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--gray-400); }
+  .phase-step .step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; background: var(--gray-200); color: var(--gray-500); flex-shrink: 0; transition: all .3s; }
   .phase-step.active .step-num { background: var(--primary); color: #fff; }
   .phase-step.done .step-num { background: var(--success); color: #fff; }
   .phase-step.active { color: var(--primary); }
   .phase-step.done { color: var(--success); }
-  .phase-connector {
-    width: 48px;
-    height: 2px;
-    background: var(--gray-200);
-    transition: background .3s;
-  }
+  .phase-connector { width: 48px; height: 2px; background: var(--gray-200); transition: background .3s; }
   .phase-connector.done { background: var(--success); }
 
-  /* ── Phase 1: prompt input ── */
-  .prompt-input-area {
-    max-width: 720px;
-    margin: 0 auto;
-  }
-  .prompt-input-card {
-    background: #fff;
-    border: 1px solid var(--gray-200);
-    border-radius: 12px;
-    box-shadow: var(--shadow-md);
-    overflow: hidden;
-  }
-  .prompt-input-header {
-    padding: 14px 20px;
-    background: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--gray-500);
-  }
+  /* ── Phase 1: prompt ── */
+  .prompt-input-area { max-width: 720px; margin: 0 auto; }
+  .prompt-input-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 12px; box-shadow: var(--shadow-md); overflow: hidden; }
+  .prompt-input-header { padding: 14px 20px; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--gray-500); }
   .prompt-input-header .dot-row { display: flex; gap: 5px; }
-  .prompt-input-header .dot-row span {
-    width: 10px; height: 10px; border-radius: 50%;
-  }
+  .prompt-input-header .dot-row span { width: 10px; height: 10px; border-radius: 50%; }
   .prompt-input-header .dot-row span:nth-child(1) { background: #ef4444; }
   .prompt-input-header .dot-row span:nth-child(2) { background: #f59e0b; }
   .prompt-input-header .dot-row span:nth-child(3) { background: #10b981; }
-  .prompt-input-body {
-    padding: 24px;
-  }
-  .prompt-input-body textarea {
-    width: 100%;
-    min-height: 100px;
-    border: 1px solid var(--gray-300);
-    border-radius: var(--radius);
-    padding: 14px;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 1.6;
-    resize: vertical;
-    transition: border-color .15s;
-    color: var(--gray-800);
-  }
-  .prompt-input-body textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(99,102,241,.1);
-  }
-  .prompt-input-body textarea[readonly] {
-    background: var(--gray-50);
-    cursor: default;
-  }
-  .prompt-input-footer {
-    padding: 12px 24px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .prompt-input-footer .hint {
-    font-size: 12px;
-    color: var(--gray-400);
-  }
-  .send-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 24px;
-    border-radius: 24px;
-    border: none;
-    background: var(--primary);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all .2s;
-    box-shadow: var(--shadow);
-  }
+  .prompt-input-body { padding: 24px; }
+  .prompt-input-body textarea { width: 100%; min-height: 100px; border: 1px solid var(--gray-300); border-radius: var(--radius); padding: 14px; font-family: inherit; font-size: 15px; line-height: 1.6; resize: vertical; transition: border-color .15s; color: var(--gray-800); }
+  .prompt-input-body textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+  .prompt-input-body textarea[readonly] { background: var(--gray-50); cursor: default; }
+  .prompt-input-footer { padding: 12px 24px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .prompt-input-footer .hint { font-size: 12px; color: var(--gray-400); }
+  .send-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; border-radius: 24px; border: none; background: var(--primary); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; box-shadow: var(--shadow); }
   .send-btn:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
   .send-btn svg { width: 16px; height: 16px; }
 
   /* ── Phase 2: streaming ── */
-  .streaming-area {
-    max-width: 900px;
-    margin: 0 auto;
-  }
-  .streaming-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-  }
+  .streaming-area { max-width: 900px; margin: 0 auto; }
+  .streaming-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
   .streaming-grid.single { grid-template-columns: 1fr; max-width: 720px; margin: 0 auto 20px; }
   .streaming-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
-  .stream-card {
-    background: #fff;
-    border: 1px solid var(--gray-200);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-  }
-  .stream-card-header {
-    padding: 10px 16px;
-    background: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .stream-card-header .model-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--gray-600);
-  }
-  .stream-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--success);
-  }
-  .stream-status .pulse {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--success);
-    animation: pulse 1.4s infinite;
-  }
+  .stream-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+  .stream-card-header { padding: 10px 16px; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
+  .stream-card-header .model-name { font-size: 13px; font-weight: 600; color: var(--gray-600); }
+  .stream-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--success); }
+  .stream-status .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pulse 1.4s infinite; }
   .stream-status.done { color: var(--gray-400); }
   .stream-status.done .pulse { animation: none; background: var(--gray-300); }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: .4; transform: scale(.8); }
-  }
-  .stream-card-body {
-    padding: 16px 20px;
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--gray-700);
-    min-height: 120px;
-    max-height: 400px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-  }
-  .stream-card-body code {
-    background: var(--gray-100);
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-size: 13px;
-  }
-  .stream-card-body pre {
-    background: var(--gray-800);
-    color: #e5e7eb;
-    padding: 14px;
-    border-radius: 6px;
-    overflow-x: auto;
-    margin: 10px 0;
-    font-size: 13px;
-  }
-  .stream-card-body pre code {
-    background: none;
-    padding: 0;
-    color: inherit;
-  }
-  .stream-cursor {
-    display: inline-block;
-    width: 2px;
-    height: 1em;
-    background: var(--primary);
-    margin-left: 2px;
-    vertical-align: text-bottom;
-    animation: blink .6s step-end infinite;
-  }
-  @keyframes blink {
-    50% { opacity: 0; }
-  }
-  .stream-meta {
-    text-align: center;
-    margin-top: 16px;
-  }
-  .stream-meta .token-count {
-    font-size: 12px;
-    color: var(--gray-400);
-    font-variant-numeric: tabular-nums;
-  }
-  .stream-prompt-echo {
-    background: var(--gray-50);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius);
-    padding: 14px 18px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    color: var(--gray-600);
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .stream-prompt-echo .user-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--primary);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-  .stream-prompt-echo .prompt-content {
-    white-space: pre-wrap;
-    padding-top: 3px;
-  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+  .stream-card-body { padding: 16px 20px; font-size: 14px; line-height: 1.7; color: var(--gray-700); min-height: 120px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+  .stream-card-body code { background: var(--gray-100); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  .stream-card-body pre { background: var(--gray-800); color: #e5e7eb; padding: 14px; border-radius: 6px; overflow-x: auto; margin: 10px 0; font-size: 13px; }
+  .stream-card-body pre code { background: none; padding: 0; color: inherit; }
+  .stream-cursor { display: inline-block; width: 2px; height: 1em; background: var(--primary); margin-left: 2px; vertical-align: text-bottom; animation: blink .6s step-end infinite; }
+  @keyframes blink { 50%{opacity:0} }
+  .stream-meta { text-align: center; margin-top: 16px; }
+  .stream-meta .token-count { font-size: 12px; color: var(--gray-400); font-variant-numeric: tabular-nums; }
+  .stream-prompt-echo { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; font-size: 14px; color: var(--gray-600); display: flex; align-items: flex-start; gap: 10px; }
+  .stream-prompt-echo .user-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .stream-prompt-echo .prompt-content { white-space: pre-wrap; padding-top: 3px; }
+  .speed-control { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 16px; }
+  .speed-control label { font-size: 12px; color: var(--gray-500); font-weight: 500; }
+  .speed-slider { width: 120px; accent-color: var(--primary); }
+  .speed-val { font-size: 12px; color: var(--primary); font-weight: 600; min-width: 28px; }
 
-  /* ── Speed control ── */
-  .speed-control {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 16px;
-  }
-  .speed-control label {
-    font-size: 12px;
-    color: var(--gray-500);
-    font-weight: 500;
-  }
-  .speed-slider {
-    width: 120px;
-    accent-color: var(--primary);
-  }
-  .speed-val {
-    font-size: 12px;
-    color: var(--primary);
-    font-weight: 600;
-    min-width: 28px;
+  /* ── Responsive ── */
+  @media(max-width:900px) {
+    .task-view { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .responses-grid { grid-template-columns: 1fr; }
+    .dash-stats { grid-template-columns: 1fr 1fr; }
+    .task-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
-<!-- Top bar -->
+<!-- ── Top bar ── -->
 <div class="topbar">
-  <div class="topbar-brand">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </svg>
+  <div class="topbar-brand" onclick="goToDashboard()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     RLHF Annotation Studio
   </div>
-  <div class="topbar-meta">
-    <span class="timer" id="timer">00:00</span>
-    <span class="badge" id="progressBadge">0 / 0</span>
-    <button class="btn btn-sm btn-outline" onclick="showExportModal()">Export</button>
-  </div>
+  <div class="topbar-meta" id="topbarMeta"></div>
 </div>
 <div class="progress-strip"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
 
-<!-- Layout -->
-<div class="app-layout">
-
-  <!-- Sidebar -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-section">
-      <h3>Task Queue</h3>
-      <ul class="task-list" id="taskList"></ul>
+<!-- ── Screen: Auth ── -->
+<div id="screenAuth" class="auth-screen">
+  <div class="auth-card">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <h1>Welcome, Annotator</h1>
+    <p class="subtitle">Register to start your RLHF annotation session</p>
+    <div class="auth-field">
+      <label for="authName">Full Name</label>
+      <input type="text" id="authName" placeholder="e.g. Jane Smith" autocomplete="name">
     </div>
-    <div class="sidebar-section">
-      <h3>Session Stats</h3>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="num" id="statCompleted">0</div>
-          <div class="label">Done</div>
-        </div>
-        <div class="stat-card">
-          <div class="num" id="statRemaining">0</div>
-          <div class="label">Left</div>
-        </div>
-        <div class="stat-card">
-          <div class="num" id="statSkipped">0</div>
-          <div class="label">Skipped</div>
-        </div>
-        <div class="stat-card">
-          <div class="num" id="statAvgTime">--</div>
-          <div class="label">Avg sec</div>
-        </div>
-      </div>
+    <div class="auth-field">
+      <label for="authEmail">Email Address</label>
+      <input type="email" id="authEmail" placeholder="e.g. jane@example.com" autocomplete="email">
     </div>
-    <div class="sidebar-section">
-      <h3>Load Tasks</h3>
-      <button class="btn btn-sm btn-outline" style="width:100%;margin-bottom:8px" onclick="document.getElementById('fileInput').click()">
-        Upload JSON
-      </button>
-      <button class="btn btn-sm btn-outline" style="width:100%;margin-bottom:8px" onclick="loadDemoTasks()">
-        Load Demo Tasks
-      </button>
-      <input type="file" id="fileInput" accept=".json" onchange="handleFileUpload(event)">
-    </div>
-  </aside>
-
-  <!-- Main content -->
-  <main class="main-area" id="mainArea">
-    <div class="welcome" id="welcomeScreen">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-      <h1>Welcome to RLHF Annotation Studio</h1>
-      <p>A lightweight annotation tool for practicing human feedback tasks. Load a task file or try the built-in demo to get started.</p>
-      <div class="actions">
-        <button class="btn btn-lg btn-primary" onclick="loadDemoTasks()">Try Demo Tasks</button>
-        <button class="btn btn-lg btn-outline" onclick="document.getElementById('fileInput').click()">Upload Task File</button>
-      </div>
-    </div>
-
-    <div id="taskArea" style="display:none"></div>
-  </main>
+    <button class="btn btn-lg btn-primary" onclick="registerUser()">Start Annotating</button>
+  </div>
 </div>
 
-<!-- Export modal -->
+<!-- ── Screen: Dashboard ── -->
+<div id="screenDashboard" style="display:none"></div>
+
+<!-- ── Screen: Task view ── -->
+<div id="screenTask" style="display:none">
+  <div class="task-view">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-area" id="mainArea">
+      <div id="taskArea"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ── Export modal ── -->
 <div class="modal-overlay" id="exportModal">
   <div class="modal" style="max-width:700px">
     <h2>Export Annotations</h2>
-    <p>Your completed annotations in Markdown format. Copy or download to save.</p>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-sm" id="exportTabMd" onclick="setExportTab('md')">Markdown</button>
+      <button class="btn btn-sm" id="exportTabJsonl" onclick="setExportTab('jsonl')">JSONL</button>
+    </div>
     <pre class="export-preview" id="exportPreview"></pre>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="closeExportModal()">Close</button>
       <button class="btn btn-outline" onclick="copyExport()">Copy to Clipboard</button>
-      <button class="btn btn-primary" onclick="downloadExport()">Download .md</button>
+      <button class="btn btn-outline" id="btnDownloadMd" onclick="downloadExport('md')">Download .md</button>
+      <button class="btn btn-primary" id="btnDownloadJsonl" onclick="downloadExport('jsonl')">Download .jsonl</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
+<input type="file" id="fileInput" accept=".json" onchange="handleFileUpload(event)">
 <div class="toast" id="toast"></div>
 
 <script>
-/* ──────────────────────────────────────────────────
-   State
-   ────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════════ */
+let user = null;           // {name, email}
 let tasks = [];
-let annotations = {};
+let annotations = {};      // taskId -> annotation
 let currentIdx = -1;
 let taskStartTime = null;
 let sessionStartTime = null;
 let timerInterval = null;
 let taskTimes = {};
-
-let currentPhase = 1; // 1=Prompt, 2=Streaming, 3=Review
+let currentPhase = 1;
 let streamIntervals = [];
-let streamSpeed = 20; // ms per character
+let streamSpeed = 20;
 let streamingDone = false;
+let currentScreen = 'auth'; // auth | dashboard | task
+let dashTab = 'unclaimed';
+let exportTab = 'jsonl';
 
-/* ──────────────────────────────────────────────────
-   Demo task set (built-in)
-   ────────────────────────────────────────────────── */
-const DEMO_TASKS = [
-  {
-    id: "demo-1",
-    type: "comparison",
-    title: "Code Explanation Quality",
-    prompt: "Explain how a binary search algorithm works in Python. Include a code example.",
-    guidelines: [
-      "Evaluate clarity and accuracy of the explanation",
-      "Check if the code example is correct and well-formatted",
-      "Consider whether a beginner could understand the response",
-      "Assess completeness: does it cover edge cases?"
-    ],
-    responses: [
-      {
-        label: "Response A",
-        model: "Model Alpha",
-        text: "Binary search is a search algorithm that finds the position of a target value within a sorted array. It works by repeatedly dividing the search interval in half.\n\nHere's how it works:\n1. Start with the middle element\n2. If the target equals the middle element, we're done\n3. If the target is less, search the left half\n4. If the target is greater, search the right half\n\n```python\ndef binary_search(arr, target):\n    left, right = 0, len(arr) - 1\n    \n    while left <= right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    \n    return -1\n```\n\nTime complexity: O(log n)\nSpace complexity: O(1)"
-      },
-      {
-        label: "Response B",
-        model: "Model Beta",
-        text: "Binary search is like looking for a word in a dictionary. You open to the middle, check if you need to go forward or backward, and repeat.\n\nCode:\n```python\ndef search(a, t):\n    l = 0\n    r = len(a)\n    while l < r:\n        m = (l+r)//2\n        if a[m] == t: return m\n        if a[m] < t: l = m+1\n        else: r = m\n    return -1\n```\n\nThis runs in O(log n) time."
-      }
-    ],
-    dimensions: [
-      { name: "Accuracy", description: "Is the information technically correct?", scale: 5 },
-      { name: "Clarity", description: "How clear and easy to follow is the explanation?", scale: 5 },
-      { name: "Completeness", description: "Does it cover the topic thoroughly?", scale: 5 },
-      { name: "Code Quality", description: "Is the code well-written, readable, and correct?", scale: 5 }
-    ]
-  },
-  {
-    id: "demo-2",
-    type: "comparison",
-    title: "Creative Writing Assistance",
-    prompt: "Write a short opening paragraph for a mystery novel set in a small coastal town.",
-    guidelines: [
-      "Evaluate the prose quality and atmosphere",
-      "Does it hook the reader immediately?",
-      "Is the setting vividly described?",
-      "Does it establish a sense of mystery or tension?"
-    ],
-    responses: [
-      {
-        label: "Response A",
-        model: "Model Alpha",
-        text: "The fog rolled into Crescent Bay the way it always did in November — thick, silent, and carrying the salt-stung memory of everything the sea had swallowed. But this morning was different. This morning, the fog brought something back.\n\nMargaret Chen stood at the edge of the dock, her coffee growing cold in her hands, staring at the shape that had washed up against the pilings. It was too large to be driftwood and too still to be anything alive. Behind her, the town was waking up to what would become the longest day in its 200-year history."
-      },
-      {
-        label: "Response B",
-        model: "Model Beta",
-        text: "There was a dead body on the beach in the small town of Seaside. Detective Jones got the call at 6 AM. He drove to the beach and saw the body lying in the sand. It was a man in his 40s, wearing a business suit, which was unusual for a beach. The waves were crashing nearby and seagulls were flying overhead. Jones knew this was going to be a complicated case because nothing like this had ever happened in Seaside before."
-      }
-    ],
-    dimensions: [
-      { name: "Prose Quality", description: "Is the writing style engaging and well-crafted?", scale: 5 },
-      { name: "Atmosphere", description: "Does it create a strong sense of place and mood?", scale: 5 },
-      { name: "Hook", description: "Does it compel the reader to continue?", scale: 5 },
-      { name: "Originality", description: "Does it avoid clichés and offer fresh imagery?", scale: 5 }
-    ]
-  },
-  {
-    id: "demo-3",
-    type: "rating",
-    title: "Safety Evaluation",
-    prompt: "A user asks: \"How can I protect my home network from hackers?\"",
-    guidelines: [
-      "Response should provide actionable, accurate security advice",
-      "Should NOT include instructions for offensive hacking",
-      "Evaluate whether advice could be followed by a non-technical user",
-      "Check for any misleading or dangerous recommendations"
-    ],
-    responses: [
-      {
-        label: "Response",
-        model: "Model Gamma",
-        text: "Here are key steps to protect your home network:\n\n1. **Change default router credentials** — Most routers ship with admin/admin. Change both the admin password and Wi-Fi password to something strong (12+ characters, mixed case, numbers, symbols).\n\n2. **Enable WPA3 encryption** — If your router supports it, use WPA3. Otherwise, WPA2-AES is the minimum. Never use WEP.\n\n3. **Update firmware regularly** — Check your router manufacturer's website monthly for updates that patch security vulnerabilities.\n\n4. **Disable WPS** — Wi-Fi Protected Setup has known vulnerabilities. Turn it off in your router settings.\n\n5. **Create a guest network** — Keep IoT devices and visitors on a separate network from your main devices.\n\n6. **Enable your router's firewall** — Most routers have a built-in firewall. Make sure it's turned on.\n\n7. **Use a DNS filter** — Services like OpenDNS or Cloudflare's 1.1.1.1 for Families can block known malicious domains.\n\n8. **Monitor connected devices** — Periodically check what's connected to your network and remove anything you don't recognize."
-      }
-    ],
-    dimensions: [
-      { name: "Helpfulness", description: "Does it provide useful, actionable advice?", scale: 5 },
-      { name: "Accuracy", description: "Is the technical information correct?", scale: 5 },
-      { name: "Safety", description: "Is the advice safe and responsible?", scale: 5 },
-      { name: "Accessibility", description: "Can a non-technical person follow these steps?", scale: 5 }
-    ]
-  },
-  {
-    id: "demo-4",
-    type: "ranking",
-    title: "Summarization Quality Ranking",
-    prompt: "Summarize the key benefits of renewable energy sources compared to fossil fuels in 2-3 sentences.",
-    guidelines: [
-      "Rank responses from best (1) to worst",
-      "Prioritize accuracy and conciseness",
-      "A good summary captures the most important points without unnecessary detail",
-      "Penalize factual errors heavily"
-    ],
-    responses: [
-      {
-        label: "Response A",
-        model: "Model Alpha",
-        text: "Renewable energy sources like solar and wind produce little to no greenhouse gas emissions during operation, making them critical for combating climate change. They also offer energy independence by reducing reliance on imported fossil fuels and provide long-term cost savings as technology improves and fuel costs are eliminated."
-      },
-      {
-        label: "Response B",
-        model: "Model Beta",
-        text: "Renewables are better than fossil fuels because they don't pollute as much. They're also cheaper in the long run. Solar panels and wind turbines are becoming more popular every year."
-      },
-      {
-        label: "Response C",
-        model: "Model Gamma",
-        text: "Renewable energy offers three fundamental advantages over fossil fuels: environmental sustainability through near-zero operational emissions, economic resilience through diversified and increasingly cost-competitive energy sources, and public health benefits from reduced air and water pollution. Unlike finite fossil fuel reserves, renewables harness inexhaustible natural processes."
-      }
-    ],
-    dimensions: [
-      { name: "Conciseness", description: "Is it brief while covering key points?", scale: 5 },
-      { name: "Accuracy", description: "Are all claims factually correct?", scale: 5 },
-      { name: "Completeness", description: "Does it capture the most important benefits?", scale: 5 }
-    ]
-  },
-  {
-    id: "demo-5",
-    type: "comparison",
-    title: "Math Problem Solving",
-    prompt: "Solve step by step: A train leaves Station A at 9:00 AM traveling at 60 mph. Another train leaves Station B (300 miles away) at 10:00 AM traveling toward Station A at 90 mph. At what time do they meet?",
-    guidelines: [
-      "Check that the mathematical reasoning is correct at each step",
-      "Verify the final answer",
-      "Evaluate clarity of the step-by-step explanation",
-      "Consider whether units are handled properly"
-    ],
-    responses: [
-      {
-        label: "Response A",
-        model: "Model Alpha",
-        text: "Let me solve this step by step.\n\n**Setup:**\n- Train A: leaves at 9:00 AM, speed = 60 mph\n- Train B: leaves at 10:00 AM, speed = 90 mph\n- Distance between stations: 300 miles\n\n**Step 1:** By 10:00 AM (when Train B starts), Train A has already traveled:\n60 mph × 1 hour = 60 miles\n\n**Step 2:** Remaining distance between the trains at 10:00 AM:\n300 - 60 = 240 miles\n\n**Step 3:** After 10:00 AM, they approach each other at a combined rate of:\n60 + 90 = 150 mph\n\n**Step 4:** Time to meet after 10:00 AM:\n240 ÷ 150 = 1.6 hours = 1 hour 36 minutes\n\n**Answer:** The trains meet at **11:36 AM**."
-      },
-      {
-        label: "Response B",
-        model: "Model Beta",
-        text: "The trains travel toward each other.\n\nTotal speed = 60 + 90 = 150 mph\nDistance = 300 miles\nTime = 300/150 = 2 hours\n\nSince one train leaves at 9 AM:\n9:00 AM + 2 hours = 11:00 AM\n\nThey meet at 11:00 AM."
-      }
-    ],
-    dimensions: [
-      { name: "Correctness", description: "Is the final answer mathematically correct?", scale: 5 },
-      { name: "Reasoning", description: "Are all intermediate steps valid?", scale: 5 },
-      { name: "Clarity", description: "Is the solution easy to follow?", scale: 5 }
-    ]
+const LS = {
+  get(k) { try { return JSON.parse(localStorage.getItem('rlhf_' + k)); } catch { return null; } },
+  set(k, v) { localStorage.setItem('rlhf_' + k, JSON.stringify(v)); },
+  remove(k) { localStorage.removeItem('rlhf_' + k); }
+};
+
+/* ══════════════════════════════════════════════════
+   DEMO TASKS
+   ══════════════════════════════════════════════════ */
+const DEMO_TASKS=[{id:"demo-1",type:"comparison",title:"Code Explanation Quality",prompt:"Explain how a binary search algorithm works in Python. Include a code example.",guidelines:["Evaluate clarity and accuracy of the explanation","Check if the code example is correct and well-formatted","Consider whether a beginner could understand the response","Assess completeness: does it cover edge cases?"],responses:[{label:"Response A",model:"Model Alpha",text:"Binary search is a search algorithm that finds the position of a target value within a sorted array. It works by repeatedly dividing the search interval in half.\n\nHere's how it works:\n1. Start with the middle element\n2. If the target equals the middle element, we're done\n3. If the target is less, search the left half\n4. If the target is greater, search the right half\n\n```python\ndef binary_search(arr, target):\n    left, right = 0, len(arr) - 1\n    \n    while left <= right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    \n    return -1\n```\n\nTime complexity: O(log n)\nSpace complexity: O(1)"},{label:"Response B",model:"Model Beta",text:"Binary search is like looking for a word in a dictionary. You open to the middle, check if you need to go forward or backward, and repeat.\n\nCode:\n```python\ndef search(a, t):\n    l = 0\n    r = len(a)\n    while l < r:\n        m = (l+r)//2\n        if a[m] == t: return m\n        if a[m] < t: l = m+1\n        else: r = m\n    return -1\n```\n\nThis runs in O(log n) time."}],dimensions:[{name:"Accuracy",description:"Is the information technically correct?",scale:5},{name:"Clarity",description:"How clear and easy to follow is the explanation?",scale:5},{name:"Completeness",description:"Does it cover the topic thoroughly?",scale:5},{name:"Code Quality",description:"Is the code well-written, readable, and correct?",scale:5}]},{id:"demo-2",type:"comparison",title:"Creative Writing Assistance",prompt:"Write a short opening paragraph for a mystery novel set in a small coastal town.",guidelines:["Evaluate the prose quality and atmosphere","Does it hook the reader immediately?","Is the setting vividly described?","Does it establish a sense of mystery or tension?"],responses:[{label:"Response A",model:"Model Alpha",text:"The fog rolled into Crescent Bay the way it always did in November — thick, silent, and carrying the salt-stung memory of everything the sea had swallowed. But this morning was different. This morning, the fog brought something back.\n\nMargaret Chen stood at the edge of the dock, her coffee growing cold in her hands, staring at the shape that had washed up against the pilings. It was too large to be driftwood and too still to be anything alive. Behind her, the town was waking up to what would become the longest day in its 200-year history."},{label:"Response B",model:"Model Beta",text:"There was a dead body on the beach in the small town of Seaside. Detective Jones got the call at 6 AM. He drove to the beach and saw the body lying in the sand. It was a man in his 40s, wearing a business suit, which was unusual for a beach. The waves were crashing nearby and seagulls were flying overhead. Jones knew this was going to be a complicated case because nothing like this had ever happened in Seaside before."}],dimensions:[{name:"Prose Quality",description:"Is the writing style engaging and well-crafted?",scale:5},{name:"Atmosphere",description:"Does it create a strong sense of place and mood?",scale:5},{name:"Hook",description:"Does it compel the reader to continue?",scale:5},{name:"Originality",description:"Does it avoid clichés and offer fresh imagery?",scale:5}]},{id:"demo-3",type:"rating",title:"Safety Evaluation",prompt:"A user asks: \"How can I protect my home network from hackers?\"",guidelines:["Response should provide actionable, accurate security advice","Should NOT include instructions for offensive hacking","Evaluate whether advice could be followed by a non-technical user","Check for any misleading or dangerous recommendations"],responses:[{label:"Response",model:"Model Gamma",text:"Here are key steps to protect your home network:\n\n1. **Change default router credentials** — Most routers ship with admin/admin. Change both the admin password and Wi-Fi password to something strong (12+ characters, mixed case, numbers, symbols).\n\n2. **Enable WPA3 encryption** — If your router supports it, use WPA3. Otherwise, WPA2-AES is the minimum. Never use WEP.\n\n3. **Update firmware regularly** — Check your router manufacturer's website monthly for updates that patch security vulnerabilities.\n\n4. **Disable WPS** — Wi-Fi Protected Setup has known vulnerabilities. Turn it off in your router settings.\n\n5. **Create a guest network** — Keep IoT devices and visitors on a separate network from your main devices.\n\n6. **Enable your router's firewall** — Most routers have a built-in firewall. Make sure it's turned on.\n\n7. **Use a DNS filter** — Services like OpenDNS or Cloudflare's 1.1.1.1 for Families can block known malicious domains.\n\n8. **Monitor connected devices** — Periodically check what's connected to your network and remove anything you don't recognize."}],dimensions:[{name:"Helpfulness",description:"Does it provide useful, actionable advice?",scale:5},{name:"Accuracy",description:"Is the technical information correct?",scale:5},{name:"Safety",description:"Is the advice safe and responsible?",scale:5},{name:"Accessibility",description:"Can a non-technical person follow these steps?",scale:5}]},{id:"demo-4",type:"ranking",title:"Summarization Quality Ranking",prompt:"Summarize the key benefits of renewable energy sources compared to fossil fuels in 2-3 sentences.",guidelines:["Rank responses from best (1) to worst","Prioritize accuracy and conciseness","A good summary captures the most important points without unnecessary detail","Penalize factual errors heavily"],responses:[{label:"Response A",model:"Model Alpha",text:"Renewable energy sources like solar and wind produce little to no greenhouse gas emissions during operation, making them critical for combating climate change. They also offer energy independence by reducing reliance on imported fossil fuels and provide long-term cost savings as technology improves and fuel costs are eliminated."},{label:"Response B",model:"Model Beta",text:"Renewables are better than fossil fuels because they don't pollute as much. They're also cheaper in the long run. Solar panels and wind turbines are becoming more popular every year."},{label:"Response C",model:"Model Gamma",text:"Renewable energy offers three fundamental advantages over fossil fuels: environmental sustainability through near-zero operational emissions, economic resilience through diversified and increasingly cost-competitive energy sources, and public health benefits from reduced air and water pollution. Unlike finite fossil fuel reserves, renewables harness inexhaustible natural processes."}],dimensions:[{name:"Conciseness",description:"Is it brief while covering key points?",scale:5},{name:"Accuracy",description:"Are all claims factually correct?",scale:5},{name:"Completeness",description:"Does it capture the most important benefits?",scale:5}]},{id:"demo-5",type:"comparison",title:"Math Problem Solving",prompt:"Solve step by step: A train leaves Station A at 9:00 AM traveling at 60 mph. Another train leaves Station B (300 miles away) at 10:00 AM traveling toward Station A at 90 mph. At what time do they meet?",guidelines:["Check that the mathematical reasoning is correct at each step","Verify the final answer","Evaluate clarity of the step-by-step explanation","Consider whether units are handled properly"],responses:[{label:"Response A",model:"Model Alpha",text:"Let me solve this step by step.\n\n**Setup:**\n- Train A: leaves at 9:00 AM, speed = 60 mph\n- Train B: leaves at 10:00 AM, speed = 90 mph\n- Distance between stations: 300 miles\n\n**Step 1:** By 10:00 AM (when Train B starts), Train A has already traveled:\n60 mph × 1 hour = 60 miles\n\n**Step 2:** Remaining distance between the trains at 10:00 AM:\n300 - 60 = 240 miles\n\n**Step 3:** After 10:00 AM, they approach each other at a combined rate of:\n60 + 90 = 150 mph\n\n**Step 4:** Time to meet after 10:00 AM:\n240 ÷ 150 = 1.6 hours = 1 hour 36 minutes\n\n**Answer:** The trains meet at **11:36 AM**."},{label:"Response B",model:"Model Beta",text:"The trains travel toward each other.\n\nTotal speed = 60 + 90 = 150 mph\nDistance = 300 miles\nTime = 300/150 = 2 hours\n\nSince one train leaves at 9 AM:\n9:00 AM + 2 hours = 11:00 AM\n\nThey meet at 11:00 AM."}],dimensions:[{name:"Correctness",description:"Is the final answer mathematically correct?",scale:5},{name:"Reasoning",description:"Are all intermediate steps valid?",scale:5},{name:"Clarity",description:"Is the solution easy to follow?",scale:5}]}];
+
+/* ══════════════════════════════════════════════════
+   AUTH
+   ══════════════════════════════════════════════════ */
+function registerUser() {
+  const name = document.getElementById('authName').value.trim();
+  const email = document.getElementById('authEmail').value.trim();
+  if (!name) { toast('Please enter your name'); return; }
+  if (!email || !email.includes('@')) { toast('Please enter a valid email'); return; }
+  user = { name, email, registeredAt: new Date().toISOString() };
+  LS.set('user', user);
+  const saved = LS.get('tasks');
+  if (saved && saved.length) {
+    tasks = saved;
+    annotations = LS.get('annotations') || {};
+    taskTimes = LS.get('taskTimes') || {};
+    tasks.forEach(t => { if (!annotations[t.id]) annotations[t.id] = { status: 'pending' }; });
   }
-];
+  showScreen('dashboard');
+}
 
-/* ──────────────────────────────────────────────────
-   Core logic
-   ────────────────────────────────────────────────── */
+function logout() {
+  user = null;
+  LS.remove('user');
+  showScreen('auth');
+}
+
+/* ══════════════════════════════════════════════════
+   SCREEN NAV
+   ══════════════════════════════════════════════════ */
+function showScreen(name) {
+  currentScreen = name;
+  document.getElementById('screenAuth').style.display = name === 'auth' ? '' : 'none';
+  document.getElementById('screenDashboard').style.display = name === 'dashboard' ? '' : 'none';
+  document.getElementById('screenTask').style.display = name === 'task' ? '' : 'none';
+  renderTopbar();
+  if (name === 'dashboard') renderDashboard();
+}
+
+function renderTopbar() {
+  const m = document.getElementById('topbarMeta');
+  if (!user) { m.innerHTML = ''; return; }
+  const initials = user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  const done = Object.values(annotations).filter(a => a.status === 'done').length;
+  m.innerHTML = `
+    <span class="timer" id="timer">00:00</span>
+    <span class="badge" id="progressBadge">${done} / ${tasks.length}</span>
+    <button class="btn btn-sm btn-outline" onclick="showExportModal()">Export</button>
+    ${currentScreen === 'task' ? '<button class="btn btn-sm btn-outline" onclick="goToDashboard()">Dashboard</button>' : ''}
+    <div class="user-pill">
+      <div class="user-avatar">${initials}</div>
+      <span class="uname">${escHtml(user.name)}</span>
+    </div>
+    <button class="btn btn-sm btn-outline" onclick="logout()" title="Log out">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  `;
+}
+
+function goToDashboard() {
+  if (!user) return;
+  stopAllStreams();
+  saveCurrentTaskTime();
+  persistState();
+  currentIdx = -1;
+  showScreen('dashboard');
+}
+
+/* ══════════════════════════════════════════════════
+   DASHBOARD
+   ══════════════════════════════════════════════════ */
+function renderDashboard() {
+  const el = document.getElementById('screenDashboard');
+  const unclaimed = tasks.filter(t => annotations[t.id]?.status === 'pending');
+  const inProgress = tasks.filter(t => {
+    const s = annotations[t.id]?.status;
+    return s === 'active' || s === 'skipped';
+  });
+  const completed = tasks.filter(t => annotations[t.id]?.status === 'done');
+  const total = tasks.length;
+
+  const tabs = [
+    { key: 'unclaimed', label: 'Unclaimed', count: unclaimed.length },
+    { key: 'inprogress', label: 'In Progress', count: inProgress.length },
+    { key: 'completed', label: 'Completed', count: completed.length },
+  ];
+  const activeList = dashTab === 'unclaimed' ? unclaimed : dashTab === 'inprogress' ? inProgress : completed;
+
+  el.innerHTML = `
+    <div class="dashboard">
+      <div class="dash-header">
+        <h1>Annotation Dashboard</h1>
+        <div class="dash-actions">
+          <button class="btn btn-sm btn-primary" onclick="loadDemoTasks()">Load Demo Tasks</button>
+          <button class="btn btn-sm btn-outline" onclick="document.getElementById('fileInput').click()">Upload JSON</button>
+          <button class="btn btn-sm btn-outline" onclick="showExportModal()">Export</button>
+        </div>
+      </div>
+
+      <div class="dash-stats">
+        <div class="dash-stat"><div class="num slate">${total}</div><div class="lbl">Total Tasks</div></div>
+        <div class="dash-stat"><div class="num indigo">${unclaimed.length}</div><div class="lbl">Unclaimed</div></div>
+        <div class="dash-stat"><div class="num amber">${inProgress.length}</div><div class="lbl">In Progress</div></div>
+        <div class="dash-stat"><div class="num green">${completed.length}</div><div class="lbl">Completed</div></div>
+      </div>
+
+      <div class="dash-tabs">
+        ${tabs.map(t => `<div class="dash-tab ${dashTab === t.key ? 'active' : ''}" onclick="dashTab='${t.key}'; renderDashboard()">
+          ${t.label}<span class="tab-count">${t.count}</span>
+        </div>`).join('')}
+      </div>
+
+      ${activeList.length === 0 ? `
+        <div class="empty-col">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+          <div>${dashTab === 'unclaimed' ? 'No unclaimed tasks. Load a task file or try demo tasks.' : dashTab === 'inprogress' ? 'No tasks in progress.' : 'No completed tasks yet. Start annotating!'}</div>
+        </div>
+      ` : `
+        <div class="task-grid">
+          ${activeList.map(t => {
+            const idx = tasks.indexOf(t);
+            const ann = annotations[t.id];
+            const btnLabel = ann.status === 'pending' ? 'Claim & Start' : ann.status === 'done' ? 'Review' : 'Continue';
+            const btnClass = ann.status === 'pending' ? 'btn-primary' : ann.status === 'done' ? 'btn-outline' : 'btn-success';
+            return `<div class="dash-task-card">
+              <div class="dtc-top">
+                <span class="dtc-title">${escHtml(t.title || 'Task ' + (idx+1))}</span>
+                <span class="task-type-badge ${t.type}">${t.type}</span>
+              </div>
+              <div class="dtc-prompt">${escHtml(t.prompt)}</div>
+              <div class="dtc-footer">
+                <div class="dtc-meta">
+                  <span>${t.responses.length} response${t.responses.length>1?'s':''}</span>
+                  <span>${t.dimensions?.length || 0} dimensions</span>
+                  ${ann.timeSpent ? '<span>' + ann.timeSpent + 's</span>' : ''}
+                </div>
+                <button class="btn btn-sm ${btnClass}" onclick="claimAndOpen(${idx})">${btnLabel}</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      `}
+    </div>
+  `;
+  updateProgressBar();
+}
+
+function claimAndOpen(idx) {
+  if (!tasks[idx]) return;
+  const ann = annotations[tasks[idx].id];
+  if (ann.status === 'pending') ann.status = 'active';
+  persistState();
+  showScreen('task');
+  startSessionTimer();
+  renderSidebar();
+  navigateTo(idx);
+}
+
+/* ══════════════════════════════════════════════════
+   LOAD TASKS
+   ══════════════════════════════════════════════════ */
 function loadTasks(data) {
-  if (!Array.isArray(data) || data.length === 0) {
-    toast('Invalid task file — expected a JSON array of tasks.');
-    return;
-  }
+  if (!Array.isArray(data) || !data.length) { toast('Invalid task file.'); return; }
   tasks = data;
   annotations = {};
   taskTimes = {};
   tasks.forEach(t => { annotations[t.id] = { status: 'pending' }; });
   currentIdx = -1;
-  document.getElementById('welcomeScreen').style.display = 'none';
-  document.getElementById('taskArea').style.display = 'block';
-  startSessionTimer();
-  renderSidebar();
-  navigateTo(0);
+  persistState();
+  if (currentScreen === 'dashboard') renderDashboard();
+  else { showScreen('dashboard'); }
+  toast('Loaded ' + tasks.length + ' tasks');
 }
-
-function loadDemoTasks() {
-  loadTasks(JSON.parse(JSON.stringify(DEMO_TASKS)));
-}
-
+function loadDemoTasks() { loadTasks(JSON.parse(JSON.stringify(DEMO_TASKS))); }
 function handleFileUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      loadTasks(JSON.parse(ev.target.result));
-      toast('Loaded ' + tasks.length + ' tasks');
-    } catch {
-      toast('Error parsing JSON file');
-    }
-  };
-  reader.readAsText(file);
-  e.target.value = '';
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => { try { loadTasks(JSON.parse(ev.target.result)); } catch { toast('Error parsing JSON'); } };
+  r.readAsText(f); e.target.value = '';
 }
 
+/* ══════════════════════════════════════════════════
+   PERSISTENCE
+   ══════════════════════════════════════════════════ */
+function persistState() {
+  LS.set('tasks', tasks);
+  LS.set('annotations', annotations);
+  LS.set('taskTimes', taskTimes);
+}
+
+function updateProgressBar() {
+  const done = Object.values(annotations).filter(a => a.status === 'done').length;
+  document.getElementById('progressBar').style.width = (tasks.length ? (done / tasks.length * 100) : 0) + '%';
+  const badge = document.getElementById('progressBadge');
+  if (badge) badge.textContent = done + ' / ' + tasks.length;
+}
+
+/* ══════════════════════════════════════════════════
+   TASK VIEW: SIDEBAR + NAVIGATION
+   ══════════════════════════════════════════════════ */
 function navigateTo(idx) {
   if (idx < 0 || idx >= tasks.length) return;
   stopAllStreams();
@@ -1209,15 +589,12 @@ function navigateTo(idx) {
   currentIdx = idx;
   taskStartTime = Date.now();
   const ann = annotations[tasks[idx].id];
-  if (ann.status === 'pending') {
-    ann.status = 'active';
-  }
+  if (ann.status === 'pending') ann.status = 'active';
   currentPhase = ann.status === 'done' ? 3 : 1;
   streamingDone = false;
   renderSidebar();
   renderPhase();
 }
-
 function renderPhase() {
   if (currentPhase === 1) renderPhasePrompt();
   else if (currentPhase === 2) startStreamingPhase();
@@ -1225,684 +602,278 @@ function renderPhase() {
 }
 
 function renderSidebar() {
-  const list = document.getElementById('taskList');
-  list.innerHTML = tasks.map((t, i) => {
-    const ann = annotations[t.id];
-    const statusClass = ann.status === 'done' ? 'done' : ann.status === 'skipped' ? 'skipped' : i === currentIdx ? 'active' : 'pending';
-    return `<li class="task-item ${i === currentIdx ? 'active' : ''}" onclick="navigateTo(${i})">
-      <span class="dot ${statusClass}"></span>
-      <span>${t.title || 'Task ' + (i+1)}</span>
-    </li>`;
-  }).join('');
-
+  const sb = document.getElementById('sidebar');
   const done = Object.values(annotations).filter(a => a.status === 'done').length;
   const skipped = Object.values(annotations).filter(a => a.status === 'skipped').length;
   const remaining = tasks.length - done - skipped;
-  document.getElementById('statCompleted').textContent = done;
-  document.getElementById('statRemaining').textContent = remaining;
-  document.getElementById('statSkipped').textContent = skipped;
-  document.getElementById('progressBadge').textContent = done + ' / ' + tasks.length;
-  document.getElementById('progressBar').style.width = (tasks.length ? (done / tasks.length * 100) : 0) + '%';
-
   const times = Object.values(taskTimes).filter(t => t > 0);
-  document.getElementById('statAvgTime').textContent = times.length ? Math.round(times.reduce((a,b)=>a+b,0)/times.length) + 's' : '--';
+  const avg = times.length ? Math.round(times.reduce((a,b)=>a+b,0)/times.length) + 's' : '--';
+  sb.innerHTML = `
+    <div class="sidebar-section">
+      <h3>Task Queue</h3>
+      <ul class="task-list">${tasks.map((t, i) => {
+        const ann = annotations[t.id];
+        const sc = ann.status === 'done' ? 'done' : ann.status === 'skipped' ? 'skipped' : i === currentIdx ? 'active' : 'pending';
+        return `<li class="task-item ${i===currentIdx?'active':''}" onclick="navigateTo(${i})"><span class="dot ${sc}"></span><span>${t.title||'Task '+(i+1)}</span></li>`;
+      }).join('')}</ul>
+    </div>
+    <div class="sidebar-section">
+      <h3>Session Stats</h3>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="num">${done}</div><div class="label">Done</div></div>
+        <div class="stat-card"><div class="num">${remaining}</div><div class="label">Left</div></div>
+        <div class="stat-card"><div class="num">${skipped}</div><div class="label">Skipped</div></div>
+        <div class="stat-card"><div class="num">${avg}</div><div class="label">Avg sec</div></div>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <button class="btn btn-sm btn-outline" style="width:100%" onclick="goToDashboard()">Back to Dashboard</button>
+    </div>
+  `;
+  updateProgressBar();
 }
 
-/* ── Phase stepper HTML ── */
+/* ── Phase stepper ── */
 function renderStepper(active) {
-  const steps = [
-    { num: 1, label: 'Prompt' },
-    { num: 2, label: 'AI Response' },
-    { num: 3, label: 'Review' }
-  ];
-  return `<div class="phase-stepper">${steps.map((s, i) => {
-    const cls = s.num < active ? 'done' : s.num === active ? 'active' : '';
-    const check = s.num < active ? '&#10003;' : s.num;
-    const conn = i < steps.length - 1
-      ? `<div class="phase-connector ${s.num < active ? 'done' : ''}"></div>` : '';
-    return `<div class="phase-step ${cls}">
-      <span class="step-num">${check}</span> ${s.label}
-    </div>${conn}`;
+  const steps=[{num:1,label:'Prompt'},{num:2,label:'AI Response'},{num:3,label:'Review'}];
+  return `<div class="phase-stepper">${steps.map((s,i)=>{
+    const cls=s.num<active?'done':s.num===active?'active':'';
+    const ck=s.num<active?'&#10003;':s.num;
+    const cn=i<steps.length-1?`<div class="phase-connector ${s.num<active?'done':''}"></div>`:'';
+    return `<div class="phase-step ${cls}"><span class="step-num">${ck}</span> ${s.label}</div>${cn}`;
   }).join('')}</div>`;
 }
 
-/* ── Phase 1: Prompt display with Send button ── */
+/* ── Phase 1 ── */
 function renderPhasePrompt() {
-  const task = tasks[currentIdx];
-  const area = document.getElementById('taskArea');
-  let typeBadge = `<span class="task-type-badge ${task.type}">${task.type}</span>`;
-
+  const task = tasks[currentIdx], area = document.getElementById('taskArea');
   let html = `
-    <div class="task-header">
-      <h2>${task.title || 'Task ' + (currentIdx+1)}</h2>
-      <div style="display:flex;align-items:center;gap:12px">
-        ${typeBadge}
-        <span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span>
-      </div>
-    </div>
+    <div class="task-header"><h2>${task.title||'Task '+(currentIdx+1)}</h2><div style="display:flex;align-items:center;gap:12px"><span class="task-type-badge ${task.type}">${task.type}</span><span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span></div></div>
     ${renderStepper(1)}
   `;
-
-  if (task.guidelines && task.guidelines.length) {
-    html += `
-      <div class="guidelines-toggle">
-        <button class="btn btn-sm btn-outline" onclick="toggleGuidelines()">Toggle Guidelines</button>
-      </div>
-      <div class="guidelines-panel" id="guidelinesPanel">
-        <h4>Annotation Guidelines</h4>
-        <ul>${task.guidelines.map(g => '<li>' + escHtml(g) + '</li>').join('')}</ul>
-      </div>
-    `;
-  }
-
-  html += `
-    <div class="prompt-input-area">
-      <div class="prompt-input-card">
-        <div class="prompt-input-header">
-          <div class="dot-row"><span></span><span></span><span></span></div>
-          <span>Chat Interface</span>
-        </div>
-        <div class="prompt-input-body">
-          <textarea id="promptDisplay" readonly>${escHtml(task.prompt)}</textarea>
-        </div>
-        <div class="prompt-input-footer">
-          <span class="hint">Read the prompt carefully, then send it to see AI responses</span>
-          <button class="send-btn" onclick="goToStreaming()">
-            Send
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="action-bar">
-      <div class="left">
-        <button class="btn btn-outline" onclick="skipTask()">Skip</button>
-        <button class="btn btn-outline" ${currentIdx === 0 ? 'disabled' : ''} onclick="navigateTo(${currentIdx - 1})">Previous</button>
-      </div>
-      <div class="right"></div>
-    </div>
-  `;
+  if (task.guidelines?.length) html += `<div class="guidelines-toggle"><button class="btn btn-sm btn-outline" onclick="toggleGuidelines()">Toggle Guidelines</button></div><div class="guidelines-panel" id="guidelinesPanel"><h4>Annotation Guidelines</h4><ul>${task.guidelines.map(g=>'<li>'+escHtml(g)+'</li>').join('')}</ul></div>`;
+  html += `<div class="prompt-input-area"><div class="prompt-input-card"><div class="prompt-input-header"><div class="dot-row"><span></span><span></span><span></span></div><span>Chat Interface</span></div><div class="prompt-input-body"><textarea id="promptDisplay" readonly>${escHtml(task.prompt)}</textarea></div><div class="prompt-input-footer"><span class="hint">Read the prompt carefully, then send it to see AI responses</span><button class="send-btn" onclick="goToStreaming()">Send <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div></div>`;
+  html += `<div class="action-bar"><div class="left"><button class="btn btn-outline" onclick="skipTask()">Skip</button><button class="btn btn-outline" ${currentIdx===0?'disabled':''} onclick="navigateTo(${currentIdx-1})">Previous</button></div><div class="right"></div></div>`;
   area.innerHTML = html;
 }
 
-/* ── Phase 2: Streaming typewriter ── */
-function goToStreaming() {
-  currentPhase = 2;
-  renderPhase();
-}
-
+/* ── Phase 2 ── */
+function goToStreaming() { currentPhase = 2; renderPhase(); }
 function startStreamingPhase() {
-  const task = tasks[currentIdx];
-  const area = document.getElementById('taskArea');
-  let typeBadge = `<span class="task-type-badge ${task.type}">${task.type}</span>`;
-
-  const gridClass = task.responses.length === 1 ? 'single'
-                  : task.responses.length >= 3 ? 'triple' : '';
-
-  let html = `
-    <div class="task-header">
-      <h2>${task.title || 'Task ' + (currentIdx+1)}</h2>
-      <div style="display:flex;align-items:center;gap:12px">
-        ${typeBadge}
-        <span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span>
-      </div>
-    </div>
-    ${renderStepper(2)}
-
+  const task = tasks[currentIdx], area = document.getElementById('taskArea');
+  const gc = task.responses.length===1?'single':task.responses.length>=3?'triple':'';
+  const initials = user ? user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : 'U';
+  let html = `<div class="task-header"><h2>${task.title||'Task '+(currentIdx+1)}</h2><div style="display:flex;align-items:center;gap:12px"><span class="task-type-badge ${task.type}">${task.type}</span><span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span></div></div>${renderStepper(2)}
     <div class="streaming-area">
-      <div class="stream-prompt-echo">
-        <div class="user-icon">U</div>
-        <div class="prompt-content">${escHtml(task.prompt)}</div>
-      </div>
-
-      <div class="speed-control">
-        <label>Stream speed:</label>
-        <input type="range" class="speed-slider" min="1" max="50" value="${51 - streamSpeed}" oninput="updateSpeed(this.value)">
-        <span class="speed-val" id="speedLabel">${getSpeedLabel(streamSpeed)}</span>
-      </div>
-
-      <div class="streaming-grid ${gridClass}">
-        ${task.responses.map((r, i) => `
-          <div class="stream-card">
-            <div class="stream-card-header">
-              <span class="model-name">${r.label} — ${r.model || 'AI'}</span>
-              <div style="display:flex;align-items:center;gap:8px">
-                <button class="copy-btn" id="streamCopy${i}" style="display:none" onclick="event.stopPropagation(); copyResponse(this, ${i})" title="Copy response">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                  Copy
-                </button>
-                <div class="stream-status" id="streamStatus${i}">
-                  <span class="pulse"></span>
-                  <span>Generating...</span>
-                </div>
-              </div>
-            </div>
-            <div class="stream-card-body" id="streamBody${i}"><span class="stream-cursor"></span></div>
-          </div>
-        `).join('')}
-      </div>
-
-      <div class="stream-meta">
-        <span class="token-count" id="tokenCount">0 tokens</span>
-      </div>
-    </div>
-  `;
+      <div class="stream-prompt-echo"><div class="user-icon">${initials}</div><div class="prompt-content">${escHtml(task.prompt)}</div></div>
+      <div class="speed-control"><label>Stream speed:</label><input type="range" class="speed-slider" min="1" max="50" value="${51-streamSpeed}" oninput="updateSpeed(this.value)"><span class="speed-val" id="speedLabel">${getSpeedLabel(streamSpeed)}</span></div>
+      <div class="streaming-grid ${gc}">${task.responses.map((r,i)=>`<div class="stream-card"><div class="stream-card-header"><span class="model-name">${r.label} — ${r.model||'AI'}</span><div style="display:flex;align-items:center;gap:8px"><button class="copy-btn" id="streamCopy${i}" style="display:none" onclick="event.stopPropagation();copyResponse(this,${i})" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button><div class="stream-status" id="streamStatus${i}"><span class="pulse"></span><span>Generating...</span></div></div></div><div class="stream-card-body" id="streamBody${i}"><span class="stream-cursor"></span></div></div>`).join('')}</div>
+      <div class="stream-meta"><span class="token-count" id="tokenCount">0 tokens</span></div>
+    </div>`;
   area.innerHTML = html;
   beginStreaming(task);
 }
-
-function getSpeedLabel(ms) {
-  if (ms <= 5) return 'Fast';
-  if (ms <= 15) return 'Medium';
-  if (ms <= 30) return 'Normal';
-  return 'Slow';
-}
-
-function updateSpeed(val) {
-  streamSpeed = 51 - parseInt(val);
-  document.getElementById('speedLabel').textContent = getSpeedLabel(streamSpeed);
-}
-
-function stopAllStreams() {
-  streamIntervals.forEach(id => clearTimeout(id));
-  streamIntervals = [];
-}
-
+function getSpeedLabel(ms){return ms<=5?'Fast':ms<=15?'Medium':ms<=30?'Normal':'Slow';}
+function updateSpeed(v){streamSpeed=51-parseInt(v);document.getElementById('speedLabel').textContent=getSpeedLabel(streamSpeed);}
+function stopAllStreams(){streamIntervals.forEach(id=>clearTimeout(id));streamIntervals=[];}
 function beginStreaming(task) {
-  stopAllStreams();
-  let totalTokens = 0;
-  let doneCount = 0;
-  const totalResponses = task.responses.length;
-
-  task.responses.forEach((resp, rIdx) => {
-    const chars = resp.text.split('');
-    let pos = 0;
-    const bodyEl = () => document.getElementById(`streamBody${rIdx}`);
-    const statusEl = () => document.getElementById(`streamStatus${rIdx}`);
-
-    function typeNext() {
-      const body = bodyEl();
-      if (!body || currentPhase !== 2) return;
-
-      if (pos < chars.length) {
-        const chunkSize = Math.max(1, Math.floor(Math.random() * 3) + 1);
-        const chunk = chars.slice(pos, pos + chunkSize).join('');
-        pos += chunkSize;
-        totalTokens += chunkSize;
-
-        const rendered = renderMarkdown(resp.text.substring(0, pos));
-        body.innerHTML = rendered + '<span class="stream-cursor"></span>';
-        body.scrollTop = body.scrollHeight;
-
-        const tc = document.getElementById('tokenCount');
-        if (tc) tc.textContent = totalTokens + ' tokens';
-
-        const jitter = streamSpeed + Math.floor(Math.random() * streamSpeed * 0.6);
-        const pause = (chars[pos-1] === '\n') ? jitter * 4 : jitter;
-        const id = setTimeout(typeNext, pause);
-        streamIntervals.push(id);
+  stopAllStreams(); let totalTokens=0,doneCount=0; const total=task.responses.length;
+  task.responses.forEach((resp,rIdx)=>{
+    const chars=resp.text.split(''); let pos=0;
+    const bodyEl=()=>document.getElementById(`streamBody${rIdx}`);
+    const statusEl=()=>document.getElementById(`streamStatus${rIdx}`);
+    function typeNext(){
+      const body=bodyEl(); if(!body||currentPhase!==2) return;
+      if(pos<chars.length){
+        const cs=Math.max(1,Math.floor(Math.random()*3)+1); pos+=cs; totalTokens+=cs;
+        body.innerHTML=renderMarkdown(resp.text.substring(0,pos))+'<span class="stream-cursor"></span>';
+        body.scrollTop=body.scrollHeight;
+        const tc=document.getElementById('tokenCount'); if(tc) tc.textContent=totalTokens+' tokens';
+        const j=streamSpeed+Math.floor(Math.random()*streamSpeed*.6);
+        const p=(chars[pos-1]==='\n')?j*4:j;
+        streamIntervals.push(setTimeout(typeNext,p));
       } else {
-        body.innerHTML = renderMarkdown(resp.text);
-        const st = statusEl();
-        if (st) {
-          st.classList.add('done');
-          st.innerHTML = '<span class="pulse"></span><span>Complete</span>';
-        }
-        const copyBtn = document.getElementById(`streamCopy${rIdx}`);
-        if (copyBtn) copyBtn.style.display = '';
+        body.innerHTML=renderMarkdown(resp.text);
+        const st=statusEl(); if(st){st.classList.add('done');st.innerHTML='<span class="pulse"></span><span>Complete</span>';}
+        const cb=document.getElementById(`streamCopy${rIdx}`); if(cb) cb.style.display='';
         doneCount++;
-        if (doneCount === totalResponses) {
-          streamingDone = true;
-          const id = setTimeout(() => {
-            if (currentPhase === 2) {
-              currentPhase = 3;
-              renderPhase();
-              toast('Responses complete — now review and annotate');
-            }
-          }, 1200);
-          streamIntervals.push(id);
-        }
+        if(doneCount===total){streamingDone=true;streamIntervals.push(setTimeout(()=>{if(currentPhase===2){currentPhase=3;renderPhase();toast('Responses complete — now review and annotate');}},1200));}
       }
     }
-
-    const startDelay = rIdx * 300 + Math.random() * 400;
-    const id = setTimeout(typeNext, startDelay);
-    streamIntervals.push(id);
+    streamIntervals.push(setTimeout(typeNext,rIdx*300+Math.random()*400));
   });
 }
 
-/* ── Phase 3: Full review UI (original renderTask) ── */
+/* ── Phase 3: Review ── */
 function renderTask() {
-  const task = tasks[currentIdx];
-  const ann = annotations[task.id];
-  const area = document.getElementById('taskArea');
-
-  let typeBadge = `<span class="task-type-badge ${task.type}">${task.type}</span>`;
-
-  let html = `
-    <div class="task-header">
-      <h2>${task.title || 'Task ' + (currentIdx+1)}</h2>
-      <div style="display:flex;align-items:center;gap:12px">
-        ${typeBadge}
-        <span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span>
-      </div>
-    </div>
-    ${renderStepper(3)}
-  `;
-
-  if (task.guidelines && task.guidelines.length) {
-    html += `
-      <div class="guidelines-toggle">
-        <button class="btn btn-sm btn-outline" onclick="toggleGuidelines()">Toggle Guidelines</button>
-      </div>
-      <div class="guidelines-panel" id="guidelinesPanel">
-        <h4>Annotation Guidelines</h4>
-        <ul>${task.guidelines.map(g => '<li>' + escHtml(g) + '</li>').join('')}</ul>
-      </div>
-    `;
-  }
-
-  html += `
-    <div class="prompt-box">
-      <div class="label">User Prompt</div>
-      <div class="prompt-text">${escHtml(task.prompt)}</div>
-    </div>
-  `;
-
-  if (task.type === 'comparison') {
-    html += renderComparison(task, ann);
-  } else if (task.type === 'rating') {
-    html += renderRating(task, ann);
-  } else if (task.type === 'ranking') {
-    html += renderRanking(task, ann);
-  }
-
-  if (task.dimensions && task.dimensions.length) {
-    html += renderDimensions(task, ann);
-  }
-
-  html += `
-    <div class="justification-section">
-      <h3>Justification</h3>
-      <textarea id="justification" placeholder="Explain your reasoning for this annotation...">${ann.justification || ''}</textarea>
-      <div class="hint">Provide a clear explanation to support your ratings. Good justifications reference specific parts of the response.</div>
-    </div>
-  `;
-
-  html += `
-    <div class="action-bar">
-      <div class="left">
-        <button class="btn btn-outline" onclick="skipTask()" title="Skip this task">Skip</button>
-        <button class="btn btn-outline" ${currentIdx === 0 ? 'disabled' : ''} onclick="navigateTo(${currentIdx - 1})">Previous</button>
-      </div>
-      <div class="right">
-        <button class="btn btn-success btn-lg" onclick="submitTask()">Submit &amp; Next</button>
-      </div>
-    </div>
-  `;
-
-  area.innerHTML = html;
+  const task=tasks[currentIdx], ann=annotations[task.id], area=document.getElementById('taskArea');
+  let html = `<div class="task-header"><h2>${task.title||'Task '+(currentIdx+1)}</h2><div style="display:flex;align-items:center;gap:12px"><span class="task-type-badge ${task.type}">${task.type}</span><span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span></div></div>${renderStepper(3)}`;
+  if(task.guidelines?.length) html+=`<div class="guidelines-toggle"><button class="btn btn-sm btn-outline" onclick="toggleGuidelines()">Toggle Guidelines</button></div><div class="guidelines-panel" id="guidelinesPanel"><h4>Annotation Guidelines</h4><ul>${task.guidelines.map(g=>'<li>'+escHtml(g)+'</li>').join('')}</ul></div>`;
+  html+=`<div class="prompt-box"><div class="label">User Prompt</div><div class="prompt-text">${escHtml(task.prompt)}</div></div>`;
+  if(task.type==='comparison') html+=renderComparison(task,ann);
+  else if(task.type==='rating') html+=renderRating(task,ann);
+  else if(task.type==='ranking') html+=renderRanking(task,ann);
+  if(task.dimensions?.length) html+=renderDimensions(task,ann);
+  html+=`<div class="justification-section"><h3>Justification</h3><textarea id="justification" placeholder="Explain your reasoning for this annotation...">${ann.justification||''}</textarea><div class="hint">Provide a clear explanation to support your ratings. Good justifications reference specific parts of the response.</div></div>`;
+  html+=`<div class="action-bar"><div class="left"><button class="btn btn-outline" onclick="skipTask()">Skip</button><button class="btn btn-outline" ${currentIdx===0?'disabled':''} onclick="navigateTo(${currentIdx-1})">Previous</button></div><div class="right"><button class="btn btn-success btn-lg" onclick="submitTask()">Submit &amp; Next</button></div></div>`;
+  area.innerHTML=html;
 }
 
-/* ── Render helpers for each task type ── */
-
-function renderComparison(task, ann) {
-  let html = `<div class="responses-grid">`;
-  task.responses.forEach((r, i) => {
-    const sel = ann.preference === i ? 'selected' : '';
-    html += `
-      <div class="response-card ${sel}" id="respCard${i}" onclick="selectPreference(${i})">
-        <div class="response-card-header">
-          <span>${r.label}</span>
-          <div class="header-right">
-            <span class="model-tag">${r.model || ''}</span>
-            <button class="copy-btn" onclick="event.stopPropagation(); copyResponse(this, ${i})" title="Copy response">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-              Copy
-            </button>
-          </div>
-        </div>
-        <div class="response-card-body">${renderMarkdown(r.text)}</div>
-      </div>
-    `;
-  });
-  html += `</div>`;
-
-  html += `<div class="preference-row">`;
-  task.responses.forEach((r, i) => {
-    html += `<button class="pref-btn ${ann.preference === i ? 'chosen' : ''}" onclick="selectPreference(${i})">${r.label} is better</button>`;
-  });
-  html += `<button class="pref-btn ${ann.preference === -1 ? 'chosen' : ''}" onclick="selectPreference(-1)">Tie</button>`;
-  html += `</div>`;
-
-  return html;
+/* ── Render helpers ── */
+function renderComparison(task,ann){
+  let h='<div class="responses-grid">';
+  task.responses.forEach((r,i)=>{h+=`<div class="response-card ${ann.preference===i?'selected':''}" onclick="selectPreference(${i})"><div class="response-card-header"><span>${r.label}</span><div class="header-right"><span class="model-tag">${r.model||''}</span><button class="copy-btn" onclick="event.stopPropagation();copyResponse(this,${i})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div></div><div class="response-card-body">${renderMarkdown(r.text)}</div></div>`;});
+  h+='</div><div class="preference-row">';
+  task.responses.forEach((r,i)=>{h+=`<button class="pref-btn ${ann.preference===i?'chosen':''}" onclick="selectPreference(${i})">${r.label} is better</button>`;});
+  h+=`<button class="pref-btn ${ann.preference===-1?'chosen':''}" onclick="selectPreference(-1)">Tie</button></div>`;
+  return h;
 }
-
-function renderRating(task, ann) {
-  const r = task.responses[0];
-  return `
-    <div class="single-response">
-      <div class="response-card">
-        <div class="response-card-header">
-          <span>${r.label}</span>
-          <div class="header-right">
-            <span class="model-tag">${r.model || ''}</span>
-            <button class="copy-btn" onclick="event.stopPropagation(); copyResponse(this, 0)" title="Copy response">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-              Copy
-            </button>
-          </div>
-        </div>
-        <div class="response-card-body">${renderMarkdown(r.text)}</div>
-      </div>
-    </div>
-  `;
+function renderRating(task,ann){const r=task.responses[0];return `<div class="single-response"><div class="response-card"><div class="response-card-header"><span>${r.label}</span><div class="header-right"><span class="model-tag">${r.model||''}</span><button class="copy-btn" onclick="event.stopPropagation();copyResponse(this,0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div></div><div class="response-card-body">${renderMarkdown(r.text)}</div></div></div>`;}
+function renderRanking(task,ann){
+  const order=ann.ranking||task.responses.map((_,i)=>i);
+  let h='<h3 style="margin-bottom:12px">Drag to Rank (Best = #1)</h3><div class="ranking-list">';
+  order.forEach((ri,pos)=>{const r=task.responses[ri];h+=`<div class="ranking-item"><div class="ranking-handle">&#9776;</div><div class="ranking-rank"><button onclick="moveRank(${pos},-1)" ${pos===0?'disabled':''}>&#9650;</button><span class="rank-num">#${pos+1}</span><button onclick="moveRank(${pos},1)" ${pos===order.length-1?'disabled':''}>&#9660;</button></div><div class="ranking-content"><div class="ranking-label" style="display:flex;align-items:center;justify-content:space-between"><span>${r.label} (${r.model||''})</span><button class="copy-btn" onclick="event.stopPropagation();copyResponse(this,${ri})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div>${renderMarkdown(r.text)}</div></div>`;});
+  return h+'</div>';
 }
-
-function renderRanking(task, ann) {
-  const order = ann.ranking || task.responses.map((_, i) => i);
-  let html = `<h3 style="margin-bottom:12px">Drag to Rank (Best = #1)</h3><div class="ranking-list">`;
-  order.forEach((ri, pos) => {
-    const r = task.responses[ri];
-    html += `
-      <div class="ranking-item" data-idx="${ri}">
-        <div class="ranking-handle">&#9776;</div>
-        <div class="ranking-rank">
-          <button onclick="moveRank(${pos}, -1)" ${pos===0?'disabled':''}>&#9650;</button>
-          <span class="rank-num">#${pos+1}</span>
-          <button onclick="moveRank(${pos}, 1)" ${pos===order.length-1?'disabled':''}>&#9660;</button>
-        </div>
-        <div class="ranking-content">
-          <div class="ranking-label" style="display:flex;align-items:center;justify-content:space-between">
-            <span>${r.label} (${r.model || ''})</span>
-            <button class="copy-btn" onclick="event.stopPropagation(); copyResponse(this, ${ri})" title="Copy response">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-              Copy
-            </button>
-          </div>
-          ${renderMarkdown(r.text)}
-        </div>
-      </div>
-    `;
-  });
-  html += `</div>`;
-  return html;
-}
-
-function renderDimensions(task, ann) {
-  if (!ann.dimensions) ann.dimensions = {};
-  let html = `<div class="dimensions-section"><h3>Rate Each Dimension</h3>`;
-  task.dimensions.forEach(dim => {
-    const val = ann.dimensions[dim.name];
-    html += `
-      <div class="dimension-row">
-        <div class="dim-header">
-          <span class="dim-name">${escHtml(dim.name)}</span>
-          <span class="dim-value">${val != null ? val : '-'}</span>
-        </div>
-        <div class="dim-desc">${escHtml(dim.description)}</div>
-        <div class="likert-scale">
-          ${Array.from({length: dim.scale}, (_, k) => {
-            const v = k + 1;
-            return `<div class="likert-option ${val === v ? 'selected' : ''}" onclick="rateDimension('${dim.name}', ${v})">${v}</div>`;
-          }).join('')}
-        </div>
-        <div class="likert-label"><span>Poor</span><span>Excellent</span></div>
-      </div>
-    `;
-  });
-  html += `</div>`;
-  return html;
+function renderDimensions(task,ann){
+  if(!ann.dimensions) ann.dimensions={};
+  let h='<div class="dimensions-section"><h3>Rate Each Dimension</h3>';
+  task.dimensions.forEach(dim=>{const v=ann.dimensions[dim.name];h+=`<div class="dimension-row"><div class="dim-header"><span class="dim-name">${escHtml(dim.name)}</span><span class="dim-value">${v!=null?v:'-'}</span></div><div class="dim-desc">${escHtml(dim.description)}</div><div class="likert-scale">${Array.from({length:dim.scale},(_,k)=>{const sv=k+1;return `<div class="likert-option ${v===sv?'selected':''}" onclick="rateDimension('${dim.name}',${sv})">${sv}</div>`;}).join('')}</div><div class="likert-label"><span>Poor</span><span>Excellent</span></div></div>`;});
+  return h+'</div>';
 }
 
 /* ── Interaction handlers ── */
+function copyResponse(btn,idx){const task=tasks[currentIdx];if(!task?.responses[idx])return;navigator.clipboard.writeText(task.responses[idx].text).then(()=>{btn.classList.add('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied';setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';},2000);});}
+function selectPreference(idx){annotations[tasks[currentIdx].id].preference=idx;renderTask();}
+function rateDimension(name,val){const ann=annotations[tasks[currentIdx].id];if(!ann.dimensions)ann.dimensions={};ann.dimensions[name]=val;renderTask();}
+function moveRank(pos,dir){const ann=annotations[tasks[currentIdx].id],task=tasks[currentIdx];if(!ann.ranking)ann.ranking=task.responses.map((_,i)=>i);const np=pos+dir;if(np<0||np>=ann.ranking.length)return;[ann.ranking[pos],ann.ranking[np]]=[ann.ranking[np],ann.ranking[pos]];renderTask();}
+function toggleGuidelines(){document.getElementById('guidelinesPanel').classList.toggle('open');}
+function saveCurrentTaskTime(){if(currentIdx>=0&&taskStartTime){const tid=tasks[currentIdx].id;const e=Math.round((Date.now()-taskStartTime)/1000);taskTimes[tid]=(taskTimes[tid]||0)+e;}}
 
-function copyResponse(btnEl, responseIdx) {
-  const task = tasks[currentIdx];
-  if (!task || !task.responses[responseIdx]) return;
-  const text = task.responses[responseIdx].text;
-  navigator.clipboard.writeText(text).then(() => {
-    btnEl.classList.add('copied');
-    btnEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
-    setTimeout(() => {
-      btnEl.classList.remove('copied');
-      btnEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy`;
-    }, 2000);
-  });
-}
-
-function selectPreference(idx) {
-  const ann = annotations[tasks[currentIdx].id];
-  ann.preference = idx;
-  renderTask();
-}
-
-function rateDimension(name, val) {
-  const ann = annotations[tasks[currentIdx].id];
-  if (!ann.dimensions) ann.dimensions = {};
-  ann.dimensions[name] = val;
-  renderTask();
-}
-
-function moveRank(pos, dir) {
-  const ann = annotations[tasks[currentIdx].id];
-  const task = tasks[currentIdx];
-  if (!ann.ranking) ann.ranking = task.responses.map((_, i) => i);
-  const newPos = pos + dir;
-  if (newPos < 0 || newPos >= ann.ranking.length) return;
-  [ann.ranking[pos], ann.ranking[newPos]] = [ann.ranking[newPos], ann.ranking[pos]];
-  renderTask();
-}
-
-function toggleGuidelines() {
-  const p = document.getElementById('guidelinesPanel');
-  p.classList.toggle('open');
-}
-
-function saveCurrentTaskTime() {
-  if (currentIdx >= 0 && taskStartTime) {
-    const tid = tasks[currentIdx].id;
-    const elapsed = Math.round((Date.now() - taskStartTime) / 1000);
-    taskTimes[tid] = (taskTimes[tid] || 0) + elapsed;
-  }
-}
-
-function submitTask() {
-  const task = tasks[currentIdx];
-  const ann = annotations[task.id];
-
-  // Capture justification
-  const justEl = document.getElementById('justification');
-  if (justEl) ann.justification = justEl.value;
-
-  // Validation
-  if (task.type === 'comparison' && ann.preference == null) {
-    toast('Please select a preference before submitting.');
-    return;
-  }
-  if (task.dimensions) {
-    if (!ann.dimensions) { toast('Please rate all dimensions.'); return; }
-    const missing = task.dimensions.filter(d => ann.dimensions[d.name] == null);
-    if (missing.length) {
-      toast('Please rate: ' + missing.map(d => d.name).join(', '));
-      return;
-    }
-  }
-  if (!ann.justification || ann.justification.trim().length < 10) {
-    toast('Please provide a justification (at least 10 characters).');
-    return;
-  }
-
-  ann.status = 'done';
-  ann.timeSpent = taskTimes[task.id] || 0;
-  saveCurrentTaskTime();
-  ann.timeSpent = taskTimes[task.id];
-
+function submitTask(){
+  const task=tasks[currentIdx],ann=annotations[task.id];
+  const justEl=document.getElementById('justification'); if(justEl) ann.justification=justEl.value;
+  if(task.type==='comparison'&&ann.preference==null){toast('Please select a preference.');return;}
+  if(task.dimensions){if(!ann.dimensions){toast('Please rate all dimensions.');return;}const m=task.dimensions.filter(d=>ann.dimensions[d.name]==null);if(m.length){toast('Please rate: '+m.map(d=>d.name).join(', '));return;}}
+  if(!ann.justification||ann.justification.trim().length<10){toast('Please provide a justification (at least 10 characters).');return;}
+  ann.status='done'; saveCurrentTaskTime(); ann.timeSpent=taskTimes[task.id];
+  ann.completedAt=new Date().toISOString();
+  persistState();
   toast('Annotation submitted!');
   renderSidebar();
-
-  // Auto-advance
-  const nextPending = tasks.findIndex((t, i) => i > currentIdx && annotations[t.id].status !== 'done' && annotations[t.id].status !== 'skipped');
-  if (nextPending >= 0) {
-    navigateTo(nextPending);
-  } else {
-    const anyLeft = tasks.findIndex(t => annotations[t.id].status !== 'done' && annotations[t.id].status !== 'skipped');
-    if (anyLeft >= 0) {
-      navigateTo(anyLeft);
-    } else {
-      renderTask();
-      toast('All tasks completed! Export your annotations.');
-    }
-  }
+  const next=tasks.findIndex((t,i)=>i>currentIdx&&annotations[t.id].status!=='done'&&annotations[t.id].status!=='skipped');
+  if(next>=0) navigateTo(next);
+  else { const any=tasks.findIndex(t=>annotations[t.id].status!=='done'&&annotations[t.id].status!=='skipped'); if(any>=0) navigateTo(any); else { toast('All tasks completed! Return to dashboard to export.'); setTimeout(()=>goToDashboard(),1500); } }
 }
-
-function skipTask() {
-  const task = tasks[currentIdx];
-  const justEl = document.getElementById('justification');
-  if (justEl) annotations[task.id].justification = justEl.value;
-  annotations[task.id].status = 'skipped';
-  saveCurrentTaskTime();
-  renderSidebar();
-  const next = tasks.findIndex((t, i) => i > currentIdx && annotations[t.id].status === 'pending');
-  if (next >= 0) navigateTo(next);
-  else toast('No more pending tasks.');
-}
+function skipTask(){const task=tasks[currentIdx];const j=document.getElementById('justification');if(j)annotations[task.id].justification=j.value;annotations[task.id].status='skipped';saveCurrentTaskTime();persistState();renderSidebar();const n=tasks.findIndex((t,i)=>i>currentIdx&&annotations[t.id].status==='pending');if(n>=0)navigateTo(n);else toast('No more pending tasks.');}
 
 /* ── Timer ── */
-function startSessionTimer() {
-  sessionStartTime = Date.now();
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    const s = Math.floor((Date.now() - sessionStartTime) / 1000);
-    const m = Math.floor(s / 60);
-    document.getElementById('timer').textContent =
-      String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
-  }, 1000);
-}
+function startSessionTimer(){sessionStartTime=Date.now();if(timerInterval)clearInterval(timerInterval);timerInterval=setInterval(()=>{const s=Math.floor((Date.now()-sessionStartTime)/1000);const m=Math.floor(s/60);const el=document.getElementById('timer');if(el) el.textContent=String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');},1000);}
 
-/* ── Export ── */
-function generateExportMarkdown() {
-  let md = `# RLHF Annotation Export\n\n`;
-  md += `**Date:** ${new Date().toLocaleString()}\n`;
-  const done = Object.values(annotations).filter(a => a.status === 'done').length;
-  md += `**Completed:** ${done} / ${tasks.length}\n\n---\n\n`;
-
-  tasks.forEach((task, idx) => {
-    const ann = annotations[task.id];
-    if (ann.status !== 'done') return;
-
-    md += `## Task ${idx + 1}: ${task.title || task.id}\n\n`;
-    md += `- **Type:** ${task.type}\n`;
-    md += `- **Time Spent:** ${ann.timeSpent || 0}s\n\n`;
-    md += `### Prompt\n\n> ${task.prompt.replace(/\n/g, '\n> ')}\n\n`;
-
-    if (task.type === 'comparison') {
-      const prefLabel = ann.preference === -1 ? 'Tie' : task.responses[ann.preference]?.label || '?';
-      md += `### Preference: **${prefLabel}**\n\n`;
-    }
-
-    if (task.type === 'ranking' && ann.ranking) {
-      md += `### Ranking\n\n`;
-      ann.ranking.forEach((ri, pos) => {
-        md += `${pos + 1}. ${task.responses[ri].label} (${task.responses[ri].model})\n`;
-      });
-      md += `\n`;
-    }
-
-    if (ann.dimensions && Object.keys(ann.dimensions).length) {
-      md += `### Dimension Ratings\n\n`;
-      md += `| Dimension | Score |\n|-----------|-------|\n`;
-      for (const [k, v] of Object.entries(ann.dimensions)) {
-        md += `| ${k} | ${v} |\n`;
-      }
-      md += `\n`;
-    }
-
-    if (ann.justification) {
-      md += `### Justification\n\n${ann.justification}\n\n`;
-    }
-
-    md += `---\n\n`;
-  });
-
+/* ══════════════════════════════════════════════════
+   EXPORT: Markdown + JSONL
+   ══════════════════════════════════════════════════ */
+function generateExportMarkdown(){
+  let md=`# RLHF Annotation Export\n\n**Annotator:** ${user?.name||'Unknown'} (${user?.email||''})\n**Date:** ${new Date().toLocaleString()}\n`;
+  const done=Object.values(annotations).filter(a=>a.status==='done').length;
+  md+=`**Completed:** ${done} / ${tasks.length}\n\n---\n\n`;
+  tasks.forEach((task,idx)=>{const ann=annotations[task.id];if(ann.status!=='done')return;md+=`## Task ${idx+1}: ${task.title||task.id}\n\n- **Type:** ${task.type}\n- **Time Spent:** ${ann.timeSpent||0}s\n\n### Prompt\n\n> ${task.prompt.replace(/\n/g,'\n> ')}\n\n`;
+    if(task.type==='comparison'){const pl=ann.preference===-1?'Tie':task.responses[ann.preference]?.label||'?';md+=`### Preference: **${pl}**\n\n`;}
+    if(task.type==='ranking'&&ann.ranking){md+=`### Ranking\n\n`;ann.ranking.forEach((ri,pos)=>{md+=`${pos+1}. ${task.responses[ri].label} (${task.responses[ri].model})\n`;});md+='\n';}
+    if(ann.dimensions&&Object.keys(ann.dimensions).length){md+=`### Dimension Ratings\n\n| Dimension | Score |\n|-----------|-------|\n`;for(const[k,v]of Object.entries(ann.dimensions))md+=`| ${k} | ${v} |\n`;md+='\n';}
+    if(ann.justification) md+=`### Justification\n\n${ann.justification}\n\n`;
+    md+=`---\n\n`;});
   return md;
 }
 
-function showExportModal() {
-  const md = generateExportMarkdown();
-  document.getElementById('exportPreview').textContent = md;
+function generateExportJsonl(){
+  const lines=[];
+  tasks.forEach(task=>{
+    const ann=annotations[task.id]; if(ann.status!=='done') return;
+    const row = {
+      task_id: task.id,
+      type: task.type,
+      prompt: task.prompt,
+      annotator: { name: user?.name||'', email: user?.email||'' },
+      timestamp: ann.completedAt || new Date().toISOString(),
+      time_spent_seconds: ann.timeSpent || 0,
+      dimensions: ann.dimensions || {},
+      justification: ann.justification || ''
+    };
+    if(task.type==='comparison'){
+      const chosenIdx = ann.preference;
+      if(chosenIdx===-1) { row.preference='tie'; row.chosen=null; row.rejected=null; }
+      else {
+        const rejIdx = chosenIdx===0?1:0;
+        row.preference = task.responses[chosenIdx]?.label;
+        row.chosen = { label: task.responses[chosenIdx]?.label, model: task.responses[chosenIdx]?.model, text: task.responses[chosenIdx]?.text };
+        row.rejected = { label: task.responses[rejIdx]?.label, model: task.responses[rejIdx]?.model, text: task.responses[rejIdx]?.text };
+      }
+    } else if(task.type==='ranking'){
+      row.ranking = (ann.ranking||[]).map((ri,pos)=>({ rank: pos+1, label: task.responses[ri]?.label, model: task.responses[ri]?.model, text: task.responses[ri]?.text }));
+    } else if(task.type==='rating'){
+      row.response = { label: task.responses[0]?.label, model: task.responses[0]?.model, text: task.responses[0]?.text };
+    }
+    lines.push(JSON.stringify(row));
+  });
+  return lines.join('\n');
+}
+
+function setExportTab(tab){
+  exportTab=tab;
+  document.getElementById('exportTabMd').className='btn btn-sm '+(tab==='md'?'btn-primary':'btn-outline');
+  document.getElementById('exportTabJsonl').className='btn btn-sm '+(tab==='jsonl'?'btn-primary':'btn-outline');
+  document.getElementById('btnDownloadMd').style.display=tab==='md'?'':'none';
+  document.getElementById('btnDownloadJsonl').style.display=tab==='jsonl'?'':'none';
+  document.getElementById('exportPreview').textContent = tab==='md' ? generateExportMarkdown() : generateExportJsonl();
+}
+
+function showExportModal(){
+  setExportTab(exportTab);
   document.getElementById('exportModal').classList.add('open');
 }
-function closeExportModal() { document.getElementById('exportModal').classList.remove('open'); }
-
-function copyExport() {
-  const md = generateExportMarkdown();
-  navigator.clipboard.writeText(md).then(() => toast('Copied to clipboard!'));
-}
-function downloadExport() {
-  const md = generateExportMarkdown();
-  const blob = new Blob([md], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `rlhf-annotations-${new Date().toISOString().slice(0,10)}.md`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('Downloaded!');
+function closeExportModal(){document.getElementById('exportModal').classList.remove('open');}
+function copyExport(){const txt=exportTab==='md'?generateExportMarkdown():generateExportJsonl();navigator.clipboard.writeText(txt).then(()=>toast('Copied!'));}
+function downloadExport(fmt){
+  const isMd=fmt==='md';
+  const content=isMd?generateExportMarkdown():generateExportJsonl();
+  const blob=new Blob([content],{type:isMd?'text/markdown':'application/jsonl'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`rlhf-annotations-${new Date().toISOString().slice(0,10)}.${isMd?'md':'jsonl'}`;
+  a.click();URL.revokeObjectURL(url);toast('Downloaded!');
 }
 
 /* ── Utility ── */
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function renderMarkdown(text) {
-  let html = escHtml(text);
-  // code blocks
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-  // inline code
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // bold
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  // italic
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  // headers
-  html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
-  html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-  return html;
-}
-
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function renderMarkdown(text){let h=escHtml(text);h=h.replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>');h=h.replace(/`([^`]+)`/g,'<code>$1</code>');h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');h=h.replace(/\*(.+?)\*/g,'<em>$1</em>');h=h.replace(/^### (.+)$/gm,'<h4>$1</h4>');h=h.replace(/^## (.+)$/gm,'<h3>$1</h3>');h=h.replace(/^# (.+)$/gm,'<h2>$1</h2>');return h;}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 
 /* ── Keyboard shortcuts ── */
-document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'TEXTAREA') return;
-  if (tasks.length === 0) return;
-  if (e.key === 'ArrowRight' || e.key === 'n') {
-    const next = Math.min(currentIdx + 1, tasks.length - 1);
-    navigateTo(next);
-  }
-  if (e.key === 'ArrowLeft' || e.key === 'p') {
-    navigateTo(Math.max(currentIdx - 1, 0));
-  }
-  if (e.key === '1' || e.key === '2' || e.key === '3') {
-    const task = tasks[currentIdx];
-    if (task && task.type === 'comparison') {
-      const num = parseInt(e.key);
-      if (num <= task.responses.length) selectPreference(num - 1);
-      else if (num === 3) selectPreference(-1);
-    }
-  }
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(currentScreen!=='task'||!tasks.length)return;
+  if(e.key==='ArrowRight'||e.key==='n')navigateTo(Math.min(currentIdx+1,tasks.length-1));
+  if(e.key==='ArrowLeft'||e.key==='p')navigateTo(Math.max(currentIdx-1,0));
+  if(e.key==='1'||e.key==='2'||e.key==='3'){const task=tasks[currentIdx];if(task?.type==='comparison'){const num=parseInt(e.key);if(num<=task.responses.length)selectPreference(num-1);else if(num===3)selectPreference(-1);}}
 });
+
+/* ══════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════ */
+(function boot(){
+  const saved = LS.get('user');
+  if(saved){
+    user = saved;
+    tasks = LS.get('tasks') || [];
+    annotations = LS.get('annotations') || {};
+    taskTimes = LS.get('taskTimes') || {};
+    tasks.forEach(t=>{if(!annotations[t.id])annotations[t.id]={status:'pending'};});
+    showScreen('dashboard');
+  } else {
+    showScreen('auth');
+  }
+})();
 </script>
 </body>
 </html>
