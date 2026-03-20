@@ -314,6 +314,10 @@
       <label for="authEmail">Email Address</label>
       <input type="email" id="authEmail" placeholder="e.g. jane@example.com" autocomplete="email">
     </div>
+    <div class="auth-field">
+      <label for="authPhone">Contact Number</label>
+      <input type="tel" id="authPhone" placeholder="e.g. +1 555-123-4567" autocomplete="tel">
+    </div>
     <button class="btn btn-lg btn-primary" onclick="registerUser()">Start Annotating</button>
   </div>
 </div>
@@ -389,9 +393,11 @@ const DEMO_TASKS=[{id:"demo-1",type:"comparison",title:"Code Explanation Quality
 function registerUser() {
   const name = document.getElementById('authName').value.trim();
   const email = document.getElementById('authEmail').value.trim();
+  const phone = document.getElementById('authPhone').value.trim();
   if (!name) { toast('Please enter your name'); return; }
   if (!email || !email.includes('@')) { toast('Please enter a valid email'); return; }
-  user = { name, email, registeredAt: new Date().toISOString() };
+  if (!phone) { toast('Please enter your contact number'); return; }
+  user = { name, email, phone, registeredAt: new Date().toISOString() };
   LS.set('user', user);
   const saved = LS.get('tasks');
   if (saved && saved.length) {
@@ -794,7 +800,7 @@ function generateExportJsonl(){
       task_id: task.id,
       type: task.type,
       prompt: task.prompt,
-      annotator: { name: user?.name||'', email: user?.email||'' },
+      annotator: { name: user?.name||'', email: user?.email||'', phone: user?.phone||'' },
       timestamp: ann.completedAt || new Date().toISOString(),
       time_spent_seconds: ann.timeSpent || 0,
       dimensions: ann.dimensions || {},
