@@ -283,6 +283,11 @@
     font-size: 14px;
     color: var(--gray-600);
   }
+  .response-card-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .response-card-header .model-tag {
     font-size: 11px;
     background: var(--gray-200);
@@ -291,6 +296,24 @@
     border-radius: 10px;
     font-weight: 500;
   }
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--gray-500);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+  .copy-btn.copied { border-color: var(--success); color: var(--success); background: var(--success-light); }
+  .copy-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
   .response-card-body {
     padding: 20px;
     font-size: 14px;
@@ -1346,9 +1369,15 @@ function startStreamingPhase() {
           <div class="stream-card">
             <div class="stream-card-header">
               <span class="model-name">${r.label} — ${r.model || 'AI'}</span>
-              <div class="stream-status" id="streamStatus${i}">
-                <span class="pulse"></span>
-                <span>Generating...</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button class="copy-btn" id="streamCopy${i}" style="display:none" onclick="event.stopPropagation(); copyResponse(this, ${i})" title="Copy response">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  Copy
+                </button>
+                <div class="stream-status" id="streamStatus${i}">
+                  <span class="pulse"></span>
+                  <span>Generating...</span>
+                </div>
               </div>
             </div>
             <div class="stream-card-body" id="streamBody${i}"><span class="stream-cursor"></span></div>
@@ -1422,6 +1451,8 @@ function beginStreaming(task) {
           st.classList.add('done');
           st.innerHTML = '<span class="pulse"></span><span>Complete</span>';
         }
+        const copyBtn = document.getElementById(`streamCopy${rIdx}`);
+        if (copyBtn) copyBtn.style.display = '';
         doneCount++;
         if (doneCount === totalResponses) {
           streamingDone = true;
@@ -1526,7 +1557,13 @@ function renderComparison(task, ann) {
       <div class="response-card ${sel}" id="respCard${i}" onclick="selectPreference(${i})">
         <div class="response-card-header">
           <span>${r.label}</span>
-          <span class="model-tag">${r.model || ''}</span>
+          <div class="header-right">
+            <span class="model-tag">${r.model || ''}</span>
+            <button class="copy-btn" onclick="event.stopPropagation(); copyResponse(this, ${i})" title="Copy response">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copy
+            </button>
+          </div>
         </div>
         <div class="response-card-body">${renderMarkdown(r.text)}</div>
       </div>
@@ -1551,7 +1588,13 @@ function renderRating(task, ann) {
       <div class="response-card">
         <div class="response-card-header">
           <span>${r.label}</span>
-          <span class="model-tag">${r.model || ''}</span>
+          <div class="header-right">
+            <span class="model-tag">${r.model || ''}</span>
+            <button class="copy-btn" onclick="event.stopPropagation(); copyResponse(this, 0)" title="Copy response">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copy
+            </button>
+          </div>
         </div>
         <div class="response-card-body">${renderMarkdown(r.text)}</div>
       </div>
@@ -1573,7 +1616,13 @@ function renderRanking(task, ann) {
           <button onclick="moveRank(${pos}, 1)" ${pos===order.length-1?'disabled':''}>&#9660;</button>
         </div>
         <div class="ranking-content">
-          <div class="ranking-label">${r.label} (${r.model || ''})</div>
+          <div class="ranking-label" style="display:flex;align-items:center;justify-content:space-between">
+            <span>${r.label} (${r.model || ''})</span>
+            <button class="copy-btn" onclick="event.stopPropagation(); copyResponse(this, ${ri})" title="Copy response">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copy
+            </button>
+          </div>
           ${renderMarkdown(r.text)}
         </div>
       </div>
@@ -1610,6 +1659,20 @@ function renderDimensions(task, ann) {
 }
 
 /* ── Interaction handlers ── */
+
+function copyResponse(btnEl, responseIdx) {
+  const task = tasks[currentIdx];
+  if (!task || !task.responses[responseIdx]) return;
+  const text = task.responses[responseIdx].text;
+  navigator.clipboard.writeText(text).then(() => {
+    btnEl.classList.add('copied');
+    btnEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
+    setTimeout(() => {
+      btnEl.classList.remove('copied');
+      btnEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy`;
+    }, 2000);
+  });
+}
 
 function selectPreference(idx) {
   const ann = annotations[tasks[currentIdx].id];
