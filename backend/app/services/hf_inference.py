@@ -11,10 +11,10 @@ MODEL_ID_RE = re.compile(r"^[\w\-.]+/[\w\-.]+(?::[\w\-]+)?$")
 
 AVAILABLE_MODELS = [
     {"id": "Qwen/Qwen2.5-Coder-32B-Instruct", "name": "Qwen 2.5 Coder 32B", "tag": "code"},
-    {"id": "Qwen/Qwen2.5-7B-Instruct", "name": "Qwen 2.5 7B", "tag": "general"},
-    {"id": "mistralai/Mistral-7B-Instruct-v0.3", "name": "Mistral 7B v0.3", "tag": "general"},
-    {"id": "meta-llama/Llama-3.1-8B-Instruct", "name": "Llama 3.1 8B", "tag": "general"},
-    {"id": "microsoft/Phi-3-mini-4k-instruct", "name": "Phi-3 Mini", "tag": "fast"},
+    {"id": "Qwen/Qwen2.5-72B-Instruct", "name": "Qwen 2.5 72B", "tag": "general"},
+    {"id": "meta-llama/Meta-Llama-3.1-8B-Instruct", "name": "Llama 3.1 8B", "tag": "general"},
+    {"id": "mistralai/Mistral-Small-24B-Instruct-2501", "name": "Mistral Small 24B", "tag": "general"},
+    {"id": "Qwen/Qwen2.5-7B-Instruct", "name": "Qwen 2.5 7B", "tag": "fast"},
 ]
 
 
