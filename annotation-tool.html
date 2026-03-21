@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- API: absolute URL, or * / same / same-origin = use current host (Docker/nginx same-origin). ?api= overrides. -->
+<meta name="rlhf-api-base" content="">
 <title>RLHF Annotation Studio</title>
 <style>
   :root {
@@ -71,7 +73,17 @@
   .auth-card { background: #fff; border-radius: 16px; box-shadow: var(--shadow-lg); padding: 48px 40px; max-width: 440px; width: 100%; text-align: center; }
   .auth-card svg { margin-bottom: 16px; }
   .auth-card h1 { font-size: 24px; margin-bottom: 6px; }
-  .auth-card .subtitle { color: var(--gray-500); font-size: 14px; margin-bottom: 32px; }
+  .auth-card .subtitle { color: var(--gray-500); font-size: 14px; margin-bottom: 24px; }
+  .auth-tabs { display: flex; border-bottom: 2px solid var(--gray-200); margin-bottom: 24px; }
+  .auth-tab { flex: 1; padding: 10px; font-size: 14px; font-weight: 600; color: var(--gray-400); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; text-align: center; background: none; border-left: none; border-right: none; border-top: none; }
+  .auth-tab:hover { color: var(--gray-600); }
+  .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .auth-pane { display: none; }
+  .auth-pane.active { display: block; }
+  .auth-card .or-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--gray-400); font-size: 12px; }
+  .auth-card .or-divider::before, .auth-card .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+  .auth-error { background: var(--danger-light); color: #991b1b; font-size: 13px; padding: 8px 12px; border-radius: var(--radius); margin-bottom: 12px; display: none; text-align: left; }
+  .auth-error.show { display: block; }
   .auth-field { text-align: left; margin-bottom: 18px; }
   .auth-field label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
   .auth-field input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 15px; font-family: inherit; transition: border-color .15s; }
@@ -332,21 +344,43 @@
 <div id="screenAuth" class="auth-screen">
   <div class="auth-card">
     <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    <h1>Welcome, Annotator</h1>
-    <p class="subtitle">Register to start your RLHF annotation session</p>
-    <div class="auth-field">
-      <label for="authName">Full Name</label>
-      <input type="text" id="authName" placeholder="e.g. Jane Smith" autocomplete="name">
+    <h1>RLHF Annotation Studio</h1>
+    <p class="subtitle">Create an account or sign in to continue</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabCreate" onclick="switchAuthTab('create')">Create Account</button>
+      <button class="auth-tab" id="tabLogin" onclick="switchAuthTab('login')">Sign In</button>
     </div>
-    <div class="auth-field">
-      <label for="authEmail">Email Address</label>
-      <input type="email" id="authEmail" placeholder="e.g. jane@example.com" autocomplete="email">
+
+    <div class="auth-error" id="authError"></div>
+
+    <!-- Create Account pane -->
+    <div class="auth-pane active" id="paneCreate">
+      <div class="auth-field">
+        <label for="authName">Full Name</label>
+        <input type="text" id="authName" placeholder="e.g. Jane Smith" autocomplete="name">
+      </div>
+      <div class="auth-field">
+        <label for="authEmail">Email Address</label>
+        <input type="email" id="authEmail" placeholder="e.g. jane@example.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label for="authPhone">Contact Number</label>
+        <input type="tel" id="authPhone" placeholder="e.g. +1 555-123-4567" autocomplete="tel">
+      </div>
+      <button class="btn btn-lg btn-primary" onclick="registerUser()">Create Account</button>
     </div>
-    <div class="auth-field">
-      <label for="authPhone">Contact Number</label>
-      <input type="tel" id="authPhone" placeholder="e.g. +1 555-123-4567" autocomplete="tel">
+
+    <!-- Sign In pane -->
+    <div class="auth-pane" id="paneLogin">
+      <div class="auth-field">
+        <label for="loginEmail">Email Address</label>
+        <input type="email" id="loginEmail" placeholder="Enter your registered email" autocomplete="email">
+      </div>
+      <button class="btn btn-lg btn-primary" onclick="loginUser()">Sign In</button>
+      <div class="or-divider">or</div>
+      <p style="font-size:13px;color:var(--gray-500)">Don't have an account? <a href="#" onclick="switchAuthTab('create');return false" style="color:var(--primary);font-weight:600;text-decoration:none">Create one</a></p>
     </div>
-    <button class="btn btn-lg btn-primary" onclick="registerUser()">Start Annotating</button>
   </div>
 </div>
 
@@ -410,6 +444,78 @@ const LS = {
   remove(k) { localStorage.removeItem('rlhf_' + k); }
 };
 
+function resolveApiBase() {
+  let b = '';
+  const meta = document.querySelector('meta[name="rlhf-api-base"]');
+  if (meta && meta.content && meta.content.trim()) {
+    const raw = meta.content.trim();
+    if (raw === '*' || raw.toLowerCase() === 'same' || raw.toLowerCase() === 'same-origin') {
+      b = window.location.origin.replace(/\/$/, '');
+    } else {
+      b = raw.replace(/\/$/, '');
+    }
+  }
+  try {
+    const q = new URLSearchParams(location.search).get('api');
+    if (q) {
+      const v = String(q).replace(/\/$/, '');
+      b = (v === '*' || v.toLowerCase() === 'same') ? window.location.origin.replace(/\/$/, '') : v;
+    }
+  } catch (e) {}
+  return b;
+}
+const API_BASE = resolveApiBase();
+let serverSessionId = null;
+let apiSyncTimer = null;
+
+function persistStateLocalOnly() {
+  if (!user) return;
+  const uk = (k) => userScopedKey(user.email, k);
+  LS.set(uk('tasks'), tasks);
+  LS.set(uk('annotations'), annotations);
+  LS.set(uk('taskTimes'), taskTimes);
+  LS.set(uk('activePack'), activePackFile);
+}
+
+function scheduleSyncToServer() {
+  if (!API_BASE || !serverSessionId || !user) return;
+  clearTimeout(apiSyncTimer);
+  apiSyncTimer = setTimeout(syncWorkspaceToServer, 800);
+}
+
+function syncWorkspaceToServer() {
+  if (!API_BASE || !serverSessionId) return;
+  fetch(API_BASE + '/api/v1/sessions/' + serverSessionId + '/workspace', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tasks,
+      annotations,
+      task_times: taskTimes,
+      active_pack_file: activePackFile
+    })
+  }).catch(() => {});
+}
+
+function pullWorkspaceFromServer() {
+  if (!API_BASE || !serverSessionId) return;
+  fetch(API_BASE + '/api/v1/sessions/' + serverSessionId + '/workspace')
+    .then(r => (r.ok ? r.json() : Promise.reject(new Error('pull failed'))))
+    .then(ws => {
+      if (ws.tasks && ws.tasks.length) {
+        tasks = ws.tasks;
+        annotations = ws.annotations || {};
+        taskTimes = ws.task_times || {};
+        activePackFile = ws.active_pack_file || null;
+        tasks.forEach(t => { if (!annotations[t.id]) annotations[t.id] = { status: 'pending' }; });
+        persistStateLocalOnly();
+        if (currentScreen === 'dashboard') renderDashboard();
+        updateProgressBar();
+      }
+    })
+    .catch(() => {});
+}
+
 const TASK_CATALOG = [
   { file: 'tasks/debugging-exercises-python.json', name: 'Python Debugging', language: 'python', langLabel: 'Python', taskCount: 9, description: 'Debug common Python pitfalls: mutable defaults, scope issues, integer caching, and more.' },
   { file: 'tasks/debugging-exercises-java.json', name: 'Java Debugging', language: 'java', langLabel: 'Java', taskCount: 9, description: 'Debug classic Java bugs: == vs .equals(), null handling, concurrency, and type casting.' },
@@ -437,28 +543,106 @@ const DEMO_TASKS=[{id:"demo-1",type:"comparison",title:"Code Explanation Quality
 /* ══════════════════════════════════════════════════
    AUTH
    ══════════════════════════════════════════════════ */
+function userScopedKey(email, k) {
+  return 'u:' + email.toLowerCase() + ':' + k;
+}
+
+function getRegistry() { return LS.get('registry') || []; }
+function saveRegistry(reg) { LS.set('registry', reg); }
+
+function switchAuthTab(tab) {
+  document.getElementById('tabCreate').classList.toggle('active', tab === 'create');
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('paneCreate').classList.toggle('active', tab === 'create');
+  document.getElementById('paneLogin').classList.toggle('active', tab === 'login');
+  hideAuthError();
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg; el.classList.add('show');
+}
+function hideAuthError() { document.getElementById('authError').classList.remove('show'); }
+
+function loadUserData(email) {
+  const uk = (k) => userScopedKey(email, k);
+  tasks = LS.get(uk('tasks')) || [];
+  annotations = LS.get(uk('annotations')) || {};
+  taskTimes = LS.get(uk('taskTimes')) || {};
+  activePackFile = LS.get(uk('activePack')) || null;
+  tasks.forEach(t => { if (!annotations[t.id]) annotations[t.id] = { status: 'pending' }; });
+}
+
 function registerUser() {
+  hideAuthError();
   const name = document.getElementById('authName').value.trim();
   const email = document.getElementById('authEmail').value.trim();
   const phone = document.getElementById('authPhone').value.trim();
-  if (!name) { toast('Please enter your name'); return; }
-  if (!email || !email.includes('@')) { toast('Please enter a valid email'); return; }
-  if (!phone) { toast('Please enter your contact number'); return; }
-  user = { name, email, phone, registeredAt: new Date().toISOString() };
-  LS.set('user', user);
-  const saved = LS.get('tasks');
-  if (saved && saved.length) {
-    tasks = saved;
-    annotations = LS.get('annotations') || {};
-    taskTimes = LS.get('taskTimes') || {};
-    tasks.forEach(t => { if (!annotations[t.id]) annotations[t.id] = { status: 'pending' }; });
+  if (!name) { showAuthError('Please enter your name.'); return; }
+  if (!email || !email.includes('@')) { showAuthError('Please enter a valid email address.'); return; }
+  if (!phone) { showAuthError('Please enter your contact number.'); return; }
+
+  const registry = getRegistry();
+  const existing = registry.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (existing) {
+    showAuthError('An account with this email already exists. Please sign in instead.');
+    return;
   }
+
+  user = { name, email, phone, registeredAt: new Date().toISOString() };
+  registry.push(user);
+  saveRegistry(registry);
+  LS.set('user', user);
+
+  function finishRegister() {
+    showScreen('dashboard');
+    toast('Account created — welcome, ' + name.split(' ')[0] + '!');
+  }
+  if (API_BASE) {
+    fetch(API_BASE + '/api/v1/sessions/bootstrap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ annotator: { name, email, phone } })
+    })
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error('bootstrap failed'))))
+      .then(data => {
+        serverSessionId = data.session_id;
+        LS.set('serverSessionId', serverSessionId);
+        finishRegister();
+        scheduleSyncToServer();
+      })
+      .catch(() => { finishRegister(); });
+  } else {
+    finishRegister();
+  }
+}
+
+function loginUser() {
+  hideAuthError();
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email || !email.includes('@')) { showAuthError('Please enter a valid email address.'); return; }
+
+  const registry = getRegistry();
+  const existing = registry.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!existing) {
+    showAuthError('No account found with this email. Please create an account first.');
+    return;
+  }
+
+  user = existing;
+  LS.set('user', user);
+  loadUserData(user.email);
   showScreen('dashboard');
+  toast('Welcome back, ' + user.name.split(' ')[0] + '!');
 }
 
 function logout() {
+  if (user) persistStateLocalOnly();
   user = null;
+  serverSessionId = null;
+  tasks = []; annotations = {}; taskTimes = {};
   LS.remove('user');
+  LS.remove('serverSessionId');
   showScreen('auth');
 }
 
@@ -640,9 +824,8 @@ function handleFileUpload(e) {
    PERSISTENCE
    ══════════════════════════════════════════════════ */
 function persistState() {
-  LS.set('tasks', tasks);
-  LS.set('annotations', annotations);
-  LS.set('taskTimes', taskTimes);
+  persistStateLocalOnly();
+  scheduleSyncToServer();
 }
 
 function updateProgressBar() {
@@ -935,14 +1118,31 @@ document.addEventListener('keydown',e=>{
    BOOT
    ══════════════════════════════════════════════════ */
 (function boot(){
+  // Migrate legacy unscoped data to per-user keys
   const saved = LS.get('user');
+  if (saved && !LS.get('_migrated')) {
+    const uk = (k) => userScopedKey(saved.email, k);
+    const legacyTasks = LS.get('tasks');
+    if (legacyTasks) { LS.set(uk('tasks'), legacyTasks); LS.remove('tasks'); }
+    const legacyAnn = LS.get('annotations');
+    if (legacyAnn) { LS.set(uk('annotations'), legacyAnn); LS.remove('annotations'); }
+    const legacyTimes = LS.get('taskTimes');
+    if (legacyTimes) { LS.set(uk('taskTimes'), legacyTimes); LS.remove('taskTimes'); }
+    // Ensure user is in registry
+    const reg = getRegistry();
+    if (!reg.find(u => u.email.toLowerCase() === saved.email.toLowerCase())) {
+      reg.push(saved); saveRegistry(reg);
+    }
+    LS.set('_migrated', true);
+  }
+
+  serverSessionId = LS.get('serverSessionId');
   if(saved){
     user = saved;
-    tasks = LS.get('tasks') || [];
-    annotations = LS.get('annotations') || {};
-    taskTimes = LS.get('taskTimes') || {};
-    tasks.forEach(t=>{if(!annotations[t.id])annotations[t.id]={status:'pending'};});
+    loadUserData(user.email);
+    const hadLocalTasks = tasks.length > 0;
     showScreen('dashboard');
+    if (API_BASE && serverSessionId && !hadLocalTasks) pullWorkspaceFromServer();
   } else {
     showScreen('auth');
   }
