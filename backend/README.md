@@ -65,6 +65,16 @@ FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for [RLHF Annotatio
 | POST | `/api/v1/sessions/bootstrap` | Body `{ "annotator": { "name", "email", "phone" } }` → `{ annotator, session_id }` |
 | GET | `/api/v1/sessions/{session_id}/workspace` | Load tasks, annotations, timings |
 | PUT | `/api/v1/sessions/{session_id}/workspace` | Body `{ tasks, annotations, task_times, active_pack_file }` |
+| GET | `/api/v1/inference/status` | Whether inference is enabled and a Hugging Face token is configured (no secrets returned) |
+| POST | `/api/v1/inference/complete` | Live completions: body `{ prompt, system?, slots: [{ label?, hf_model?, temperature?, seed? }] }` → `{ slots: [{ label, text, model, error }] }` |
+
+### Hugging Face live responses
+
+1. Create a [fine-grained token](https://huggingface.co/settings/tokens) with **Make calls to Inference Providers**.
+2. In `.env`: `HF_API_TOKEN=hf_...` (or `HF_TOKEN`).
+3. Optional: `HF_DEFAULT_MODEL`, `HF_ROUTER_BASE_URL` (default `https://router.huggingface.co/v1`).
+4. In the UI, set `?api=http://127.0.0.1:8000` and load **`tasks/hf-live-demo.json`** from the Task Library (or any task with `"inference": { "provider": "hf", "system": "..." }` and empty `responses[].text`).
+5. Set `INFERENCE_REQUIRE_AUTH=true` if the API is public and you want to require a JWT from `/api/v1/auth/login`.
 
 ## Environment
 
@@ -75,3 +85,8 @@ FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for [RLHF Annotatio
 | `CORS_ORIGINS` | Comma-separated origins allowed for the browser UI |
 | `ROOT_PATH` | Optional reverse-proxy subpath |
 | `DEBUG` | `true` to echo SQL |
+| `HF_API_TOKEN` / `HF_TOKEN` | Hugging Face token for Inference Providers router |
+| `HF_DEFAULT_MODEL` | Default Hub model id for `/inference/complete` |
+| `INFERENCE_REQUIRE_AUTH` | `true` to require `Authorization: Bearer` (JWT) on inference routes |
+| `INFERENCE_MAX_TOKENS` | Max new tokens per completion (default `1024`) |
+| `INFERENCE_TIMEOUT_SECONDS` | HTTP timeout to HF router (default `120`) |

@@ -13,6 +13,7 @@ description = "FastAPI backend for RLHF Annotation Studio (Neon PostgreSQL)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+  "httpx>=0.28.0",
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.32.0",
   "sqlalchemy[asyncio]>=2.0.36",
@@ -27,7 +28,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "httpx>=0.28.0",
   "ruff>=0.8.0",
 ]
 

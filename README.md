@@ -4,7 +4,7 @@ A lightweight, Markdown-based annotation kit for practicing Reinforcement Learni
 
 **Frontend: zero npm dependencies.** Open the HTML file locally, or run a simple static server for task packs.
 
-**Optional full stack:** A **FastAPI** API in `backend/` syncs workspace data to **Neon PostgreSQL**. See `backend/README.md`. **Docker:** `docker compose up` from the repo root — see **`deploy/README.md`** (nginx + API on port **8080**).
+**Optional full stack:** A **FastAPI** API in `backend/` syncs workspace data to **Neon PostgreSQL** and can proxy **live Hugging Face** completions (`/api/v1/inference/complete`). See `backend/README.md`. **Docker:** `docker compose up` from the repo root — see **`deploy/README.md`** (nginx + API on port **8080**).
 
 **Vercel + Fly.io:** Static UI on Vercel (`npm run vercel-build` → `out/`), API on Fly (`backend/fly.toml`). Vercel rewrites `/api/*` to Fly. Step-by-step: **`deploy/DEPLOY-VERCEL-FLY.md`**.
 

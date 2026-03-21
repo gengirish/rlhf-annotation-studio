@@ -1,0 +1,42 @@
+[
+  {
+    "id": "hf-live-demo-1",
+    "type": "comparison",
+    "title": "Live model comparison (Hugging Face)",
+    "prompt": "In 2–3 sentences, what is a closure in JavaScript?",
+    "guidelines": [
+      "Both answers are generated live via your FastAPI server and Hugging Face Inference Providers.",
+      "Compare clarity and technical accuracy."
+    ],
+    "inference": {
+      "provider": "hf",
+      "system": "You are a concise programming tutor. Answer in markdown. Keep under 120 words."
+    },
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "HF — slot A",
+        "text": "",
+        "seed": 101
+      },
+      {
+        "label": "Response B",
+        "model": "HF — slot B",
+        "text": "",
+        "seed": 102
+      }
+    ],
+    "dimensions": [
+      {
+        "name": "Helpfulness",
+        "description": "Does it answer the question clearly?",
+        "scale": 5
+      },
+      {
+        "name": "Accuracy",
+        "description": "Is the technical content correct?",
+        "scale": 5
+      }
+    ]
+  }
+]

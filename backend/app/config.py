@@ -1,6 +1,7 @@
+import os
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,6 +25,24 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
+
+    # Hugging Face Inference Providers (OpenAI-compatible router)
+    hf_api_token: str | None = None
+    hf_router_base_url: str = "https://router.huggingface.co/v1"
+    hf_default_model: str = "Qwen/Qwen2.5-7B-Instruct"
+    inference_enabled: bool = True
+    inference_require_auth: bool = False
+    inference_max_tokens: int = 1024
+    inference_max_prompt_chars: int = 48000
+    inference_timeout_seconds: float = 120.0
+
+    @model_validator(mode="after")
+    def hf_token_from_env_aliases(self) -> "Settings":
+        if not self.hf_api_token:
+            self.hf_api_token = os.environ.get("HF_TOKEN") or os.environ.get(
+                "HUGGINGFACE_HUB_TOKEN",
+            )
+        return self
 
     @field_validator("database_url")
     @classmethod

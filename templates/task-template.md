@@ -39,6 +39,19 @@ Each task file is a JSON array of task objects:
 
 ---
 
+## Live Hugging Face completions (optional)
+
+When the UI is pointed at a FastAPI server with `HF_API_TOKEN` (or `HF_TOKEN`) set, you can load responses at annotation time instead of embedding `text` in the JSON.
+
+- Add top-level `"inference": { "provider": "hf", "system": "Optional system prompt for the model." }`.
+- For each slot in `responses`, use `"text": ""` (or omit). Optional per-slot: `"hf_model": "org/model-id"`, `"temperature"`, `"seed"`.
+- If `hf_model` is omitted, the server uses `HF_DEFAULT_MODEL` from `.env`.
+- After the first successful run, filled `text` is kept in memory (and may sync to the server with your workspace) so revisiting the task replays the same wording.
+
+See `tasks/hf-live-demo.json` for a minimal example.
+
+---
+
 ## Task Types
 
 ### Comparison (2 responses, pick the better one)

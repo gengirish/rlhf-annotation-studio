@@ -321,6 +321,13 @@
   .speed-control label { font-size: 12px; color: var(--gray-500); font-weight: 500; }
   .speed-slider { width: 120px; accent-color: var(--primary); }
   .speed-val { font-size: 12px; color: var(--primary); font-weight: 600; min-width: 28px; }
+  .model-selector { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .model-selector label { font-size: 12px; color: var(--gray-500); font-weight: 500; }
+  .model-selector select { padding: 5px 10px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 13px; color: var(--gray-700); background: #fff; cursor: pointer; max-width: 280px; }
+  .model-selector .model-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--primary-light); color: var(--primary); font-weight: 600; text-transform: uppercase; }
+  .inference-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .inference-badge.live { background: #d1fae5; color: #065f46; }
+  .inference-badge.sim { background: var(--gray-100); color: var(--gray-500); }
 
   /* ── Responsive ── */
   @media(max-width:900px) {
@@ -452,6 +459,10 @@ let currentPhase = 1;
 let streamIntervals = [];
 let streamSpeed = 20;
 let streamingDone = false;
+let inferenceAvailable = false;
+let inferenceModels = [];
+let inferenceDefaultModel = '';
+let selectedModel = '';
 let currentScreen = 'auth'; // auth | dashboard | task
 let dashTab = 'unclaimed';
 let exportTab = 'jsonl';
@@ -539,11 +550,31 @@ function pullWorkspaceFromServer() {
     .catch(() => {});
 }
 
+function checkInferenceStatus() {
+  if (!API_BASE) return;
+  const h = {};
+  if (authToken) h['Authorization'] = 'Bearer ' + authToken;
+  fetch(API_BASE + '/api/v1/inference/models', { headers: h })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(data => {
+      inferenceModels = data.models || [];
+      inferenceDefaultModel = data.default || '';
+      selectedModel = inferenceDefaultModel;
+      return fetch(API_BASE + '/api/v1/inference/status', { headers: h });
+    })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(st => {
+      inferenceAvailable = st.enabled && st.configured;
+    })
+    .catch(() => { inferenceAvailable = false; });
+}
+
 const TASK_CATALOG = [
   { file: 'tasks/debugging-exercises-python.json', name: 'Python Debugging', language: 'python', langLabel: 'Python', taskCount: 9, description: 'Debug common Python pitfalls: mutable defaults, scope issues, integer caching, and more.' },
   { file: 'tasks/debugging-exercises-java.json', name: 'Java Debugging', language: 'java', langLabel: 'Java', taskCount: 9, description: 'Debug classic Java bugs: == vs .equals(), null handling, concurrency, and type casting.' },
   { file: 'tasks/code-review-comparisons.json', name: 'Code Review', language: 'multi', langLabel: 'Multi-lang', taskCount: 4, description: 'Evaluate code review quality across Python, React, REST API design, and git practices.' },
   { file: 'tasks/safety-alignment.json', name: 'Safety & Alignment', language: 'general', langLabel: 'General', taskCount: 3, description: 'Evaluate AI safety: medical advice handling, refusal quality, and bias detection.' },
+  { file: 'tasks/hf-live-demo.json', name: 'HF Live Demo', language: 'general', langLabel: 'Live API', taskCount: 1, description: 'Real completions via FastAPI + Hugging Face (requires backend and HF_API_TOKEN).' },
 ];
 let activePackFile = null;
 
@@ -640,6 +671,7 @@ function registerUser() {
           saveRegistry(registry);
         }
         showScreen('dashboard');
+        checkInferenceStatus();
         toast('Account created — welcome, ' + name.split(' ')[0] + '!');
       })
       .catch(err => showAuthError(err.message));
@@ -691,6 +723,7 @@ function loginUser() {
         }
         loadUserData(user.email);
         showScreen('dashboard');
+        checkInferenceStatus();
         toast('Welcome back, ' + user.name.split(' ')[0] + '!');
       })
       .catch(err => showAuthError(err.message));
@@ -990,41 +1023,176 @@ function renderPhasePrompt() {
 
 /* ── Phase 2 ── */
 function goToStreaming() { currentPhase = 2; renderPhase(); }
+let activeAbortControllers = [];
+
+function shouldUseLiveSSE(task) {
+  if (!API_BASE || !inferenceAvailable) return false;
+  if (task.inference && String(task.inference.provider || '').toLowerCase() === 'hf') return true;
+  if (task.responses?.every(r => !(r.text != null && String(r.text).trim()))) return true;
+  return false;
+}
+
+function buildModelSelector() {
+  if (!inferenceAvailable || !inferenceModels.length) return '';
+  const opts = inferenceModels.map(m =>
+    `<option value="${escHtml(m.id)}" ${m.id === selectedModel ? 'selected' : ''}>${escHtml(m.name)}</option>`
+  ).join('');
+  return `<div class="model-selector"><label>Model:</label><select id="modelSelect" onchange="selectedModel=this.value">${opts}</select></div>`;
+}
+
 function startStreamingPhase() {
   const task = tasks[currentIdx], area = document.getElementById('taskArea');
-  const gc = task.responses.length===1?'single':task.responses.length>=3?'triple':'';
+  const useLive = shouldUseLiveSSE(task);
+  const numSlots = useLive ? Math.max(task.responses?.length || 1, 1) : (task.responses?.length || 0);
+  const gc = numSlots===1?'single':numSlots>=3?'triple':'';
   const initials = user ? user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : 'U';
-  let html = `<div class="task-header"><h2>${task.title||'Task '+(currentIdx+1)}</h2><div style="display:flex;align-items:center;gap:12px"><span class="task-type-badge ${task.type}">${task.type}</span><span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span></div></div>${renderStepper(2)}
+  const badge = useLive
+    ? '<span class="inference-badge live">LIVE</span>'
+    : '<span class="inference-badge sim">SIMULATED</span>';
+
+  let cards = '';
+  for (let i = 0; i < numSlots; i++) {
+    const r = task.responses?.[i];
+    const label = r ? (r.label || 'Response ' + (i+1)) : 'Response ' + (i+1);
+    const modelName = useLive ? (selectedModel.split('/').pop() || 'AI') : (r?.model || 'AI');
+    cards += `<div class="stream-card"><div class="stream-card-header"><span class="model-name">${escHtml(label)} — ${escHtml(modelName)}</span><div style="display:flex;align-items:center;gap:8px"><button class="copy-btn" id="streamCopy${i}" style="display:none" onclick="event.stopPropagation();copyResponse(this,${i})" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button><div class="stream-status" id="streamStatus${i}"><span class="pulse"></span><span>Generating...</span></div></div></div><div class="stream-card-body" id="streamBody${i}"><span class="stream-cursor"></span></div></div>`;
+  }
+
+  let html = `<div class="task-header"><h2>${task.title||'Task '+(currentIdx+1)}</h2><div style="display:flex;align-items:center;gap:12px">${badge}<span class="task-type-badge ${task.type}">${task.type}</span><span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span></div></div>${renderStepper(2)}
     <div class="streaming-area">
       <div class="stream-prompt-echo"><div class="user-icon">${initials}</div><div class="prompt-content">${escHtml(task.prompt)}</div></div>
-      <div class="speed-control"><label>Stream speed:</label><input type="range" class="speed-slider" min="1" max="50" value="${51-streamSpeed}" oninput="updateSpeed(this.value)"><span class="speed-val" id="speedLabel">${getSpeedLabel(streamSpeed)}</span></div>
-      <div class="streaming-grid ${gc}">${task.responses.map((r,i)=>`<div class="stream-card"><div class="stream-card-header"><span class="model-name">${r.label} — ${r.model||'AI'}</span><div style="display:flex;align-items:center;gap:8px"><button class="copy-btn" id="streamCopy${i}" style="display:none" onclick="event.stopPropagation();copyResponse(this,${i})" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button><div class="stream-status" id="streamStatus${i}"><span class="pulse"></span><span>Generating...</span></div></div></div><div class="stream-card-body" id="streamBody${i}"><span class="stream-cursor"></span></div></div>`).join('')}</div>
+      ${useLive ? buildModelSelector() : `<div class="speed-control"><label>Stream speed:</label><input type="range" class="speed-slider" min="1" max="50" value="${51-streamSpeed}" oninput="updateSpeed(this.value)"><span class="speed-val" id="speedLabel">${getSpeedLabel(streamSpeed)}</span></div>`}
+      <div class="streaming-grid ${gc}">${cards}</div>
       <div class="stream-meta"><span class="token-count" id="tokenCount">0 tokens</span></div>
     </div>`;
   area.innerHTML = html;
-  beginStreaming(task);
+
+  if (useLive) {
+    beginLiveStreaming(task, numSlots);
+  } else {
+    beginStreaming(task);
+  }
 }
+
+function beginLiveStreaming(task, numSlots) {
+  stopAllStreams();
+  activeAbortControllers.forEach(c => c.abort());
+  activeAbortControllers = [];
+  let totalTokens = 0, doneCount = 0;
+  const idxAtStart = currentIdx;
+
+  for (let rIdx = 0; rIdx < numSlots; rIdx++) {
+    const resp = task.responses?.[rIdx] || {};
+    const model = resp.hf_model || selectedModel || inferenceDefaultModel;
+    const system = task.inference?.system || null;
+    const controller = new AbortController();
+    activeAbortControllers.push(controller);
+    let accumulated = '';
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+
+    fetch(API_BASE + '/api/v1/inference/stream', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ prompt: task.prompt, system, model, temperature: resp.temperature ?? 0.7, seed: resp.seed ?? (1000 + rIdx) }),
+      signal: controller.signal
+    }).then(async response => {
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || 'Inference request failed');
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (currentIdx !== idxAtStart || currentPhase !== 2) { reader.cancel(); return; }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(payload);
+            if (parsed.error) {
+              const body = document.getElementById('streamBody' + rIdx);
+              if (body) body.innerHTML = renderMarkdown('*Error:* ' + parsed.error);
+              const st = document.getElementById('streamStatus' + rIdx);
+              if (st) { st.classList.add('done'); st.innerHTML = '<span class="pulse"></span><span>Error</span>'; }
+              return;
+            }
+            if (parsed.token) {
+              accumulated += parsed.token;
+              totalTokens++;
+              const body = document.getElementById('streamBody' + rIdx);
+              if (body) {
+                body.innerHTML = renderMarkdown(accumulated) + '<span class="stream-cursor"></span>';
+                body.scrollTop = body.scrollHeight;
+              }
+              const tc = document.getElementById('tokenCount');
+              if (tc) tc.textContent = totalTokens + ' tokens';
+            }
+          } catch (e) {}
+        }
+      }
+
+      if (!task.responses[rIdx]) task.responses[rIdx] = { label: 'Response ' + (rIdx+1) };
+      task.responses[rIdx].text = accumulated;
+      task.responses[rIdx].model = model.split('/').pop();
+      const body = document.getElementById('streamBody' + rIdx);
+      if (body) body.innerHTML = renderMarkdown(accumulated);
+      const st = document.getElementById('streamStatus' + rIdx);
+      if (st) { st.classList.add('done'); st.innerHTML = '<span class="pulse"></span><span>Complete</span>'; }
+      const cb = document.getElementById('streamCopy' + rIdx);
+      if (cb) cb.style.display = '';
+      doneCount++;
+      if (doneCount === numSlots) {
+        streamingDone = true;
+        persistState();
+        setTimeout(() => { if (currentPhase === 2 && currentIdx === idxAtStart) { currentPhase = 3; renderPhase(); toast('Responses complete — now review and annotate'); } }, 1200);
+      }
+    }).catch(err => {
+      if (err.name === 'AbortError') return;
+      if (currentIdx !== idxAtStart || currentPhase !== 2) return;
+      const body = document.getElementById('streamBody' + rIdx);
+      if (body) body.innerHTML = renderMarkdown('*Error:* ' + (err.message || 'Connection failed'));
+      const st = document.getElementById('streamStatus' + rIdx);
+      if (st) { st.classList.add('done'); st.innerHTML = '<span class="pulse"></span><span>Error</span>'; }
+      doneCount++;
+      if (doneCount === numSlots) { streamingDone = true; }
+    });
+  }
+}
+
 function getSpeedLabel(ms){return ms<=5?'Fast':ms<=15?'Medium':ms<=30?'Normal':'Slow';}
 function updateSpeed(v){streamSpeed=51-parseInt(v);document.getElementById('speedLabel').textContent=getSpeedLabel(streamSpeed);}
-function stopAllStreams(){streamIntervals.forEach(id=>clearTimeout(id));streamIntervals=[];}
+function stopAllStreams(){streamIntervals.forEach(id=>clearTimeout(id));streamIntervals=[];activeAbortControllers.forEach(c=>c.abort());activeAbortControllers=[];}
 function beginStreaming(task) {
   stopAllStreams(); let totalTokens=0,doneCount=0; const total=task.responses.length;
   task.responses.forEach((resp,rIdx)=>{
-    const chars=resp.text.split(''); let pos=0;
+    const raw = resp.text != null ? String(resp.text) : '';
+    const chars=raw.split(''); let pos=0;
     const bodyEl=()=>document.getElementById(`streamBody${rIdx}`);
     const statusEl=()=>document.getElementById(`streamStatus${rIdx}`);
     function typeNext(){
       const body=bodyEl(); if(!body||currentPhase!==2) return;
       if(pos<chars.length){
         const cs=Math.max(1,Math.floor(Math.random()*3)+1); pos+=cs; totalTokens+=cs;
-        body.innerHTML=renderMarkdown(resp.text.substring(0,pos))+'<span class="stream-cursor"></span>';
+        body.innerHTML=renderMarkdown(raw.substring(0,pos))+'<span class="stream-cursor"></span>';
         body.scrollTop=body.scrollHeight;
         const tc=document.getElementById('tokenCount'); if(tc) tc.textContent=totalTokens+' tokens';
         const j=streamSpeed+Math.floor(Math.random()*streamSpeed*.6);
         const p=(chars[pos-1]==='\n')?j*4:j;
         streamIntervals.push(setTimeout(typeNext,p));
       } else {
-        body.innerHTML=renderMarkdown(resp.text);
+        body.innerHTML=renderMarkdown(raw);
         const st=statusEl(); if(st){st.classList.add('done');st.innerHTML='<span class="pulse"></span><span>Complete</span>';}
         const cb=document.getElementById(`streamCopy${rIdx}`); if(cb) cb.style.display='';
         doneCount++;
@@ -1218,6 +1386,7 @@ document.addEventListener('keydown',e=>{
     loadUserData(user.email);
     const hadLocalTasks = tasks.length > 0;
     showScreen('dashboard');
+    checkInferenceStatus();
     if (API_BASE && serverSessionId && !hadLocalTasks) pullWorkspaceFromServer();
   } else {
     showScreen('auth');
