@@ -1,0 +1,29 @@
+# RLHF Annotation Studio — full stack on one host
+# 1. Copy .env.example → .env in repo root and set DATABASE_URL (Neon +asyncpg)
+# 2. docker compose up --build
+# 3. Open http://localhost:8080/  (or http://YOUR_SERVER_IP:8080/)
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    # Compose reads `.env` next to this file for ${VAR} substitution below.
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080,http://localhost,http://127.0.0.1}
+      DEBUG: ${DEBUG:-false}
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    depends_on:
+      - api
+    restart: unless-stopped

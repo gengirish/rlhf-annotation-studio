@@ -84,6 +84,10 @@
   .auth-card .or-divider::before, .auth-card .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
   .auth-error { background: var(--danger-light); color: #991b1b; font-size: 13px; padding: 8px 12px; border-radius: var(--radius); margin-bottom: 12px; display: none; text-align: left; }
   .auth-error.show { display: block; }
+  .auth-field .password-wrapper { position: relative; }
+  .auth-field .password-wrapper input { padding-right: 40px; }
+  .auth-field .toggle-pw { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--gray-400); padding: 4px; }
+  .auth-field .toggle-pw:hover { color: var(--gray-600); }
   .auth-field { text-align: left; margin-bottom: 18px; }
   .auth-field label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
   .auth-field input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 15px; font-family: inherit; transition: border-color .15s; }
@@ -368,6 +372,13 @@
         <label for="authPhone">Contact Number</label>
         <input type="tel" id="authPhone" placeholder="e.g. +1 555-123-4567" autocomplete="tel">
       </div>
+      <div class="auth-field">
+        <label for="authPassword">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="authPassword" placeholder="Min. 6 characters" autocomplete="new-password" minlength="6">
+          <button type="button" class="toggle-pw" onclick="togglePw('authPassword', this)" tabindex="-1" title="Show password">&#128065;</button>
+        </div>
+      </div>
       <button class="btn btn-lg btn-primary" onclick="registerUser()">Create Account</button>
     </div>
 
@@ -376,6 +387,13 @@
       <div class="auth-field">
         <label for="loginEmail">Email Address</label>
         <input type="email" id="loginEmail" placeholder="Enter your registered email" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label for="loginPassword">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+          <button type="button" class="toggle-pw" onclick="togglePw('loginPassword', this)" tabindex="-1" title="Show password">&#128065;</button>
+        </div>
       </div>
       <button class="btn btn-lg btn-primary" onclick="loginUser()">Sign In</button>
       <div class="or-divider">or</div>
@@ -467,6 +485,7 @@ function resolveApiBase() {
 const API_BASE = resolveApiBase();
 let serverSessionId = null;
 let apiSyncTimer = null;
+let authToken = null;
 
 function persistStateLocalOnly() {
   if (!user) return;
@@ -485,9 +504,11 @@ function scheduleSyncToServer() {
 
 function syncWorkspaceToServer() {
   if (!API_BASE || !serverSessionId) return;
+  const syncHeaders = { 'Content-Type': 'application/json' };
+  if (authToken) syncHeaders['Authorization'] = 'Bearer ' + authToken;
   fetch(API_BASE + '/api/v1/sessions/' + serverSessionId + '/workspace', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: syncHeaders,
     body: JSON.stringify({
       tasks,
       annotations,
@@ -499,7 +520,9 @@ function syncWorkspaceToServer() {
 
 function pullWorkspaceFromServer() {
   if (!API_BASE || !serverSessionId) return;
-  fetch(API_BASE + '/api/v1/sessions/' + serverSessionId + '/workspace')
+  const pullHeaders = {};
+  if (authToken) pullHeaders['Authorization'] = 'Bearer ' + authToken;
+  fetch(API_BASE + '/api/v1/sessions/' + serverSessionId + '/workspace', { headers: pullHeaders })
     .then(r => (r.ok ? r.json() : Promise.reject(new Error('pull failed'))))
     .then(ws => {
       if (ws.tasks && ws.tasks.length) {
@@ -564,6 +587,14 @@ function showAuthError(msg) {
 }
 function hideAuthError() { document.getElementById('authError').classList.remove('show'); }
 
+function togglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.innerHTML = show ? '&#128064;' : '&#128065;';
+  btn.title = show ? 'Hide password' : 'Show password';
+}
+
 function loadUserData(email) {
   const uk = (k) => userScopedKey(email, k);
   tasks = LS.get(uk('tasks')) || [];
@@ -578,62 +609,104 @@ function registerUser() {
   const name = document.getElementById('authName').value.trim();
   const email = document.getElementById('authEmail').value.trim();
   const phone = document.getElementById('authPhone').value.trim();
+  const password = document.getElementById('authPassword').value;
   if (!name) { showAuthError('Please enter your name.'); return; }
   if (!email || !email.includes('@')) { showAuthError('Please enter a valid email address.'); return; }
   if (!phone) { showAuthError('Please enter your contact number.'); return; }
+  if (!password || password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
 
-  const registry = getRegistry();
-  const existing = registry.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (existing) {
-    showAuthError('An account with this email already exists. Please sign in instead.');
-    return;
-  }
-
-  user = { name, email, phone, registeredAt: new Date().toISOString() };
-  registry.push(user);
-  saveRegistry(registry);
-  LS.set('user', user);
-
-  function finishRegister() {
-    showScreen('dashboard');
-    toast('Account created — welcome, ' + name.split(' ')[0] + '!');
-  }
   if (API_BASE) {
-    fetch(API_BASE + '/api/v1/sessions/bootstrap', {
+    fetch(API_BASE + '/api/v1/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ annotator: { name, email, phone } })
+      body: JSON.stringify({ name, email, password, phone })
     })
-      .then(r => (r.ok ? r.json() : Promise.reject(new Error('bootstrap failed'))))
+      .then(r => {
+        if (r.status === 409) throw new Error('Email already registered. Please sign in instead.');
+        if (!r.ok) return r.json().then(d => { throw new Error(d.detail || 'Registration failed'); });
+        return r.json();
+      })
       .then(data => {
+        authToken = data.token;
+        LS.set('authToken', authToken);
+        user = data.annotator;
+        user.registeredAt = user.created_at;
+        LS.set('user', user);
         serverSessionId = data.session_id;
         LS.set('serverSessionId', serverSessionId);
-        finishRegister();
-        scheduleSyncToServer();
+        const registry = getRegistry();
+        if (!registry.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+          registry.push(user);
+          saveRegistry(registry);
+        }
+        showScreen('dashboard');
+        toast('Account created — welcome, ' + name.split(' ')[0] + '!');
       })
-      .catch(() => { finishRegister(); });
+      .catch(err => showAuthError(err.message));
   } else {
-    finishRegister();
+    const registry = getRegistry();
+    if (registry.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+      showAuthError('An account with this email already exists. Please sign in instead.');
+      return;
+    }
+    user = { name, email, phone, registeredAt: new Date().toISOString() };
+    registry.push(user);
+    saveRegistry(registry);
+    LS.set('user', user);
+    showScreen('dashboard');
+    toast('Account created — welcome, ' + name.split(' ')[0] + '!');
   }
 }
 
 function loginUser() {
   hideAuthError();
   const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
   if (!email || !email.includes('@')) { showAuthError('Please enter a valid email address.'); return; }
+  if (!password) { showAuthError('Please enter your password.'); return; }
 
-  const registry = getRegistry();
-  const existing = registry.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (!existing) {
-    showAuthError('No account found with this email. Please create an account first.');
-    return;
+  if (API_BASE) {
+    fetch(API_BASE + '/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+      .then(r => {
+        if (r.status === 401) throw new Error('Invalid email or password.');
+        if (!r.ok) return r.json().then(d => { throw new Error(d.detail || 'Login failed'); });
+        return r.json();
+      })
+      .then(data => {
+        authToken = data.token;
+        LS.set('authToken', authToken);
+        user = data.annotator;
+        user.registeredAt = user.created_at;
+        LS.set('user', user);
+        serverSessionId = data.session_id;
+        LS.set('serverSessionId', serverSessionId);
+        const registry = getRegistry();
+        if (!registry.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+          registry.push(user);
+          saveRegistry(registry);
+        }
+        loadUserData(user.email);
+        showScreen('dashboard');
+        toast('Welcome back, ' + user.name.split(' ')[0] + '!');
+      })
+      .catch(err => showAuthError(err.message));
+  } else {
+    const registry = getRegistry();
+    const existing = registry.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!existing) {
+      showAuthError('No account found with this email. Please create an account first.');
+      return;
+    }
+    user = existing;
+    LS.set('user', user);
+    loadUserData(user.email);
+    showScreen('dashboard');
+    toast('Welcome back, ' + user.name.split(' ')[0] + '!');
   }
-
-  user = existing;
-  LS.set('user', user);
-  loadUserData(user.email);
-  showScreen('dashboard');
-  toast('Welcome back, ' + user.name.split(' ')[0] + '!');
 }
 
 function logout() {
@@ -643,6 +716,8 @@ function logout() {
   tasks = []; annotations = {}; taskTimes = {};
   LS.remove('user');
   LS.remove('serverSessionId');
+  authToken = null;
+  LS.remove('authToken');
   showScreen('auth');
 }
 
@@ -1137,6 +1212,7 @@ document.addEventListener('keydown',e=>{
   }
 
   serverSessionId = LS.get('serverSessionId');
+  authToken = LS.get('authToken');
   if(saved){
     user = saved;
     loadUserData(user.email);

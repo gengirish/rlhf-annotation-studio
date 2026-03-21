@@ -2,7 +2,11 @@
 
 A lightweight, Markdown-based annotation kit for practicing Reinforcement Learning from Human Feedback (RLHF) workflows. Designed to give students hands-on experience with the same annotation patterns used at Scale AI, Surge AI, and similar data labeling platforms.
 
-**Zero dependencies. No server. Just open the HTML file.**
+**Frontend: zero npm dependencies.** Open the HTML file locally, or run a simple static server for task packs.
+
+**Optional full stack:** A **FastAPI** API in `backend/` syncs workspace data to **Neon PostgreSQL**. See `backend/README.md`. **Docker:** `docker compose up` from the repo root — see **`deploy/README.md`** (nginx + API on port **8080**).
+
+**Vercel + Fly.io:** Static UI on Vercel (`npm run vercel-build` → `out/`), API on Fly (`backend/fly.toml`). Vercel rewrites `/api/*` to Fly. Step-by-step: **`deploy/DEPLOY-VERCEL-FLY.md`**.
 
 ---
 
@@ -20,6 +24,9 @@ A lightweight, Markdown-based annotation kit for practicing Reinforcement Learni
 ```
 RLHF/
 ├── annotation-tool.html              ← Main annotation interface (open in browser)
+├── backend/                          ← FastAPI + Neon PostgreSQL (optional)
+│   ├── app/                          ← API, models, Alembic migrations
+│   └── README.md
 ├── tasks/
 │   ├── code-review-comparisons.json  ← Code review annotation tasks
 │   └── safety-alignment.json         ← Safety & alignment evaluation tasks

@@ -1,0 +1,10 @@
+{
+  "name": "rlhf-annotation-studio",
+  "private": true,
+  "description": "Vercel build copies static UI to out/; API lives on Fly.io",
+  "scripts": {
+    "vercel-build": "node scripts/vercel-build.mjs",
+    "build": "node scripts/vercel-build.mjs",
+    "sync-fly-url": "node scripts/sync-vercel-fly-rewrite.mjs"
+  }
+}

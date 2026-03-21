@@ -1,0 +1,6 @@
+.git
+.cursor
+.vercel
+backend/.venv
+**/__pycache__
+.env

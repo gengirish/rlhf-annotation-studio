@@ -1,5 +1,16 @@
 node_modules/
+out/
 .vercel/
 exports/*.md
 !exports/.gitkeep
 .vercel
+
+# Secrets (Docker compose at repo root uses /.env)
+.env
+backend/.env
+backend/.venv/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/.pytest_cache/
+backend/**/*.egg-info/
+.cursor/
