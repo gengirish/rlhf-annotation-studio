@@ -9,8 +9,7 @@ primary_region = "syd"
   dockerfile = "Dockerfile"
 
 [env]
-  # Browser hits API via Vercel /api proxy (same-origin). Use * unless you lock to your Vercel URL(s).
-  CORS_ORIGINS = "*"
+  CORS_ORIGINS = "https://rlhf-annotation-frontend.vercel.app"
 
 [http_service]
   internal_port = 8000

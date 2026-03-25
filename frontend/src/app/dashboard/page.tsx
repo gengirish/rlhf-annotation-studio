@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { api, taskCatalog } from "@/lib/api";
+import { api } from "@/lib/api";
+import type { TaskPackSummary } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 import { fetchTaskPack } from "@/lib/task-packs";
 import type { WorkspaceSnapshot } from "@/types";
@@ -23,6 +24,8 @@ export default function DashboardPage() {
     logout
   } = useAppStore();
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "synced" | "error">("idle");
+  const [packCatalog, setPackCatalog] = useState<TaskPackSummary[]>([]);
+  const [packsLoading, setPacksLoading] = useState(true);
 
   const completed = useMemo(
     () => Object.values(annotations).filter((ann) => ann.status === "done").length,
@@ -34,6 +37,20 @@ export default function DashboardPage() {
       router.push("/auth");
     }
   }, [user, sessionId, router]);
+
+  useEffect(() => {
+    async function loadCatalog() {
+      try {
+        const { packs } = await api.getTaskPacks();
+        setPackCatalog(packs);
+      } catch {
+        toast.error("Failed to load task catalog");
+      } finally {
+        setPacksLoading(false);
+      }
+    }
+    void loadCatalog();
+  }, []);
 
   useEffect(() => {
     async function bootstrapWorkspace() {
@@ -97,15 +114,15 @@ export default function DashboardPage() {
     }
   }
 
-  async function loadPack(file: string) {
+  async function loadPack(slug: string) {
     try {
-      const data = await fetchTaskPack(file);
+      const data = await fetchTaskPack(slug);
       const validation = await api.validateTasks(data);
       if (!validation.ok) {
         toast.error("Selected task pack has validation issues");
         return;
       }
-      loadTasks(data, `tasks/${file}`);
+      loadTasks(data, slug);
       toast.success(`Loaded ${data.length} tasks`);
       router.push("/task/0");
     } catch (err) {
@@ -158,17 +175,26 @@ export default function DashboardPage() {
 
       <section className="card" style={{ marginTop: 18, padding: 16 }}>
         <h2 style={{ marginTop: 0 }}>Task Library</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-          {taskCatalog.map((pack) => (
-            <article key={pack.file} className="card" style={{ padding: 14 }}>
-              <h3 style={{ margin: "0 0 6px" }}>{pack.name}</h3>
-              <p style={{ margin: "0 0 10px", color: "var(--muted)" }}>{pack.description}</p>
-              <button className="btn btn-primary" onClick={() => loadPack(pack.file)}>
-                Load and Start
-              </button>
-            </article>
-          ))}
-        </div>
+        {packsLoading ? (
+          <p style={{ color: "var(--muted)" }}>Loading task packs...</p>
+        ) : packCatalog.length === 0 ? (
+          <p style={{ color: "var(--muted)" }}>No task packs available.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+            {packCatalog.map((pack) => (
+              <article key={pack.slug} className="card" style={{ padding: 14 }}>
+                <h3 style={{ margin: "0 0 6px" }}>{pack.name}</h3>
+                <p style={{ margin: "0 0 4px", color: "var(--muted)" }}>{pack.description}</p>
+                <p style={{ margin: "0 0 10px", fontSize: 13, color: "var(--muted)" }}>
+                  {pack.task_count} tasks &middot; {pack.language}
+                </p>
+                <button className="btn btn-primary" onClick={() => loadPack(pack.slug)}>
+                  Load and Start
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       {tasks.length > 0 ? (

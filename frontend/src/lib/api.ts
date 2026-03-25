@@ -1,6 +1,6 @@
 import type { TaskItem, WorkspaceSnapshot } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -71,32 +71,23 @@ export const api = {
     request<{ ok: boolean; issues: Array<{ row_index: number; row_label: string; message: string }> }>(
       "/api/v1/tasks/validate",
       { method: "POST", body: JSON.stringify({ tasks, strict_mode: false }) }
-    )
+    ),
+  getTaskPacks: () =>
+    request<{ packs: TaskPackSummary[] }>("/api/v1/tasks/packs"),
+  getTaskPack: (slug: string) =>
+    request<TaskPackDetail>(`/api/v1/tasks/packs/${encodeURIComponent(slug)}`)
 };
 
-export const taskCatalog = [
-  {
-    file: "debugging-exercises-python.json",
-    name: "Python Debugging",
-    description: "9 debugging-focused comparison tasks",
-    language: "python"
-  },
-  {
-    file: "debugging-exercises-java.json",
-    name: "Java Debugging",
-    description: "9 Java debugging tasks with common pitfalls",
-    language: "java"
-  },
-  {
-    file: "code-review-comparisons.json",
-    name: "Code Review Comparisons",
-    description: "4 code review quality comparison tasks",
-    language: "multi"
-  },
-  {
-    file: "safety-alignment.json",
-    name: "Safety and Alignment",
-    description: "3 safety-oriented evaluation tasks",
-    language: "general"
-  }
-] as const;
+export interface TaskPackSummary {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  language: string;
+  task_count: number;
+  created_at: string;
+}
+
+export interface TaskPackDetail extends TaskPackSummary {
+  tasks_json: TaskItem[];
+}

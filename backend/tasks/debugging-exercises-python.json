@@ -1,0 +1,335 @@
+[
+  {
+    "id": "debug-1",
+    "type": "comparison",
+    "title": "The Event Logger — Mutable Default Argument",
+    "prompt": "A junior developer wrote this event logging function. When called multiple times, events from previous calls appear in later results. Identify the bug and provide a corrected version.\n\n```python\ndef log_event(event_name, event_log=[]):\n    \"\"\"\n    Log an event and return the list of all logged events.\n    \"\"\"\n    event_log.append(event_name)\n    return event_log\n\n# Test calls\nlog1 = log_event(\"user_login\")\nlog2 = log_event(\"page_view\")\nlog3 = log_event(\"api_call\")\n\nprint(\"First call:\", log1)\nprint(\"Second call:\", log2)\nprint(\"Third call:\", log3)\n```\n\nActual output:\n```\nFirst call: ['user_login', 'page_view', 'api_call']\nSecond call: ['user_login', 'page_view', 'api_call']\nThird call: ['user_login', 'page_view', 'api_call']\n```",
+    "guidelines": [
+      "The response MUST correctly identify the mutable default argument as the root cause",
+      "It should explain that Python evaluates default arguments once at function definition time, not at each call",
+      "The fix must use None as the default and create a new list inside the function body",
+      "Penalize responses that fix the symptom without explaining the underlying Python behavior",
+      "Bonus: mentions that all three variables (log1, log2, log3) reference the same list object"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "The bug is Python's **mutable default argument** gotcha. When you write `event_log=[]`, Python creates that empty list **once** — when the function is defined — and reuses the same list object for every call that doesn't provide the second argument.\n\nSo each call to `log_event` appends to the same list. After three calls, all three variables (`log1`, `log2`, `log3`) point to that same list, which now contains all three events.\n\n**Why all three print statements show the same list:** `log1`, `log2`, and `log3` are not three separate lists. They are three references to the one default list. When you print `log1`, the list already has all three items because `log2` and `log3` modified it too.\n\n**Fix — use `None` as the sentinel default:**\n\n```python\ndef log_event(event_name, event_log=None):\n    if event_log is None:\n        event_log = []\n    event_log.append(event_name)\n    return event_log\n```\n\nNow each call without an explicit `event_log` gets a brand-new list. This is the standard Python idiom for mutable defaults."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The issue is that the list is being shared between calls. You should copy the list to fix it:\n\n```python\ndef log_event(event_name, event_log=[]):\n    event_log = event_log.copy()\n    event_log.append(event_name)\n    return event_log\n```\n\nThis way each call gets a copy of the list so they don't interfere with each other."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The problem is that `append` modifies the list in place. You should use concatenation instead so you don't change the original:\n\n```python\ndef log_event(event_name, event_log=[]):\n    event_log = event_log + [event_name]\n    return event_log\n```\n\nUsing `+` creates a new list instead of modifying the original one."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify the mutable default argument as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain WHY this happens in Python (definition-time evaluation)?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the proposed fix correct and idiomatic Python?", "scale": 5 },
+      { "name": "Completeness", "description": "Does it address the shared-reference issue (all 3 variables point to same list)?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer avoid the same mistake in future?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-2",
+    "type": "comparison",
+    "title": "The Filter-Even-Numbers Function — Mutation During Iteration",
+    "prompt": "A data processing function is supposed to filter out even numbers and return only odd numbers. It runs without errors, but the output is wrong — some even numbers remain and some odd numbers are missing. Identify the bug and provide a corrected version.\n\n```python\ndef filter_odd(numbers):\n    \"\"\"\n    Remove even numbers from the list and return only odd numbers.\n    \"\"\"\n    for num in numbers:\n        if num % 2 == 0:\n            numbers.remove(num)\n    return numbers\n\n# Test\ndata = [2, 4, 6, 8]\nresult = filter_odd(data)\nprint(\"Result:\", result)\nprint(\"Expected: []\")\n```\n\nActual output:\n```\nResult: [4, 8]\nExpected: []\n```",
+    "guidelines": [
+      "The response MUST identify that modifying a list while iterating over it causes the iterator to skip elements",
+      "Should explain the internal index mechanism: removing an element shifts all subsequent elements left, but the iterator's index advances, skipping the shifted element",
+      "The fix should either use a list comprehension, iterate over a copy, or build a new list",
+      "Penalize responses that only fix the specific test case without explaining the general principle",
+      "Bonus: mentions that this can produce unpredictable results depending on the input order"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the classic **mutation during iteration** bug. When you call `numbers.remove(num)` inside a `for num in numbers` loop, you're modifying the list that the iterator is traversing.\n\nHere's what happens step by step with `[2, 4, 6, 8]`:\n\n1. **Index 0:** sees `2` (even) → removes it → list becomes `[4, 6, 8]`\n2. **Index 1:** the iterator advances to index 1 → sees `6` (even) → removes it → list becomes `[4, 8]`\n3. **Index 2:** iterator advances to index 2 → but list length is now 2 → loop ends\n\nThe values `4` and `8` were never checked because they shifted into indices the iterator had already passed.\n\n**Fix — use a list comprehension (Pythonic and safe):**\n\n```python\ndef filter_odd(numbers):\n    return [num for num in numbers if num % 2 != 0]\n```\n\nThis builds a new list without mutating the original. No iterator confusion, no skipped elements.\n\n**Rule:** Never modify a collection while iterating over it."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The `remove` function is removing the wrong elements. You should use `del` instead:\n\n```python\ndef filter_odd(numbers):\n    for i in range(len(numbers)):\n        if numbers[i] % 2 == 0:\n            del numbers[i]\n    return numbers\n```\n\nUsing `del` with the index is more precise than `remove` which searches by value."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The issue is that you're modifying the list while looping over it. You can fix this by iterating over a copy:\n\n```python\ndef filter_odd(numbers):\n    for num in numbers[:]:\n        if num % 2 == 0:\n            numbers.remove(num)\n    return numbers\n```\n\n`numbers[:]` creates a shallow copy, so the iterator runs over the copy while you modify the original. This works, but a cleaner approach is a list comprehension:\n\n```python\ndef filter_odd(numbers):\n    return [num for num in numbers if num % 2 != 0]\n```"
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify mutation-during-iteration as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain the index-shifting mechanism that causes elements to be skipped?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the proposed fix correct and free of the same bug?", "scale": 5 },
+      { "name": "Pythonic Quality", "description": "Does the fix follow Pythonic idioms (list comprehension, immutability)?", "scale": 5 },
+      { "name": "Educational Value", "description": "Does it teach the general principle of not mutating during iteration?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-3",
+    "type": "comparison",
+    "title": "The Button Factory — Late-Binding Closure",
+    "prompt": "A UI framework helper creates a list of button handlers. Each button should print its own index when clicked (0, 1, 2, 3). Instead, all buttons print the same number. Identify the bug and provide a corrected version.\n\n```python\ndef create_buttons(count):\n    \"\"\"\n    Create a list of button click handlers. Each handler should\n    print the index of its button when called.\n    \"\"\"\n    handlers = []\n    for i in range(count):\n        handlers.append(lambda: print(f\"Button {i} clicked\"))\n    return handlers\n\n# Simulate button clicks\nbuttons = create_buttons(4)\nfor j, btn in enumerate(buttons):\n    print(f\"Clicking button {j}:\", end=\" \")\n    btn()\n```\n\nActual output:\n```\nClicking button 0: Button 3 clicked\nClicking button 1: Button 3 clicked\nClicking button 2: Button 3 clicked\nClicking button 3: Button 3 clicked\n```",
+    "guidelines": [
+      "The response MUST identify this as the late-binding closure (loop variable capture) problem",
+      "Should explain that the lambda captures the variable i by reference, not by value",
+      "Should explain that i is looked up at call time, not at lambda creation time",
+      "The fix should use a default argument (lambda idx=i:) or functools.partial to capture the value",
+      "Penalize responses that restructure the code entirely without explaining the closure behavior"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the **late-binding closure** problem — one of Python's most common gotchas with loops and lambdas.\n\n**What's happening:** The lambda `lambda: print(f\"Button {i} clicked\")` does not store the *value* of `i` at the time it's created. It stores a *reference* to the variable `i`. When the lambda is finally called (after the loop), it looks up `i` in the enclosing scope and finds its final value: `3`.\n\nAll four lambdas share the same variable `i`, so they all print `3`.\n\n**Fix — capture the value with a default argument:**\n\n```python\ndef create_buttons(count):\n    handlers = []\n    for i in range(count):\n        handlers.append(lambda idx=i: print(f\"Button {idx} clicked\"))\n    return handlers\n```\n\nDefault arguments are evaluated at **definition time** (when the lambda is created), so each lambda gets its own copy: `idx=0`, `idx=1`, `idx=2`, `idx=3`.\n\n**Alternative — use `functools.partial`:**\n\n```python\nfrom functools import partial\n\ndef create_buttons(count):\n    handlers = []\n    for i in range(count):\n        handlers.append(partial(print, f\"Button {i} clicked\"))\n    return handlers\n```\n\n`partial` evaluates its arguments immediately, so each handler captures the correct string."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The lambda functions are all using the same `i` variable. You need to create a separate function to fix it:\n\n```python\ndef create_buttons(count):\n    handlers = []\n    for i in range(count):\n        def make_handler():\n            return lambda: print(f\"Button {i} clicked\")\n        handlers.append(make_handler())\n    return handlers\n```\n\nWrapping the lambda in another function creates a new scope."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "This is a closure issue. The lambda captures `i` by reference, not value. When the lambdas execute, `i` has already reached its final value of `3`.\n\n**Fix — use a default parameter to bind the current value:**\n\n```python\ndef create_buttons(count):\n    handlers = []\n    for i in range(count):\n        handlers.append(lambda idx=i: print(f\"Button {idx} clicked\"))\n    return handlers\n```\n\nThe key insight: Python evaluates default arguments when the function is *defined*, not when it's *called*. So `idx=i` snapshots the current value of `i` at each loop iteration."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify late-binding closure as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain reference vs value capture and when the lookup happens?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the proposed fix correct and does it actually solve the problem?", "scale": 5 },
+      { "name": "Alternative Solutions", "description": "Does it offer more than one valid approach (default arg, partial, factory)?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand closures and avoid similar bugs?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-4",
+    "type": "comparison",
+    "title": "The User Lookup — Identity vs Equality",
+    "prompt": "A caching function checks whether a user object has already been fetched. The developer uses `is` to compare user IDs, but the cache never returns a hit — even when the same user ID is requested twice. Identify the bug and provide a corrected version.\n\n```python\ndef get_user(user_id, cache={}):\n    # Check if user is already cached\n    for cached_id, user in cache.items():\n        if cached_id is user_id:\n            return user\n\n    # Simulate database fetch\n    user = {\"id\": user_id, \"name\": f\"User_{user_id}\"}\n    cache[user_id] = user\n    return user\n\n\n# Test\nprint(get_user(300))   # Fetches from 'database'\nprint(get_user(300))   # Should return cached, but fetches again\nprint(get_user(300))   # Still fetching again every time\n\n# Verify cache is growing with duplicates\nimport sys\nprint(\"Cache entries:\", len(get_user.__defaults__[0]))\n```\n\nActual output:\n```\n{'id': 300, 'name': 'User_300'}\n{'id': 300, 'name': 'User_300'}\n{'id': 300, 'name': 'User_300'}\nCache entries: 3\n```\n\nThe cache keeps growing with duplicate entries for the same user ID. The lookup never finds a match.",
+    "guidelines": [
+      "The response MUST identify the misuse of `is` (identity) instead of `==` (equality) as the primary bug",
+      "Should explain that `is` compares object identity (memory address), not value",
+      "Should mention Python's integer interning: small integers (-5 to 256) are cached and `is` works by accident, but larger integers are separate objects",
+      "The fix must replace `is` with `==` for value comparison",
+      "Bonus: notes that this code also has the mutable default argument issue (cache={}), but that's actually intentional here as a simple cache"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "There are two issues here, but only one is a bug:\n\n**The real bug: `is` vs `==`**\n\nThe line `if cached_id is user_id` uses `is`, which checks **identity** (are these the exact same object in memory?), not **equality** (do they have the same value?).\n\nFor integers outside Python's interning range (-5 to 256), each occurrence of `300` creates a **new integer object**. So `cached_id is user_id` returns `False` even when both equal `300`, because they are different objects that happen to hold the same value.\n\nThis works by accident with small numbers:\n```python\na = 5\nb = 5\na is b  # True — Python interns small integers\n\na = 300\nb = 300\na is b  # False — separate objects!\n```\n\n**Fix:**\n```python\ndef get_user(user_id, cache={}):\n    for cached_id, user in cache.items():\n        if cached_id == user_id:  # == checks VALUE equality\n            return user\n\n    user = {\"id\": user_id, \"name\": f\"User_{user_id}\"}\n    cache[user_id] = user\n    return user\n```\n\nOr more simply, use `in` to check dictionary membership:\n```python\ndef get_user(user_id, cache={}):\n    if user_id in cache:\n        return cache[user_id]\n\n    user = {\"id\": user_id, \"name\": f\"User_{user_id}\"}\n    cache[user_id] = user\n    return user\n```\n\n**Note:** The `cache={}` mutable default is actually being used intentionally here as a simple cache that persists across calls. In production you'd use `functools.lru_cache` or an explicit cache object.\n\n**Rule:** Only use `is` for `None` checks (`if x is None`) and singleton comparisons. Use `==` for everything else."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The `is` keyword doesn't work for comparing numbers. Just change it to `==`:\n\n```python\ndef get_user(user_id, cache={}):\n    for cached_id, user in cache.items():\n        if cached_id == user_id:\n            return user\n    user = {\"id\": user_id, \"name\": f\"User_{user_id}\"}\n    cache[user_id] = user\n    return user\n```\n\nAlso, `cache={}` is a mutable default argument bug. You should change it to `None`."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The problem is that the dictionary iteration is slow and doesn't find the key. You should use direct dictionary lookup instead of looping:\n\n```python\ndef get_user(user_id, cache=None):\n    if cache is None:\n        cache = {}\n    if user_id in cache:\n        return cache[user_id]\n    user = {\"id\": user_id, \"name\": f\"User_{user_id}\"}\n    cache[user_id] = user\n    return user\n```\n\nUsing `in` is O(1) for dictionaries, much faster than iterating."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify `is` vs `==` as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain identity vs equality and Python's integer interning?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the proposed fix correct and does it solve the actual problem?", "scale": 5 },
+      { "name": "Nuance", "description": "Does it correctly handle the cache={} being intentional vs being a bug?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand when to use `is` vs `==`?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-5",
+    "type": "comparison",
+    "title": "The Discount Calculator — UnboundLocalError",
+    "prompt": "A pricing module has a global discount rate. A function is supposed to read the global rate and optionally override it. Instead, it crashes with an `UnboundLocalError`. Identify the bug and provide a corrected version.\n\n```python\ndiscount_rate = 0.10  # 10% global discount\n\ndef apply_discount(price, use_premium=False):\n    \"\"\"\n    Apply the global discount rate to a price.\n    If use_premium is True, upgrade to 20% discount.\n    \"\"\"\n    if use_premium:\n        discount_rate = 0.20\n    final_price = price * (1 - discount_rate)\n    return round(final_price, 2)\n\n\nprint(apply_discount(100.00))                # Should be 90.00\nprint(apply_discount(100.00, use_premium=True))  # Should be 80.00\n```\n\nActual output:\n```\nUnboundLocalError: cannot access local variable 'discount_rate' where it is not associated with a value\n```\n\nThe first call crashes, even though `discount_rate` is defined at module level.",
+    "guidelines": [
+      "The response MUST explain Python's LEGB scope rule and why the assignment inside the `if` makes `discount_rate` local to the entire function",
+      "Should explain that Python determines variable scope at compile time — if any branch assigns to a variable, that variable is local everywhere in the function",
+      "The fix should NOT use the `global` keyword (bad practice); instead, use a local variable with a different name or restructure the logic",
+      "Penalize responses that just add `global discount_rate` without discussing why it's problematic",
+      "Bonus: mentions that this is a compile-time decision, not a runtime decision"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is a **Python scoping** bug caused by how Python determines variable scope at **compile time**, not runtime.\n\n**What's happening:**\n\nPython's compiler scans the entire function body before execution. It sees `discount_rate = 0.20` inside the `if` block, and that assignment makes `discount_rate` a **local variable for the entire function** — including the line `price * (1 - discount_rate)` that runs even when `use_premium` is `False`.\n\nWhen `use_premium=False`, the `if` block doesn't execute, so `discount_rate` is never assigned — but Python already decided it's local. Accessing an unassigned local raises `UnboundLocalError`.\n\nThis is the **LEGB rule** (Local, Enclosing, Global, Built-in). Once Python sees a local assignment, it stops looking in the Global scope.\n\n**Fix — use a local variable, don't rely on the global:**\n\n```python\ndiscount_rate = 0.10\n\ndef apply_discount(price, use_premium=False):\n    rate = 0.20 if use_premium else discount_rate\n    final_price = price * (1 - rate)\n    return round(final_price, 2)\n```\n\nBy reading `discount_rate` without ever assigning to it in the function, Python correctly looks it up in the global scope. The local variable `rate` avoids the naming collision.\n\n**Why NOT to use `global`:** Adding `global discount_rate` would work, but it creates a hidden dependency and risks accidentally modifying the module-level value. Functions should prefer parameters and return values over global state."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "You need to declare the variable as global:\n\n```python\ndiscount_rate = 0.10\n\ndef apply_discount(price, use_premium=False):\n    global discount_rate\n    if use_premium:\n        discount_rate = 0.20\n    final_price = price * (1 - discount_rate)\n    return round(final_price, 2)\n```\n\nThe `global` keyword tells Python to use the module-level variable instead of creating a local one."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The error happens because `discount_rate` is used before it's assigned in the function. You need to move the assignment before the `if`:\n\n```python\ndef apply_discount(price, use_premium=False):\n    discount_rate = 0.10\n    if use_premium:\n        discount_rate = 0.20\n    final_price = price * (1 - discount_rate)\n    return round(final_price, 2)\n```\n\nNow the variable is always assigned before it's used, regardless of the `if` branch."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify Python's compile-time scope determination as the cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain the LEGB rule and why assignment makes the variable local everywhere?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the fix correct and does it avoid introducing new problems?", "scale": 5 },
+      { "name": "Best Practices", "description": "Does it advise against global state and suggest cleaner alternatives?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand Python scoping rules?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-6",
+    "type": "comparison",
+    "title": "The Report Generator — Generator Exhaustion",
+    "prompt": "A data pipeline generates a report from sensor readings. The code computes the average and then the maximum, but the maximum always comes back wrong. Identify the bug and provide a corrected version.\n\n```python\ndef get_readings():\n    \"\"\"Simulate sensor readings.\"\"\"\n    return (x * 1.5 for x in [10, 20, 30, 40, 50])\n\n\ndef generate_report():\n    readings = get_readings()\n\n    # Compute average\n    total = sum(readings)\n    count = 5\n    average = total / count\n    print(f\"Average: {average}\")\n\n    # Compute maximum\n    maximum = max(readings)\n    print(f\"Maximum: {maximum}\")\n\n\ngenerate_report()\n```\n\nActual output:\n```\nAverage: 45.0\nTraceback (most recent call last):\n  ...\nValueError: max() arg is an empty sequence\n```\n\nThe average computes correctly, but `max()` crashes saying the sequence is empty.",
+    "guidelines": [
+      "The response MUST identify generator exhaustion as the root cause — generators can only be iterated once",
+      "Should explain the difference between a generator expression and a list: generators produce values lazily and don't store them",
+      "The fix should either convert to a list, use itertools.tee, or restructure to compute both in a single pass",
+      "Penalize responses that just convert to a list without explaining WHY the generator was empty",
+      "Bonus: discusses when generators are preferable (memory efficiency with large datasets) and when lists are better"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is a **generator exhaustion** bug. The function `get_readings()` returns a **generator expression** (notice the parentheses `()` instead of brackets `[]`). Generators produce values **lazily and only once**.\n\nHere's what happens:\n1. `sum(readings)` iterates through the entire generator, consuming all values → generator is now **exhausted**\n2. `max(readings)` tries to iterate the same generator → it's empty → `ValueError`\n\n**Generators vs lists:**\n- `(x * 1.5 for x in data)` — generator: produces values on demand, no storage, single-use\n- `[x * 1.5 for x in data]` — list: stores all values in memory, reusable\n\n**Fix — materialize into a list when you need multiple passes:**\n\n```python\ndef generate_report():\n    readings = list(get_readings())  # Convert to list — now reusable\n\n    average = sum(readings) / len(readings)\n    print(f\"Average: {average}\")\n\n    maximum = max(readings)\n    print(f\"Maximum: {maximum}\")\n```\n\nUsing `list()` also lets you replace the hardcoded `count = 5` with `len(readings)`.\n\n**Alternative — single pass for memory efficiency:**\n\n```python\ndef generate_report():\n    total = 0\n    maximum = float('-inf')\n    count = 0\n    for value in get_readings():\n        total += value\n        maximum = max(maximum, value)\n        count += 1\n    print(f\"Average: {total / count}\")\n    print(f\"Maximum: {maximum}\")\n```\n\n**When to use generators:** When the dataset is too large to fit in memory and you only need one pass. When you need multiple passes, convert to a list."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The `max()` function is getting an empty sequence. You need to call `get_readings()` again:\n\n```python\ndef generate_report():\n    total = sum(get_readings())\n    count = 5\n    average = total / count\n    print(f\"Average: {average}\")\n\n    maximum = max(get_readings())\n    print(f\"Maximum: {maximum}\")\n```\n\nCalling the function twice gives you fresh data each time."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The problem is that `get_readings()` returns a generator, not a list. Generators can only be consumed once. After `sum()` iterates through it, the generator is empty.\n\nChange the generator expression to a list comprehension:\n\n```python\ndef get_readings():\n    return [x * 1.5 for x in [10, 20, 30, 40, 50]]\n```\n\nNow `get_readings()` returns a list that can be iterated multiple times."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify generator exhaustion as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain generator vs list behavior and single-use iteration?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the fix correct and appropriate for the use case?", "scale": 5 },
+      { "name": "Trade-off Awareness", "description": "Does it discuss when generators vs lists are appropriate?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand generators and their limitations?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-7",
+    "type": "comparison",
+    "title": "The API Client — Bare except Swallowing Errors",
+    "prompt": "An API client function retries failed requests, but during testing it hangs forever when given an invalid URL. Even pressing Ctrl+C doesn't stop it. Identify the bug and provide a corrected version.\n\n```python\nimport requests\nimport time\n\ndef fetch_data(url, max_retries=3):\n    \"\"\"\n    Fetch data from an API with retry logic.\n    \"\"\"\n    for attempt in range(max_retries):\n        try:\n            response = requests.get(url, timeout=5)\n            response.raise_for_status()\n            return response.json()\n        except:\n            print(f\"Attempt {attempt + 1} failed, retrying...\")\n            time.sleep(2)\n\n    print(\"All retries exhausted.\")\n    return None\n\n\n# Test with bad URL\nresult = fetch_data(\"https://nonexistent.example.com/api/data\")\nprint(\"Result:\", result)\n```\n\nActual behavior:\n```\nAttempt 1 failed, retrying...\nAttempt 2 failed, retrying...\nAttempt 3 failed, retrying...\nAll retries exhausted.\nResult: None\n```\n\nSeems to work — but when you press Ctrl+C during a retry wait, the function catches the KeyboardInterrupt and treats it as a failed request, continuing to retry instead of stopping.",
+    "guidelines": [
+      "The response MUST identify the bare `except:` clause as the root cause",
+      "Should explain that bare except catches ALL exceptions including KeyboardInterrupt, SystemExit, and GeneratorExit",
+      "The fix must use `except Exception` at minimum, or better yet, catch only the specific exceptions expected",
+      "Should discuss the exception hierarchy: BaseException > Exception > specific exceptions",
+      "Penalize responses that only mention 'catching too many exceptions' without explaining WHICH exceptions are problematic"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "The bug is the **bare `except:` clause**, which catches **every exception** — including ones that should never be caught:\n\n- `KeyboardInterrupt` (Ctrl+C) — user wants to stop the program\n- `SystemExit` (sys.exit()) — program wants to terminate\n- `GeneratorExit` — generator cleanup\n- `MemoryError` — system is out of memory\n\nPython's exception hierarchy:\n```\nBaseException\n├── SystemExit\n├── KeyboardInterrupt\n├── GeneratorExit\n└── Exception          ← this is what you almost always want\n    ├── ValueError\n    ├── TypeError\n    ├── requests.RequestException\n    └── ...\n```\n\nBare `except:` catches `BaseException`. You almost always want `except Exception:` at broadest, and ideally the specific exception type.\n\n**Fix — catch only the expected network errors:**\n\n```python\nimport requests\nimport time\n\ndef fetch_data(url, max_retries=3):\n    for attempt in range(max_retries):\n        try:\n            response = requests.get(url, timeout=5)\n            response.raise_for_status()\n            return response.json()\n        except requests.RequestException as e:\n            print(f\"Attempt {attempt + 1} failed ({e}), retrying...\")\n            time.sleep(2)\n\n    print(\"All retries exhausted.\")\n    return None\n```\n\n`requests.RequestException` is the base class for all `requests` library errors (connection errors, timeouts, HTTP errors). This lets `KeyboardInterrupt` and other system exceptions propagate normally.\n\n**Rule:** Never use bare `except:`. Catch the most specific exception type you can handle."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The `except` is too broad. Change it to catch `Exception`:\n\n```python\n        except Exception as e:\n            print(f\"Attempt {attempt + 1} failed: {e}, retrying...\")\n            time.sleep(2)\n```\n\n`except Exception` won't catch `KeyboardInterrupt`, so Ctrl+C will work. This is a common Python best practice."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The problem is the bare `except` catching keyboard interrupts. You should add a specific handler for `KeyboardInterrupt`:\n\n```python\n        except KeyboardInterrupt:\n            print(\"\\nInterrupted by user.\")\n            raise\n        except:\n            print(f\"Attempt {attempt + 1} failed, retrying...\")\n            time.sleep(2)\n```\n\nThis re-raises `KeyboardInterrupt` while still catching everything else."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify the bare except as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain the exception hierarchy (BaseException vs Exception)?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the fix correct and does it catch only appropriate exceptions?", "scale": 5 },
+      { "name": "Specificity", "description": "Does it recommend catching specific exception types over broad ones?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer write proper exception handling?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-8",
+    "type": "comparison",
+    "title": "The Config Cloner — Shallow Copy Trap",
+    "prompt": "A configuration manager creates per-user configs by cloning a default template. Changes to one user's nested settings are unexpectedly affecting other users. Identify the bug and provide a corrected version.\n\n```python\ndef create_user_config(username, defaults):\n    \"\"\"\n    Create a user-specific config by cloning defaults and adding the username.\n    \"\"\"\n    config = defaults.copy()\n    config[\"username\"] = username\n    return config\n\n\n# Default configuration template\ndefault_config = {\n    \"username\": None,\n    \"theme\": \"light\",\n    \"notifications\": {\n        \"email\": True,\n        \"sms\": False,\n        \"push\": True\n    },\n    \"permissions\": [\"read\"]\n}\n\nalice = create_user_config(\"alice\", default_config)\nbob = create_user_config(\"bob\", default_config)\n\n# Alice enables SMS notifications\nalice[\"notifications\"][\"sms\"] = True\n# Alice gets write permission\nalice[\"permissions\"].append(\"write\")\n\nprint(\"Alice notifications:\", alice[\"notifications\"])\nprint(\"Bob notifications:\", bob[\"notifications\"])\nprint(\"Alice permissions:\", alice[\"permissions\"])\nprint(\"Bob permissions:\", bob[\"permissions\"])\n```\n\nActual output:\n```\nAlice notifications: {'email': True, 'sms': True, 'push': True}\nBob notifications: {'email': True, 'sms': True, 'push': True}\nAlice permissions: ['read', 'write']\nBob permissions: ['read', 'write']\n```\n\nBob's notifications and permissions changed when only Alice's were modified.",
+    "guidelines": [
+      "The response MUST identify shallow copy vs deep copy as the root cause",
+      "Should explain that dict.copy() only copies the top-level keys — nested dicts and lists are still shared references",
+      "The fix must use copy.deepcopy() or manually reconstruct the nested structures",
+      "Should demonstrate the difference between shallow and deep copy with a clear mental model",
+      "Penalize responses that just say 'use deepcopy' without explaining what shallow copy actually copies"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the **shallow copy trap**. `defaults.copy()` (or `dict.copy()`) creates a new dictionary, but it only copies the **top-level** key-value pairs. Nested objects like the `notifications` dict and `permissions` list are **not cloned** — the new dictionary contains references to the **same nested objects**.\n\nVisually:\n```\ndefaults  ──→ {\"notifications\": ──→ {\"email\": True, \"sms\": False, ...}  ← SHARED\nalice     ──→ {\"notifications\": ──↗\nbob       ──→ {\"notifications\": ──↗\n```\n\nAll three dicts point to the **same inner dict**. Modifying it through `alice` affects `bob` and `defaults` too. Same for the `permissions` list.\n\n**Fix — use `copy.deepcopy()`:**\n\n```python\nimport copy\n\ndef create_user_config(username, defaults):\n    config = copy.deepcopy(defaults)\n    config[\"username\"] = username\n    return config\n```\n\n`deepcopy` recursively clones every nested object, so each user gets completely independent copies of `notifications` and `permissions`.\n\n**When to use each:**\n- `dict.copy()` / `list.copy()` — safe when the structure is flat (no nested mutables)\n- `copy.deepcopy()` — necessary when nested dicts, lists, or other mutable objects exist\n- Manual reconstruction — when you need fine control or `deepcopy` is too slow for large structures"
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The `.copy()` method only does a shallow copy. Use `deepcopy`:\n\n```python\nimport copy\n\ndef create_user_config(username, defaults):\n    config = copy.deepcopy(defaults)\n    config[\"username\"] = username\n    return config\n```\n\nThis copies everything recursively so changes to one config don't affect others."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The issue is that `alice` and `bob` share the same nested dictionaries. You can fix this by converting to JSON and back:\n\n```python\nimport json\n\ndef create_user_config(username, defaults):\n    config = json.loads(json.dumps(defaults))\n    config[\"username\"] = username\n    return config\n```\n\nJSON serialization creates a completely new data structure. This is a common trick for deep cloning in Python and JavaScript."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify shallow copy as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain what shallow copy actually copies vs what it shares?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the fix correct, robust, and appropriate?", "scale": 5 },
+      { "name": "Trade-off Awareness", "description": "Does it discuss when shallow vs deep copy is appropriate?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand Python's copy semantics?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-9",
+    "type": "comparison",
+    "title": "The Log Builder — String Concatenation Performance",
+    "prompt": "A log aggregation function collects thousands of log lines into a single string. It works correctly but runs extremely slowly on large inputs. With 50,000 log lines, it takes over 10 seconds. Identify the performance bug and provide a corrected version.\n\n```python\nimport time\n\ndef build_log_report(log_entries):\n    \"\"\"\n    Combine all log entries into a single formatted report string.\n    \"\"\"\n    report = \"\"\n    for i, entry in enumerate(log_entries):\n        report = report + f\"[{i+1:05d}] {entry}\\n\"\n    return report\n\n\n# Generate test data\nentries = [f\"Event occurred at timestamp {t}\" for t in range(50000)]\n\nstart = time.time()\nresult = build_log_report(entries)\nelapsed = time.time() - start\n\nprint(f\"Lines: {result.count(chr(10))}\")\nprint(f\"Time: {elapsed:.2f}s\")\n```\n\nActual output:\n```\nLines: 50000\nTime: 12.47s\n```\n\nThe function produces correct output, but 12 seconds for 50,000 entries is unacceptable. A similar Java or C# operation would take milliseconds.",
+    "guidelines": [
+      "The response MUST identify string concatenation in a loop as an O(n^2) operation because Python strings are immutable",
+      "Should explain that each concatenation creates a new string object and copies all previous characters",
+      "The fix should use str.join() with a list, which is O(n)",
+      "Penalize responses that suggest StringIO without explaining WHY concatenation is slow",
+      "Bonus: mentions that CPython has an optimization for s = s + x in some cases, but it's an implementation detail and not guaranteed"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the classic **string concatenation in a loop** anti-pattern. It's an **O(n²)** problem.\n\n**Why it's slow:** Python strings are **immutable**. Every time you do `report = report + new_text`, Python:\n1. Allocates a **new string** large enough for `report + new_text`\n2. **Copies** the entire existing `report` into the new string\n3. Appends the new text\n4. Discards the old string\n\nWith 50,000 iterations, the total characters copied grows like: 1 + 2 + 3 + ... + 50000 = ~1.25 billion character copies. That's O(n²).\n\n**Fix — collect strings in a list, join once at the end:**\n\n```python\ndef build_log_report(log_entries):\n    lines = []\n    for i, entry in enumerate(log_entries):\n        lines.append(f\"[{i+1:05d}] {entry}\")\n    return \"\\n\".join(lines) + \"\\n\"\n```\n\nOr more concisely with a generator expression:\n\n```python\ndef build_log_report(log_entries):\n    return \"\\n\".join(\n        f\"[{i+1:05d}] {entry}\"\n        for i, entry in enumerate(log_entries)\n    ) + \"\\n\"\n```\n\n`str.join()` calculates the total length first, allocates once, and copies each piece exactly once — **O(n)**.\n\n**Performance difference:** For 50,000 entries, concatenation takes ~12s; join takes ~0.02s — roughly **600x faster**.\n\n**Note:** CPython (the standard interpreter) has an optimization that sometimes makes `s = s + t` and `s += t` run in O(1) amortized by resizing in place when the reference count is 1. But this is an implementation detail, not a language guarantee. PyPy, Jython, and other implementations may not have it. Always use `join()` for building strings from many pieces."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "String concatenation in a loop is slow. Use `io.StringIO` instead:\n\n```python\nfrom io import StringIO\n\ndef build_log_report(log_entries):\n    buffer = StringIO()\n    for i, entry in enumerate(log_entries):\n        buffer.write(f\"[{i+1:05d}] {entry}\\n\")\n    return buffer.getvalue()\n```\n\n`StringIO` acts like a file buffer and avoids creating new string objects on each write."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The function is slow because it processes entries one at a time. You should use `str.join()` which is faster:\n\n```python\ndef build_log_report(log_entries):\n    return \"\\n\".join(\n        f\"[{i+1:05d}] {entry}\" for i, entry in enumerate(log_entries)\n    ) + \"\\n\"\n```\n\n`join()` is implemented in C and is optimized for combining many strings."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify O(n²) string copying as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain string immutability and why each concatenation copies everything?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the fix correct and does it achieve O(n) performance?", "scale": 5 },
+      { "name": "Complexity Analysis", "description": "Does it clearly contrast O(n²) vs O(n) with concrete reasoning?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer recognize and avoid string concatenation anti-patterns?", "scale": 5 }
+    ]
+  }
+]

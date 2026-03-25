@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.config import get_settings  # noqa: E402
 from app.db import Base  # noqa: E402
-from app.models import Annotator, WorkSession  # noqa: F401, E402
+from app.models import Annotator, TaskPack, WorkSession  # noqa: F401, E402
 
 config = context.config
 if config.config_file_name is not None:
