@@ -46,8 +46,20 @@
   }
   .topbar-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--primary); cursor: pointer; }
   .topbar-brand svg { width: 28px; height: 28px; }
-  .topbar-meta { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--gray-500); }
+  .topbar-meta { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--gray-500); }
   .topbar-meta .badge { background: var(--primary-light); color: var(--primary); padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 12px; }
+  .sync-pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--gray-200); border-radius: 999px; padding: 4px 10px; background: #fff; }
+  .sync-state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--gray-600); }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gray-400); }
+  .sync-state.idle .sync-dot { background: var(--gray-400); }
+  .sync-state.syncing .sync-dot { background: var(--primary); animation: syncPulse 1.2s infinite ease-in-out; }
+  .sync-state.synced .sync-dot { background: var(--success); }
+  .sync-state.error .sync-dot { background: var(--danger); }
+  .sync-state.offline .sync-dot { background: var(--warning); }
+  .sync-last { font-size: 11px; color: var(--gray-400); white-space: nowrap; }
+  .sync-relogin { font-size: 11px; color: var(--primary); border: none; background: none; cursor: pointer; padding: 0; text-decoration: underline; }
+  .sync-relogin:hover { color: var(--primary-hover); }
+  @keyframes syncPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
   .user-pill { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 20px; background: var(--gray-100); }
   .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
   .user-pill .uname { font-size: 13px; font-weight: 600; color: var(--gray-700); }
@@ -193,7 +205,8 @@
 
   /* ── Prompt box ── */
   .prompt-box { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
-  .prompt-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-400); font-weight: 600; margin-bottom: 8px; }
+  .prompt-box-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .prompt-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-400); font-weight: 600; margin-bottom: 0; flex-shrink: 0; }
   .prompt-box .prompt-text { font-size: 15px; color: var(--gray-800); white-space: pre-wrap; }
 
   /* ── Response cards ── */
@@ -287,8 +300,9 @@
   .prompt-input-body textarea { width: 100%; min-height: 100px; border: 1px solid var(--gray-300); border-radius: var(--radius); padding: 14px; font-family: inherit; font-size: 15px; line-height: 1.6; resize: vertical; transition: border-color .15s; color: var(--gray-800); }
   .prompt-input-body textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
   .prompt-input-body textarea[readonly] { background: var(--gray-50); cursor: default; }
-  .prompt-input-footer { padding: 12px 24px 20px; display: flex; justify-content: space-between; align-items: center; }
-  .prompt-input-footer .hint { font-size: 12px; color: var(--gray-400); }
+  .prompt-input-footer { padding: 12px 24px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .prompt-input-footer .hint { font-size: 12px; color: var(--gray-400); flex: 1; min-width: 140px; }
+  .prompt-input-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .send-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; border-radius: 24px; border: none; background: var(--primary); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; box-shadow: var(--shadow); }
   .send-btn:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
   .send-btn svg { width: 16px; height: 16px; }
@@ -316,7 +330,9 @@
   .stream-meta .token-count { font-size: 12px; color: var(--gray-400); font-variant-numeric: tabular-nums; }
   .stream-prompt-echo { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; font-size: 14px; color: var(--gray-600); display: flex; align-items: flex-start; gap: 10px; }
   .stream-prompt-echo .user-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
-  .stream-prompt-echo .prompt-content { white-space: pre-wrap; padding-top: 3px; }
+  .stream-prompt-echo .stream-prompt-body { flex: 1; min-width: 0; }
+  .stream-prompt-echo .stream-prompt-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .stream-prompt-echo .prompt-content { white-space: pre-wrap; padding-top: 3px; flex: 1; min-width: 0; }
   .speed-control { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 16px; }
   .speed-control label { font-size: 12px; color: var(--gray-500); font-weight: 500; }
   .speed-slider { width: 120px; accent-color: var(--primary); }
@@ -497,6 +513,23 @@ const API_BASE = resolveApiBase();
 let serverSessionId = null;
 let apiSyncTimer = null;
 let authToken = null;
+const SYNC_STATES = {
+  IDLE: 'idle',
+  SYNCING: 'syncing',
+  SYNCED: 'synced',
+  ERROR: 'error',
+  OFFLINE: 'offline'
+};
+let syncState = SYNC_STATES.IDLE;
+let syncStateMessage = '';
+let syncQueue = [];
+let syncRetryTimer = null;
+let syncIdleTimer = null;
+let syncInFlight = false;
+let syncAuthBlocked = false;
+let syncAuthToastShown = false;
+let lastSyncSuccessAt = null;
+let draftPersistTimer = null;
 
 function persistStateLocalOnly() {
   if (!user) return;
@@ -510,23 +543,147 @@ function persistStateLocalOnly() {
 function scheduleSyncToServer() {
   if (!API_BASE || !serverSessionId || !user) return;
   clearTimeout(apiSyncTimer);
-  apiSyncTimer = setTimeout(syncWorkspaceToServer, 800);
+  apiSyncTimer = setTimeout(() => queueWorkspaceSync('local-change'), 800);
 }
 
-function syncWorkspaceToServer() {
-  if (!API_BASE || !serverSessionId) return;
+function workspaceSnapshot() {
+  return {
+    tasks,
+    annotations,
+    task_times: taskTimes,
+    active_pack_file: activePackFile
+  };
+}
+
+function formatSyncTime(isoTs) {
+  if (!isoTs) return 'No successful sync yet';
+  const dt = new Date(isoTs);
+  if (Number.isNaN(dt.getTime())) return 'No successful sync yet';
+  return 'Last sync ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function syncStateLabel(state) {
+  if (state === SYNC_STATES.SYNCING) return 'Syncing';
+  if (state === SYNC_STATES.SYNCED) return 'Synced';
+  if (state === SYNC_STATES.ERROR) return 'Sync error';
+  if (state === SYNC_STATES.OFFLINE) return 'Offline';
+  return 'Idle';
+}
+
+function refreshSyncIndicator() {
+  const stateEl = document.getElementById('sync-status') || document.getElementById('syncState');
+  const labelEl = document.getElementById('syncLabel');
+  const timeEl = document.getElementById('syncTime');
+  if (stateEl) {
+    stateEl.className = 'sync-state ' + syncState;
+    stateEl.setAttribute('data-sync-state', syncState);
+  }
+  if (labelEl) labelEl.textContent = syncStateMessage || syncStateLabel(syncState);
+  if (timeEl) timeEl.textContent = formatSyncTime(lastSyncSuccessAt);
+}
+
+function setSyncState(nextState, message) {
+  syncState = nextState;
+  syncStateMessage = message || '';
+  refreshSyncIndicator();
+}
+
+function queueWorkspaceSync(reason) {
+  if (!API_BASE || !serverSessionId || !user || syncAuthBlocked) return;
+  syncQueue.push({ payload: workspaceSnapshot(), attempt: 0, reason: reason || 'unspecified' });
+  if (syncQueue.length > 25) {
+    syncQueue = [syncQueue[syncQueue.length - 1]];
+  }
+  flushSyncQueue(0);
+}
+
+function scheduleSyncRetry(delayMs) {
+  clearTimeout(syncRetryTimer);
+  syncRetryTimer = setTimeout(() => {
+    syncRetryTimer = null;
+    flushSyncQueue(0);
+  }, delayMs);
+}
+
+function handleSyncAuthFailure() {
+  syncAuthBlocked = true;
+  syncInFlight = false;
+  clearTimeout(syncIdleTimer);
+  syncIdleTimer = null;
+  clearTimeout(syncRetryTimer);
+  syncRetryTimer = null;
+  setSyncState(SYNC_STATES.ERROR, 'Session expired');
+  if (!syncAuthToastShown) {
+    syncAuthToastShown = true;
+    toast('Cloud sync session expired. Re-login to resume server sync. Local changes are safe.');
+  }
+  renderTopbar();
+}
+
+function computeBackoffMs(attempt) {
+  const base = Math.min(30000, 1000 * Math.pow(2, Math.max(0, attempt - 1)));
+  return base + Math.floor(Math.random() * 350);
+}
+
+function flushSyncQueue(delayMs) {
+  if (!API_BASE || !serverSessionId || !user || syncAuthBlocked) return;
+  if (!syncQueue.length) {
+    if (syncState !== SYNC_STATES.SYNCED) setSyncState(SYNC_STATES.IDLE);
+    return;
+  }
+  if (syncInFlight || syncRetryTimer) return;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    setSyncState(SYNC_STATES.OFFLINE, 'Offline - local save only');
+    return;
+  }
+  if (delayMs > 0) {
+    scheduleSyncRetry(delayMs);
+    return;
+  }
+
+  const job = syncQueue[0];
+  syncInFlight = true;
+  setSyncState(SYNC_STATES.SYNCING);
   const syncHeaders = { 'Content-Type': 'application/json' };
   if (authToken) syncHeaders['Authorization'] = 'Bearer ' + authToken;
   fetch(API_BASE + '/api/v1/sessions/' + serverSessionId + '/workspace', {
     method: 'PUT',
     headers: syncHeaders,
-    body: JSON.stringify({
-      tasks,
-      annotations,
-      task_times: taskTimes,
-      active_pack_file: activePackFile
+    body: JSON.stringify(job.payload)
+  })
+    .then(r => {
+      if (r.status === 401 || r.status === 403) {
+        handleSyncAuthFailure();
+        throw new Error('auth');
+      }
+      if (!r.ok) throw new Error('http-' + r.status);
+      syncQueue.shift();
+      syncInFlight = false;
+      lastSyncSuccessAt = new Date().toISOString();
+      LS.set('lastSyncSuccessAt', lastSyncSuccessAt);
+      setSyncState(SYNC_STATES.SYNCED);
+      if (syncQueue.length) flushSyncQueue(150);
+      else {
+        clearTimeout(syncIdleTimer);
+        syncIdleTimer = setTimeout(() => {
+          if (!syncQueue.length && !syncInFlight && syncState === SYNC_STATES.SYNCED) {
+            setSyncState(SYNC_STATES.IDLE);
+          }
+        }, 2000);
+      }
     })
-  }).catch(() => {});
+    .catch(err => {
+      if (err && err.message === 'auth') return;
+      syncInFlight = false;
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setSyncState(SYNC_STATES.OFFLINE, 'Offline - local save only');
+        return;
+      }
+      job.attempt += 1;
+      const retryDelay = computeBackoffMs(job.attempt);
+      setSyncState(SYNC_STATES.ERROR, 'Retrying in ' + Math.round(retryDelay / 1000) + 's');
+      scheduleSyncRetry(retryDelay);
+    });
 }
 
 function pullWorkspaceFromServer() {
@@ -534,7 +691,13 @@ function pullWorkspaceFromServer() {
   const pullHeaders = {};
   if (authToken) pullHeaders['Authorization'] = 'Bearer ' + authToken;
   fetch(API_BASE + '/api/v1/sessions/' + serverSessionId + '/workspace', { headers: pullHeaders })
-    .then(r => (r.ok ? r.json() : Promise.reject(new Error('pull failed'))))
+    .then(r => {
+      if (r.status === 401 || r.status === 403) {
+        handleSyncAuthFailure();
+        return Promise.reject(new Error('auth'));
+      }
+      return r.ok ? r.json() : Promise.reject(new Error('pull failed'));
+    })
     .then(ws => {
       if (ws.tasks && ws.tasks.length) {
         tasks = ws.tasks;
@@ -671,6 +834,10 @@ function registerUser() {
           saveRegistry(registry);
         }
         showScreen('dashboard');
+        syncAuthBlocked = false;
+        syncAuthToastShown = false;
+        setSyncState(SYNC_STATES.IDLE);
+        queueWorkspaceSync('register');
         checkInferenceStatus();
         toast('Account created — welcome, ' + name.split(' ')[0] + '!');
       })
@@ -723,6 +890,10 @@ function loginUser() {
         }
         loadUserData(user.email);
         showScreen('dashboard');
+        syncAuthBlocked = false;
+        syncAuthToastShown = false;
+        setSyncState(SYNC_STATES.IDLE);
+        queueWorkspaceSync('login');
         checkInferenceStatus();
         toast('Welcome back, ' + user.name.split(' ')[0] + '!');
       })
@@ -751,7 +922,29 @@ function logout() {
   LS.remove('serverSessionId');
   authToken = null;
   LS.remove('authToken');
+  clearTimeout(apiSyncTimer);
+  clearTimeout(syncRetryTimer);
+  clearTimeout(draftPersistTimer);
+  clearTimeout(syncIdleTimer);
+  apiSyncTimer = null;
+  syncRetryTimer = null;
+  draftPersistTimer = null;
+  syncIdleTimer = null;
+  syncQueue = [];
+  syncInFlight = false;
+  syncAuthBlocked = false;
+  syncAuthToastShown = false;
+  setSyncState(SYNC_STATES.IDLE);
   showScreen('auth');
+}
+
+function reLoginForSync() {
+  const loginEmail = user?.email || '';
+  logout();
+  switchAuthTab('login');
+  const loginEmailEl = document.getElementById('loginEmail');
+  if (loginEmailEl && loginEmail) loginEmailEl.value = loginEmail;
+  showAuthError('Session expired. Please sign in again to resume cloud sync. Local annotations are saved on this device.');
 }
 
 /* ══════════════════════════════════════════════════
@@ -774,6 +967,11 @@ function renderTopbar() {
   m.innerHTML = `
     <span class="timer" id="timer">00:00</span>
     <span class="badge" id="progressBadge">${done} / ${tasks.length}</span>
+    ${API_BASE ? `<span class="sync-pill">
+      <span class="sync-state ${syncState}" id="sync-status" data-sync-state="${syncState}"><span class="sync-dot"></span><span id="syncLabel">${escHtml(syncStateMessage || syncStateLabel(syncState))}</span></span>
+      <span class="sync-last" id="syncTime">${escHtml(formatSyncTime(lastSyncSuccessAt))}</span>
+      ${syncAuthBlocked ? '<button class="sync-relogin" onclick="reLoginForSync()">Re-login</button>' : ''}
+    </span>` : ''}
     <button class="btn btn-sm btn-outline" onclick="showExportModal()">Export</button>
     ${currentScreen === 'task' ? '<button class="btn btn-sm btn-outline" onclick="goToDashboard()">Dashboard</button>' : ''}
     <div class="user-pill">
@@ -784,11 +982,13 @@ function renderTopbar() {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     </button>
   `;
+  refreshSyncIndicator();
 }
 
 function goToDashboard() {
   if (!user) return;
   stopAllStreams();
+  captureCurrentTaskDraft();
   saveCurrentTaskTime();
   persistState();
   currentIdx = -1;
@@ -932,8 +1132,16 @@ function handleFileUpload(e) {
    PERSISTENCE
    ══════════════════════════════════════════════════ */
 function persistState() {
+  captureCurrentTaskDraft();
   persistStateLocalOnly();
   scheduleSyncToServer();
+}
+
+function captureCurrentTaskDraft() {
+  if (currentScreen !== 'task' || currentIdx < 0 || !tasks[currentIdx]) return;
+  const just = document.getElementById('justification');
+  if (!just) return;
+  annotations[tasks[currentIdx].id].justification = just.value;
 }
 
 function updateProgressBar() {
@@ -949,7 +1157,9 @@ function updateProgressBar() {
 function navigateTo(idx) {
   if (idx < 0 || idx >= tasks.length) return;
   stopAllStreams();
+  captureCurrentTaskDraft();
   saveCurrentTaskTime();
+  persistState();
   currentIdx = idx;
   taskStartTime = Date.now();
   const ann = annotations[tasks[idx].id];
@@ -1016,7 +1226,7 @@ function renderPhasePrompt() {
     ${renderStepper(1)}
   `;
   if (task.guidelines?.length) html += `<div class="guidelines-toggle"><button class="btn btn-sm btn-outline" onclick="toggleGuidelines()">Toggle Guidelines</button></div><div class="guidelines-panel" id="guidelinesPanel"><h4>Annotation Guidelines</h4><ul>${task.guidelines.map(g=>'<li>'+escHtml(g)+'</li>').join('')}</ul></div>`;
-  html += `<div class="prompt-input-area"><div class="prompt-input-card"><div class="prompt-input-header"><div class="dot-row"><span></span><span></span><span></span></div><span>Chat Interface</span></div><div class="prompt-input-body"><textarea id="promptDisplay" readonly>${escHtml(task.prompt)}</textarea></div><div class="prompt-input-footer"><span class="hint">Read the prompt carefully, then send it to see AI responses</span><button class="send-btn" onclick="goToStreaming()">Send <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div></div>`;
+  html += `<div class="prompt-input-area"><div class="prompt-input-card"><div class="prompt-input-header"><div class="dot-row"><span></span><span></span><span></span></div><span>Chat Interface</span></div><div class="prompt-input-body"><textarea id="promptDisplay" readonly>${escHtml(task.prompt)}</textarea></div><div class="prompt-input-footer"><span class="hint">Read the prompt carefully, then send it to see AI responses</span><div class="prompt-input-actions"><button type="button" class="copy-btn" onclick="copyPrompt(this)" title="Copy prompt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button><button class="send-btn" onclick="goToStreaming()">Send <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div></div></div>`;
   html += `<div class="action-bar"><div class="left"><button class="btn btn-outline" onclick="skipTask()">Skip</button><button class="btn btn-outline" ${currentIdx===0?'disabled':''} onclick="navigateTo(${currentIdx-1})">Previous</button></div><div class="right"></div></div>`;
   area.innerHTML = html;
 }
@@ -1060,7 +1270,7 @@ function startStreamingPhase() {
 
   let html = `<div class="task-header"><h2>${task.title||'Task '+(currentIdx+1)}</h2><div style="display:flex;align-items:center;gap:12px">${badge}<span class="task-type-badge ${task.type}">${task.type}</span><span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span></div></div>${renderStepper(2)}
     <div class="streaming-area">
-      <div class="stream-prompt-echo"><div class="user-icon">${initials}</div><div class="prompt-content">${escHtml(task.prompt)}</div></div>
+      <div class="stream-prompt-echo"><div class="user-icon">${initials}</div><div class="stream-prompt-body"><div class="stream-prompt-row"><div class="prompt-content">${escHtml(task.prompt)}</div><button type="button" class="copy-btn" onclick="copyPrompt(this)" title="Copy prompt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div></div></div>
       ${useLive ? buildModelSelector() : `<div class="speed-control"><label>Stream speed:</label><input type="range" class="speed-slider" min="1" max="50" value="${51-streamSpeed}" oninput="updateSpeed(this.value)"><span class="speed-val" id="speedLabel">${getSpeedLabel(streamSpeed)}</span></div>`}
       <div class="streaming-grid ${gc}">${cards}</div>
       <div class="stream-meta"><span class="token-count" id="tokenCount">0 tokens</span></div>
@@ -1208,12 +1418,12 @@ function renderTask() {
   const task=tasks[currentIdx], ann=annotations[task.id], area=document.getElementById('taskArea');
   let html = `<div class="task-header"><h2>${task.title||'Task '+(currentIdx+1)}</h2><div style="display:flex;align-items:center;gap:12px"><span class="task-type-badge ${task.type}">${task.type}</span><span style="font-size:13px;color:var(--gray-400)">${currentIdx+1} of ${tasks.length}</span></div></div>${renderStepper(3)}`;
   if(task.guidelines?.length) html+=`<div class="guidelines-toggle"><button class="btn btn-sm btn-outline" onclick="toggleGuidelines()">Toggle Guidelines</button></div><div class="guidelines-panel" id="guidelinesPanel"><h4>Annotation Guidelines</h4><ul>${task.guidelines.map(g=>'<li>'+escHtml(g)+'</li>').join('')}</ul></div>`;
-  html+=`<div class="prompt-box"><div class="label">User Prompt</div><div class="prompt-text">${escHtml(task.prompt)}</div></div>`;
+  html+=`<div class="prompt-box"><div class="prompt-box-header"><div class="label">User Prompt</div><button type="button" class="copy-btn" onclick="copyPrompt(this)" title="Copy prompt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">${escHtml(task.prompt)}</div></div>`;
   if(task.type==='comparison') html+=renderComparison(task,ann);
   else if(task.type==='rating') html+=renderRating(task,ann);
   else if(task.type==='ranking') html+=renderRanking(task,ann);
   if(task.dimensions?.length) html+=renderDimensions(task,ann);
-  html+=`<div class="justification-section"><h3>Justification</h3><textarea id="justification" placeholder="Explain your reasoning for this annotation...">${ann.justification||''}</textarea><div class="hint">Provide a clear explanation to support your ratings. Good justifications reference specific parts of the response.</div></div>`;
+  html+=`<div class="justification-section"><h3>Justification</h3><textarea id="justification" oninput="updateJustificationDraft(this.value)" placeholder="Explain your reasoning for this annotation...">${ann.justification||''}</textarea><div class="hint">Provide a clear explanation to support your ratings. Good justifications reference specific parts of the response.</div></div>`;
   html+=`<div class="action-bar"><div class="left"><button class="btn btn-outline" onclick="skipTask()">Skip</button><button class="btn btn-outline" ${currentIdx===0?'disabled':''} onclick="navigateTo(${currentIdx-1})">Previous</button></div><div class="right"><button class="btn btn-success btn-lg" onclick="submitTask()">Submit &amp; Next</button></div></div>`;
   area.innerHTML=html;
 }
@@ -1243,11 +1453,18 @@ function renderDimensions(task,ann){
 
 /* ── Interaction handlers ── */
 function copyResponse(btn,idx){const task=tasks[currentIdx];if(!task?.responses[idx])return;navigator.clipboard.writeText(task.responses[idx].text).then(()=>{btn.classList.add('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied';setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';},2000);});}
-function selectPreference(idx){annotations[tasks[currentIdx].id].preference=idx;renderTask();}
-function rateDimension(name,val){const ann=annotations[tasks[currentIdx].id];if(!ann.dimensions)ann.dimensions={};ann.dimensions[name]=val;renderTask();}
-function moveRank(pos,dir){const ann=annotations[tasks[currentIdx].id],task=tasks[currentIdx];if(!ann.ranking)ann.ranking=task.responses.map((_,i)=>i);const np=pos+dir;if(np<0||np>=ann.ranking.length)return;[ann.ranking[pos],ann.ranking[np]]=[ann.ranking[np],ann.ranking[pos]];renderTask();}
+function copyPrompt(btn){const task=tasks[currentIdx];if(!task)return;const text=task.prompt!=null?String(task.prompt):'';navigator.clipboard.writeText(text).then(()=>{btn.classList.add('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied';setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';},2000);}).catch(()=>toast('Could not copy'));}
+function selectPreference(idx){annotations[tasks[currentIdx].id].preference=idx;persistState();renderTask();}
+function rateDimension(name,val){const ann=annotations[tasks[currentIdx].id];if(!ann.dimensions)ann.dimensions={};ann.dimensions[name]=val;persistState();renderTask();}
+function moveRank(pos,dir){const ann=annotations[tasks[currentIdx].id],task=tasks[currentIdx];if(!ann.ranking)ann.ranking=task.responses.map((_,i)=>i);const np=pos+dir;if(np<0||np>=ann.ranking.length)return;[ann.ranking[pos],ann.ranking[np]]=[ann.ranking[np],ann.ranking[pos]];persistState();renderTask();}
 function toggleGuidelines(){document.getElementById('guidelinesPanel').classList.toggle('open');}
 function saveCurrentTaskTime(){if(currentIdx>=0&&taskStartTime){const tid=tasks[currentIdx].id;const e=Math.round((Date.now()-taskStartTime)/1000);taskTimes[tid]=(taskTimes[tid]||0)+e;}}
+function updateJustificationDraft(value){
+  if(currentIdx<0||!tasks[currentIdx]) return;
+  annotations[tasks[currentIdx].id].justification=value;
+  if(draftPersistTimer) clearTimeout(draftPersistTimer);
+  draftPersistTimer=setTimeout(()=>persistState(),350);
+}
 
 function submitTask(){
   const task=tasks[currentIdx],ann=annotations[task.id];
@@ -1381,11 +1598,28 @@ document.addEventListener('keydown',e=>{
 
   serverSessionId = LS.get('serverSessionId');
   authToken = LS.get('authToken');
+  lastSyncSuccessAt = LS.get('lastSyncSuccessAt');
+  if (API_BASE && typeof window !== 'undefined') {
+    window.addEventListener('offline', () => {
+      if (!user) return;
+      setSyncState(SYNC_STATES.OFFLINE, 'Offline - local save only');
+    });
+    window.addEventListener('online', () => {
+      if (!user || syncAuthBlocked) return;
+      setSyncState(SYNC_STATES.IDLE);
+      flushSyncQueue(200);
+    });
+  }
   if(saved){
     user = saved;
     loadUserData(user.email);
     const hadLocalTasks = tasks.length > 0;
     showScreen('dashboard');
+    if (API_BASE && !syncAuthBlocked) {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) setSyncState(SYNC_STATES.OFFLINE, 'Offline - local save only');
+      else setSyncState(SYNC_STATES.IDLE);
+      queueWorkspaceSync('boot');
+    }
     checkInferenceStatus();
     if (API_BASE && serverSessionId && !hadLocalTasks) pullWorkspaceFromServer();
   } else {

@@ -19,6 +19,34 @@ A lightweight, Markdown-based annotation kit for practicing Reinforcement Learni
 
 ---
 
+## Operating Modes
+
+Choose the mode that matches your class/lab setup:
+
+### 1) Local offline (no API)
+- Open `annotation-tool.html` directly (`file://`) for demo tasks and manual JSON uploads.
+- All data stays in browser localStorage (`rlhf_*` keys).
+- No backend, no auth, no network sync required.
+- Best for quick practice and fully offline environments.
+
+### 2) Local + API (development/full-stack)
+- Run FastAPI from `backend/` and serve the repo over HTTP.
+- Open the tool with `?api=http://127.0.0.1:8000` (or set `<meta name="rlhf-api-base" ...>`).
+- Uses `/api/v1/auth/register` or `/api/v1/auth/login` to get JWT + `session_id`.
+- Workspace autosaves to Neon through `/api/v1/sessions/{session_id}/workspace`.
+
+See `backend/README.md` for setup and env vars.
+
+### 3) Vercel + Fly production
+- Deploy static UI to Vercel (`out/`), API to Fly (`backend/fly.toml`).
+- Keep browser calls on same origin (`/api/*`) and rewrite to Fly.
+- Configure backend env (`DATABASE_URL`, `CORS_ORIGINS`, `JWT_SECRET`, optional HF settings).
+- Enable `INFERENCE_REQUIRE_AUTH=true` when the API is public.
+
+See `deploy/DEPLOY-VERCEL-FLY.md` for the exact CLI workflow.
+
+---
+
 ## What's Included
 
 ```
@@ -106,7 +134,46 @@ Minimal example:
 - **Keyboard shortcuts**: arrow keys to navigate, number keys for quick preference selection
 - **Export to Markdown** — copy to clipboard or download as `.md` file
 - **Validation** — prevents submission without complete ratings and justification
-- **100% client-side** — no data leaves your browser
+- **Offline-first local persistence** — works fully client-side without any backend
+- **Optional API sync** — persist workspace snapshots to backend/Neon when `API_BASE` is set
+- **Optional authenticated inference** — Hugging Face-backed live generation via FastAPI endpoints
+
+---
+
+## API Endpoints and Auth Expectations
+
+When `API_BASE` is configured, the UI uses these endpoints:
+
+| Method | Path | Used by UI | Auth required |
+|-----|-----|-----|-----|
+| `POST` | `/api/v1/auth/register` | Yes (new user flow) | No |
+| `POST` | `/api/v1/auth/login` | Yes (returning user flow) | No |
+| `GET` | `/api/v1/health` | Optional diagnostics | No |
+| `GET` | `/api/v1/inference/status` | Yes (capability check) | No |
+| `GET` | `/api/v1/inference/models` | Yes (model picker) | No |
+| `POST` | `/api/v1/inference/stream` | Yes (live streaming text) | Optional (`INFERENCE_REQUIRE_AUTH=true`) |
+| `POST` | `/api/v1/inference/complete` | Optional/non-stream use | Optional (`INFERENCE_REQUIRE_AUTH=true`) |
+| `GET` | `/api/v1/sessions/{session_id}/workspace` | Yes (restore workspace) | No (session ID based) |
+| `PUT` | `/api/v1/sessions/{session_id}/workspace` | Yes (autosync) | No (session ID based) |
+| `POST` | `/api/v1/sessions/bootstrap` | Legacy/optional path | No |
+
+Notes:
+- Current UI auth flow uses `/auth/register` and `/auth/login` and stores JWT in localStorage.
+- Session workspace routes currently rely on possession of `session_id` (not JWT enforcement).
+- Inference routes enforce JWT only when `INFERENCE_REQUIRE_AUTH=true`.
+
+---
+
+## Troubleshooting Matrix
+
+| Symptom | Likely cause | What to check | Fix |
+|--------|--------------|---------------|-----|
+| Browser shows CORS error on `/api/v1/*` | Frontend origin not allowed | Backend `CORS_ORIGINS`; exact page URL origin | Add exact origin(s), redeploy API |
+| `401` on `/api/v1/inference/stream` or `/complete` | Inference auth enabled but token missing/invalid | `INFERENCE_REQUIRE_AUTH`; `Authorization: Bearer ...` header; token age | Log in again, ensure token is sent, verify `JWT_SECRET` consistency |
+| Inference status says unavailable/configured false | Missing/invalid HF token or inference disabled | `HF_API_TOKEN`/`HF_TOKEN`; `INFERENCE_ENABLED`; API logs | Set valid HF token, enable inference, restart API |
+| Register/login fails (`401`/`409`) | Bad credentials or existing email | `/api/v1/auth/login` and `/auth/register` responses | Use correct password; for `409`, log in instead of registering |
+| Sync silently stops or workspace not restored | Bad `API_BASE`, missing `session_id`, network/API failure | Browser Network tab for `/sessions/{id}/workspace`; localStorage keys | Re-login to refresh token/session, verify `?api=` URL, confirm API health |
+| Vercel app cannot reach API (`404`/`502`) | Missing rewrite or Fly app down | `vercel.json` rewrite target; `fly status`; `/api/v1/health` on Fly | Re-run rewrite sync script, redeploy Vercel/Fly, verify Fly hostname |
 
 ---
 
@@ -182,3 +249,20 @@ In production RLHF systems (like those at OpenAI, Anthropic, and Google), human 
 ## Browser Support
 
 Works in any modern browser: Chrome, Firefox, Edge, Safari. No installation or build step required.
+
+---
+
+## Release Gate
+
+A production release is blocked unless **all three** checks are complete:
+
+- [ ] **All tests pass**  
+      Run backend test suite from `backend/` (example: `python -m pytest`).
+- [ ] **Deploy smoke pass**  
+      Run `scripts/e2e-test.ps1` and confirm `0 failed` in the summary.
+- [ ] **Manual scenario checklist completed**  
+      Validate critical user flows:
+  - create account and log in;
+  - load a task pack and submit at least one task;
+  - verify workspace autosync indicator shows state transitions (idle -> syncing -> synced);
+  - export Markdown/JSONL successfully.
