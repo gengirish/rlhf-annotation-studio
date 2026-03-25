@@ -1,16 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run vercel-build",
-  "outputDirectory": "out",
-  "installCommand": "npm install",
+  "framework": "nextjs",
+  "installCommand": "npm --prefix frontend install",
+  "buildCommand": "npm --prefix frontend run build",
+  "devCommand": "npm --prefix frontend run dev",
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://rlhf-annotation-api.fly.dev/api/:path*"
-    },
-    {
-      "source": "/",
-      "destination": "/index.html"
     }
   ],
   "headers": [

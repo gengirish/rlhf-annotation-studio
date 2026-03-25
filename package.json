@@ -1,10 +1,16 @@
 {
   "name": "rlhf-annotation-studio",
   "private": true,
-  "description": "Vercel build copies static UI to out/; API lives on Fly.io",
+  "description": "Monorepo: Next.js frontend + FastAPI backend for RLHF Annotation Studio",
   "scripts": {
-    "vercel-build": "node scripts/vercel-build.mjs",
-    "build": "node scripts/vercel-build.mjs",
-    "sync-fly-url": "node scripts/sync-vercel-fly-rewrite.mjs"
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "frontend:start": "npm --prefix frontend run start",
+    "frontend:lint": "npm --prefix frontend run lint",
+    "frontend:e2e": "npm --prefix frontend run test:e2e",
+    "vercel-build": "npm --prefix frontend run build",
+    "backend:test": "python -m pytest -q",
+    "sync-fly-url": "node scripts/sync-vercel-fly-rewrite.mjs",
+    "legacy:vercel-build": "node scripts/vercel-build.mjs"
   }
 }

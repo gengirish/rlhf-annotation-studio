@@ -1,21 +1,23 @@
 # RLHF Annotation Studio
 
-A lightweight, Markdown-based annotation kit for practicing Reinforcement Learning from Human Feedback (RLHF) workflows. Designed to give students hands-on experience with the same annotation patterns used at Scale AI, Surge AI, and similar data labeling platforms.
+A lightweight annotation platform for practicing Reinforcement Learning from Human Feedback (RLHF) workflows. The project now uses a **Pure Next.js frontend** with a **FastAPI backend**, preserving the original annotation workflows with a production-friendly architecture.
 
-**Frontend: zero npm dependencies.** Open the HTML file locally, or run a simple static server for task packs.
+**Frontend:** Next.js App Router app in `frontend/`.
 
-**Optional full stack:** A **FastAPI** API in `backend/` syncs workspace data to **Neon PostgreSQL** and can proxy **live Hugging Face** completions (`/api/v1/inference/complete`). See `backend/README.md`. **Docker:** `docker compose up` from the repo root — see **`deploy/README.md`** (nginx + API on port **8080**).
+**Backend:** FastAPI in `backend/` (with `src/rlhf_api` package compatibility wrapper), workspace sync to PostgreSQL/Neon, and live Hugging Face inference routes. See `backend/README.md`.
 
-**Vercel + Fly.io:** Static UI on Vercel (`npm run vercel-build` → `out/`), API on Fly (`backend/fly.toml`). Vercel rewrites `/api/*` to Fly. Step-by-step: **`deploy/DEPLOY-VERCEL-FLY.md`**.
+**Local full stack:** `docker/docker-compose.yml` provides `frontend`, `backend`, `postgres`, and `redis` services.
+
+**Legacy frontend notice:** `annotation-tool.html` is now a redirect shim to `/auth` and retained only for backward link compatibility.
 
 ---
 
 ## Quick Start
 
-1. Open `annotation-tool.html` in any modern browser
-2. Click **"Try Demo Tasks"** to load 5 built-in practice tasks
-3. Annotate each task: read the prompt, evaluate responses, rate dimensions, write justifications
-4. Click **Export** to download your annotations as Markdown
+1. Start backend API (`backend/`) and frontend (`frontend/`)
+2. Open `http://localhost:3000/auth`
+3. Sign in / register, load a task pack from dashboard, and annotate tasks
+4. Use in-app export actions (Markdown / JSONL)
 
 ---
 
@@ -23,23 +25,17 @@ A lightweight, Markdown-based annotation kit for practicing Reinforcement Learni
 
 Choose the mode that matches your class/lab setup:
 
-### 1) Local offline (no API)
-- Open `annotation-tool.html` directly (`file://`) for demo tasks and manual JSON uploads.
-- All data stays in browser localStorage (`rlhf_*` keys).
-- No backend, no auth, no network sync required.
-- Best for quick practice and fully offline environments.
-
-### 2) Local + API (development/full-stack)
-- Run FastAPI from `backend/` and serve the repo over HTTP.
-- Open the tool with `?api=http://127.0.0.1:8000` (or set `<meta name="rlhf-api-base" ...>`).
-- Uses `/api/v1/auth/register` or `/api/v1/auth/login` to get JWT + `session_id`.
-- Workspace autosaves to Neon through `/api/v1/sessions/{session_id}/workspace`.
+### 1) Local + API (development/full-stack)
+- Run FastAPI from `backend/` and Next.js from `frontend/`.
+- Open `http://127.0.0.1:3000/auth`.
+- Uses `/api/v1/auth/register` and `/api/v1/auth/login` for JWT + `session_id`.
+- Workspace autosaves through `/api/v1/sessions/{session_id}/workspace`.
 
 See `backend/README.md` for setup and env vars.
 
-### 3) Vercel + Fly production
-- Deploy static UI to Vercel (`out/`), API to Fly (`backend/fly.toml`).
-- Keep browser calls on same origin (`/api/*`) and rewrite to Fly.
+### 2) Vercel + Fly production
+- Deploy Next.js frontend from `frontend/` and API to Fly (`backend/fly.toml`).
+- In Vercel, set project **Root Directory** to `frontend/` (recommended monorepo setup).
 - Configure backend env (`DATABASE_URL`, `CORS_ORIGINS`, `JWT_SECRET`, optional HF settings).
 - Enable `INFERENCE_REQUIRE_AUTH=true` when the API is public.
 
@@ -51,10 +47,16 @@ See `deploy/DEPLOY-VERCEL-FLY.md` for the exact CLI workflow.
 
 ```
 RLHF/
-├── annotation-tool.html              ← Main annotation interface (open in browser)
+├── frontend/                         ← Next.js App Router frontend
+│   ├── src/app/                      ← Auth, dashboard, task routes
+│   └── tests/e2e/                    ← Playwright E2E tests
+├── annotation-tool.html              ← Legacy redirect shim to Next.js routes
 ├── backend/                          ← FastAPI + Neon PostgreSQL (optional)
-│   ├── app/                          ← API, models, Alembic migrations
+│   ├── app/                          ← API routers, models, services
+│   ├── src/rlhf_api/                 ← src-layout package entrypoint
 │   └── README.md
+├── docker/
+│   └── docker-compose.yml            ← Full-stack local orchestration
 ├── tasks/
 │   ├── code-review-comparisons.json  ← Code review annotation tasks
 │   └── safety-alignment.json         ← Safety & alignment evaluation tasks

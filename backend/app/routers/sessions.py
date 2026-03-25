@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
@@ -8,6 +8,7 @@ from app.db import get_db
 from app.models import Annotator, WorkSession
 from app.schemas.annotator import AnnotatorRead
 from app.schemas.session import BootstrapRequest, BootstrapResponse, WorkspaceRead, WorkspaceUpdate
+from app.services.workspace_service import WorkspaceService
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -47,20 +48,7 @@ async def get_workspace(
     db: AsyncSession = Depends(get_db),
     current_user: Annotator = Depends(get_current_user),
 ) -> WorkspaceRead:
-    row = await db.get(WorkSession, session_id)
-    if row is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Session not found")
-    if row.annotator_id != current_user.id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Forbidden")
-    return WorkspaceRead(
-        session_id=row.id,
-        annotator_id=row.annotator_id,
-        tasks=row.tasks_json,
-        annotations=row.annotations_json or {},
-        task_times=row.task_times_json or {},
-        active_pack_file=row.active_pack_file,
-        updated_at=row.updated_at,
-    )
+    return await WorkspaceService(db).get_workspace(session_id=session_id, user_id=current_user.id)
 
 
 @router.put("/{session_id}/workspace")
@@ -71,17 +59,8 @@ async def put_workspace(
     current_user: Annotator = Depends(get_current_user),
 ) -> dict[str, bool]:
     """Replace workspace JSON (tasks, annotations, timings) from the annotation UI."""
-    row = await db.get(WorkSession, session_id)
-    if row is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Session not found")
-    if row.annotator_id != current_user.id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Forbidden")
-
-    if body.tasks is not None:
-        row.tasks_json = body.tasks
-    row.annotations_json = body.annotations
-    row.task_times_json = body.task_times
-    row.active_pack_file = body.active_pack_file
-
-    await db.commit()
-    return {"ok": True}
+    return await WorkspaceService(db).put_workspace(
+        session_id=session_id,
+        user_id=current_user.id,
+        body=body,
+    )

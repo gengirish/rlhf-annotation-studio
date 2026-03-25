@@ -3,8 +3,8 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["app*"]
+where = [".", "src"]
+include = ["app*", "rlhf_api*"]
 
 [project]
 name = "rlhf-annotation-api"

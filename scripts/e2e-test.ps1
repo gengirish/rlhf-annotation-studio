@@ -17,27 +17,26 @@ Write-Host "`n=== E2E Test Suite ===" -ForegroundColor Cyan
 $frontendHtml = ""
 try {
     $frontendHtml = (Invoke-WebRequest -Uri $FE -UseBasicParsing -TimeoutSec 30).Content
-    if ($frontendHtml.Contains("authPassword") -and $frontendHtml.Contains("model-selector")) {
-        Ok "Frontend shell" "password + model selector present"
+    if ($frontendHtml.Contains("__NEXT_DATA__") -and $frontendHtml.Contains("RLHF Annotation Studio")) {
+        Ok "Frontend shell" "nextjs app shell detected"
     } else {
-        Fail "Frontend shell" "missing expected auth/model elements"
+        Fail "Frontend shell" "missing Next.js shell markers"
     }
 } catch { Fail "Frontend shell" $_ }
 
-# 2. Frontend sync-status smoke (exists + update path)
+# 2. Frontend route smoke (auth + dashboard routes available)
 try {
-    $hasElement = $frontendHtml -match 'id="sync-status"'
-    $hasRefresh = $frontendHtml -match 'function refreshSyncIndicator\(\)'
-    $hasStateUpdate = $frontendHtml -match 'stateEl\.setAttribute\('
-    $hasLabelUpdate = $frontendHtml -match 'labelEl\.textContent = syncStateMessage \|\| syncStateLabel\(syncState\);'
+    $authHtml = (Invoke-WebRequest -Uri "$FE/auth" -UseBasicParsing -TimeoutSec 30).Content
+    $dashStatus = (Invoke-WebRequest -Uri "$FE/dashboard" -UseBasicParsing -TimeoutSec 30 -MaximumRedirection 0 -ErrorAction SilentlyContinue).StatusCode
+    $hasAuthCopy = $authHtml -match "RLHF Annotation Studio"
 
-    if ($hasElement -and $hasRefresh -and $hasStateUpdate -and $hasLabelUpdate) {
-        Ok "Frontend sync-status" "element exists and refresh logic updates label/state"
+    if ($hasAuthCopy -and ($dashStatus -eq 200 -or $dashStatus -eq 307 -or $dashStatus -eq 308)) {
+        Ok "Frontend routes" "auth route responds; dashboard route reachable/redirects"
     } else {
-        $detail = "element=$hasElement refresh=$hasRefresh dataAttr=$hasStateUpdate label=$hasLabelUpdate"
-        Fail "Frontend sync-status" $detail
+        $detail = "authHeading=$hasAuthCopy dashboardStatus=$dashStatus"
+        Fail "Frontend routes" $detail
     }
-} catch { Fail "Frontend sync-status" $_ }
+} catch { Fail "Frontend routes" $_ }
 
 # 3. Health
 try {
