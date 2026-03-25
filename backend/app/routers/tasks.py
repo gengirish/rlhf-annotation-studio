@@ -39,7 +39,8 @@ def _row_label(idx: int, task: Any) -> str:
         raw_id = task.get("id")
         if raw_id is not None:
             task_id = str(raw_id).strip()
-    return f'row {idx + 1}{f" (id=\\"{task_id}\\")" if task_id else ""}'
+    suffix = f' (id="{task_id}")' if task_id else ""
+    return f"row {idx + 1}{suffix}"
 
 
 def _validate_tasks(tasks: list[dict[str, Any]]) -> tuple[list[TaskValidationIssue], set[int]]:
