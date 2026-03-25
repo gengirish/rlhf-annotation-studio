@@ -1,7 +1,7 @@
-# RLHF Annotation Studio — full stack on one host
+# RLHF Annotation Studio — Next.js + FastAPI on one host
 # 1. Copy .env.example → .env in repo root and set DATABASE_URL (Neon +asyncpg)
 # 2. docker compose up --build
-# 3. Open http://localhost:8080/  (or http://YOUR_SERVER_IP:8080/)
+# 3. Open http://localhost:8080/auth  (or http://YOUR_SERVER_IP:8080/auth)
 
 services:
   api:
@@ -20,10 +20,12 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: deploy/Dockerfile.web
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     ports:
-      - "${HTTP_PORT:-8080}:80"
+      - "${HTTP_PORT:-8080}:3000"
     depends_on:
       - api
     restart: unless-stopped

@@ -2,8 +2,8 @@
 
 One `docker compose` stack:
 
-- **web** — nginx on port **8080** (configurable), serves `annotation-tool.html` with `rlhf-api-base=*` (same-origin API).
-- **api** — FastAPI + Uvicorn on port 8000 **inside** the network only; nginx proxies `/api/*` → `api:8000`.
+- **frontend** — Next.js app on port **8080** (host-mapped).
+- **api** — FastAPI + Uvicorn on port 8000 inside the compose network.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ First API start runs `alembic upgrade head` against Neon.
 ## 3. Test in the browser
 
 1. Open **http://localhost:8080/** (or `http://SERVER_IP:8080/` on a VPS).
-2. Register — you should see **“Synced with server”** if the API is up.
+2. Register/login and open dashboard — workspace sync should work if the API is up.
 3. Load a task pack from the library; annotate; refresh — data should still be in localStorage; server copy updates on save (debounced).
 
 ### Quick API checks (optional)
@@ -66,6 +66,6 @@ To expose the API on the host temporarily, add under `api` in `docker-compose.ym
 | Issue | What to try |
 |-------|-------------|
 | `alembic upgrade` fails on start | Check `DATABASE_URL`, SSL, and Neon project status. |
-| Task library empty / fetch errors | Ensure you open **`/`** or **`/index.html`** on the **nginx** port, not `file://`. |
+| Task library empty / fetch errors | Ensure `frontend` container is up and check browser network requests to `/api/v1/*`. |
 | No “Synced with server” | Check browser devtools → Network for `/api/v1/sessions/bootstrap`. |
 | CORS errors | Add your exact page origin to `CORS_ORIGINS`. |

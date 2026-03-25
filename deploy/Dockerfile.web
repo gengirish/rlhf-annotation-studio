@@ -1,6 +1,0 @@
-# Serves static UI with meta rlhf-api-base=* so API calls stay same-origin via nginx /api proxy
-FROM nginx:alpine
-COPY annotation-tool.html /tmp/app.html
-RUN sed 's|<meta name="rlhf-api-base" content="">|<meta name="rlhf-api-base" content="*">|' /tmp/app.html > /usr/share/nginx/html/index.html \
-    && cp /usr/share/nginx/html/index.html /usr/share/nginx/html/annotation-tool.html
-COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf

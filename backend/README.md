@@ -1,6 +1,6 @@
 # RLHF Annotation API
 
-FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for [RLHF Annotation Studio](../annotation-tool.html).
+FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for the RLHF Annotation Studio Next.js frontend.
 
 ## Quick start
 
@@ -40,20 +40,19 @@ FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for [RLHF Annotatio
 
    Open [http://127.0.0.1:8000/api/docs](http://127.0.0.1:8000/api/docs).
 
-## Connect the HTML UI
+## Connect the Next.js UI
 
-1. Serve the repo root over HTTP (so `tasks/*.json` loads), e.g.:
-   ```bash
-   cd ..
-   python -m http.server 8080
+1. Run the frontend app:
+   ```
+   cd ../frontend
+   npm install
+   npm run dev
    ```
 
 2. Open:
    ```
-   http://127.0.0.1:8080/annotation-tool.html?api=http://127.0.0.1:8000
+   http://127.0.0.1:3000/auth
    ```
-
-   Or set `<meta name="rlhf-api-base" content="http://127.0.0.1:8000">` in `annotation-tool.html`.
 
 3. Register once — the app creates a **work session** in Neon and syncs workspace JSON on each save.
 
@@ -73,7 +72,7 @@ FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for [RLHF Annotatio
 1. Create a [fine-grained token](https://huggingface.co/settings/tokens) with **Make calls to Inference Providers**.
 2. In `.env`: `HF_API_TOKEN=hf_...` (or `HF_TOKEN`).
 3. Optional: `HF_DEFAULT_MODEL`, `HF_ROUTER_BASE_URL` (default `https://router.huggingface.co/v1`).
-4. In the UI, set `?api=http://127.0.0.1:8000` and load **`tasks/hf-live-demo.json`** from the Task Library (or any task with `"inference": { "provider": "hf", "system": "..." }` and empty `responses[].text`).
+4. In the UI, sign in and use the dashboard task flow. The frontend calls `/api/v1/inference/*` directly via `NEXT_PUBLIC_API_URL`.
 5. Set `INFERENCE_REQUIRE_AUTH=true` if the API is public and you want to require a JWT from `/api/v1/auth/login`.
 
 ## Environment

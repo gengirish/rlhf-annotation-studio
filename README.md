@@ -8,10 +8,6 @@ A lightweight annotation platform for practicing Reinforcement Learning from Hum
 
 **Local full stack:** `docker/docker-compose.yml` provides `frontend`, `backend`, `postgres`, and `redis` services.
 
-**Legacy frontend notice:** `annotation-tool.html` is now a redirect shim to `/auth` and retained only for backward link compatibility.
-
----
-
 ## Quick Start
 
 1. Start backend API (`backend/`) and frontend (`frontend/`)
@@ -50,7 +46,6 @@ RLHF/
 ├── frontend/                         ← Next.js App Router frontend
 │   ├── src/app/                      ← Auth, dashboard, task routes
 │   └── tests/e2e/                    ← Playwright E2E tests
-├── annotation-tool.html              ← Legacy redirect shim to Next.js routes
 ├── backend/                          ← FastAPI + Neon PostgreSQL (optional)
 │   ├── app/                          ← API routers, models, services
 │   ├── src/rlhf_api/                 ← src-layout package entrypoint
@@ -100,7 +95,7 @@ The tool supports three annotation task types that mirror real RLHF workflows:
 
 1. Read `templates/task-template.md` for the JSON schema
 2. Create a new `.json` file in the `tasks/` folder
-3. Load it into the annotation tool via the **"Upload JSON"** button in the sidebar
+3. Load it from the dashboard **Task Library** in the Next.js app
 
 Minimal example:
 
@@ -208,7 +203,7 @@ Before annotating, read the relevant rubric in the `guidelines/` folder:
 
 1. Create task files targeting your learning objectives
 2. Distribute this folder to students (zip, git, or LMS upload)
-3. Students open `annotation-tool.html`, load the task file, and annotate
+3. Students open the app at `/auth`, load the task file, and annotate
 4. Students export their annotations as Markdown and submit
 5. Review submissions — the structured Markdown format makes comparison easy
 
@@ -250,7 +245,7 @@ In production RLHF systems (like those at OpenAI, Anthropic, and Google), human 
 
 ## Browser Support
 
-Works in any modern browser: Chrome, Firefox, Edge, Safari. No installation or build step required.
+Works in any modern browser: Chrome, Firefox, Edge, Safari. Run with `frontend` + `backend` services for full functionality.
 
 ---
 

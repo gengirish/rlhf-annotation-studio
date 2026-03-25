@@ -10,7 +10,6 @@
     "frontend:e2e": "npm --prefix frontend run test:e2e",
     "vercel-build": "npm --prefix frontend run build",
     "backend:test": "python -m pytest -q",
-    "sync-fly-url": "node scripts/sync-vercel-fly-rewrite.mjs",
-    "legacy:vercel-build": "node scripts/vercel-build.mjs"
+    "sync-fly-url": "node scripts/sync-vercel-fly-rewrite.mjs"
   }
 }
