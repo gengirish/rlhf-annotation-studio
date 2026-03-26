@@ -8,6 +8,55 @@ test("renders auth page", async ({ page }) => {
 });
 
 test("login, load pack, and open task workflow", async ({ page }) => {
+  await page.route("**/api/v1/tasks/packs", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        packs: [
+          {
+            id: "pack-1",
+            slug: "debugging-exercises-python",
+            name: "Python Debugging",
+            description: "Debug Python snippets",
+            language: "python",
+            task_count: 1,
+            created_at: "2026-01-01T00:00:00Z"
+          }
+        ]
+      })
+    });
+  });
+
+  await page.route("**/api/v1/tasks/packs/*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: "pack-1",
+        slug: "debugging-exercises-python",
+        name: "Python Debugging",
+        description: "Debug Python snippets",
+        language: "python",
+        task_count: 1,
+        created_at: "2026-01-01T00:00:00Z",
+        tasks_json: [
+          {
+            id: "task-1",
+            type: "comparison",
+            title: "Fix buggy function",
+            prompt: "Find the better fix.",
+            responses: [
+              { label: "A", text: "Use copy.deepcopy" },
+              { label: "B", text: "Use list()" }
+            ],
+            dimensions: [{ name: "correctness", description: "Correctness", scale: 5 }]
+          }
+        ]
+      })
+    });
+  });
+
   await page.route("**/api/v1/auth/login", async (route) => {
     await route.fulfill({
       status: 200,
