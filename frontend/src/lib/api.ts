@@ -33,6 +33,12 @@ export interface AuthResponse {
   session_id: string;
 }
 
+export interface InferenceModelOption {
+  id: string;
+  name: string;
+  tag: string;
+}
+
 export const api = {
   register: (body: { name: string; email: string; password: string; phone?: string }) =>
     request<AuthResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify(body) }),
@@ -41,7 +47,8 @@ export const api = {
   health: () => request<{ status: string }>("/api/v1/health"),
   inferenceStatus: () =>
     request<{ enabled: boolean; configured: boolean; require_auth: boolean }>("/api/v1/inference/status"),
-  inferenceModels: () => request<{ default: string; models: string[] }>("/api/v1/inference/models"),
+  inferenceModels: () =>
+    request<{ default: string; models: InferenceModelOption[] }>("/api/v1/inference/models"),
   inferenceStream: async (body: { prompt: string; model?: string; system?: string }) =>
     fetch(`${API_BASE}/api/v1/inference/stream`, {
       method: "POST",

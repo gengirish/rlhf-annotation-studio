@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { api } from "@/lib/api";
+import type { InferenceModelOption } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 import type { TaskItem } from "@/types";
 
@@ -60,7 +61,7 @@ export default function TaskPage() {
   const [streamingText, setStreamingText] = useState<Record<number, string>>({});
   const [streamingDone, setStreamingDone] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>("");
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [availableModels, setAvailableModels] = useState<InferenceModelOption[]>([]);
   const startedAtRef = useRef<number>(Date.now());
   const [showExport, setShowExport] = useState(false);
 
@@ -261,8 +262,8 @@ export default function TaskPage() {
                 onChange={(e) => setSelectedModel(e.target.value)}
               >
                 {availableModels.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.tag})
                   </option>
                 ))}
               </select>
