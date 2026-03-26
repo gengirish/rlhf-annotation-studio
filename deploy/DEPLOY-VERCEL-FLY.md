@@ -166,11 +166,24 @@ The CLI uses **`vercel.json`**: `buildCommand` (`npm run vercel-build`), `output
 
 ---
 
+## Current Production URLs
+
+| Service | URL |
+|---------|-----|
+| Frontend | https://rlhf-annotation-frontend.vercel.app |
+| Auth page | https://rlhf-annotation-frontend.vercel.app/auth |
+| Dashboard | https://rlhf-annotation-frontend.vercel.app/dashboard |
+| API (Fly, direct) | https://rlhf-annotation-api.fly.dev |
+| API health (via Vercel rewrite) | https://rlhf-annotation-frontend.vercel.app/api/v1/health |
+| Task packs catalog | https://rlhf-annotation-frontend.vercel.app/api/v1/tasks/packs |
+| API interactive docs | https://rlhf-annotation-api.fly.dev/api/docs |
+
 ## Smoke test
 
-1. Copy the **production** URL from `vercel --prod` output (or `vercel ls`).
-2. Open `/` — should load the tool from `out/index.html`.
-3. Use register / sync — traffic goes to `https://your-vercel-host/api/v1/...` and is rewritten to Fly.
+1. Open the **Frontend** URL above (or copy from `vercel --prod` output).
+2. Register or log in at `/auth`.
+3. Dashboard should load task packs from the API — traffic goes to `/api/v1/tasks/packs` and is rewritten to Fly.
+4. Verify API health: `curl https://rlhf-annotation-frontend.vercel.app/api/v1/health` should return `{"status":"ok"}`.
 
 ---
 

@@ -64,6 +64,9 @@ FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for the RLHF Annota
 | POST | `/api/v1/sessions/bootstrap` | Body `{ "annotator": { "name", "email", "phone" } }` → `{ annotator, session_id }` |
 | GET | `/api/v1/sessions/{session_id}/workspace` | Load tasks, annotations, timings |
 | PUT | `/api/v1/sessions/{session_id}/workspace` | Body `{ tasks, annotations, task_times, active_pack_file }` |
+| GET | `/api/v1/tasks/packs` | List all task packs (slug, name, description, language, task_count) |
+| GET | `/api/v1/tasks/packs/{slug}` | Full task pack with tasks_json array |
+| POST | `/api/v1/tasks/validate` | Validate an array of task items |
 | GET | `/api/v1/inference/status` | Whether inference is enabled and a Hugging Face token is configured (no secrets returned) |
 | POST | `/api/v1/inference/complete` | Live completions: body `{ prompt, system?, slots: [{ label?, hf_model?, temperature?, seed? }] }` → `{ slots: [{ label, text, model, error }] }` |
 

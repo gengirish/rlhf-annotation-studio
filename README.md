@@ -37,6 +37,18 @@ See `backend/README.md` for setup and env vars.
 
 See `deploy/DEPLOY-VERCEL-FLY.md` for the exact CLI workflow.
 
+#### Live Deployment URLs
+
+| Service | URL |
+|---------|-----|
+| Frontend | https://rlhf-annotation-frontend.vercel.app |
+| Auth | https://rlhf-annotation-frontend.vercel.app/auth |
+| Dashboard | https://rlhf-annotation-frontend.vercel.app/dashboard |
+| API (direct) | https://rlhf-annotation-api.fly.dev |
+| API health | https://rlhf-annotation-frontend.vercel.app/api/v1/health |
+| Task packs | https://rlhf-annotation-frontend.vercel.app/api/v1/tasks/packs |
+| API docs | https://rlhf-annotation-api.fly.dev/api/docs |
+
 ---
 
 ## What's Included
@@ -152,6 +164,9 @@ When `API_BASE` is configured, the UI uses these endpoints:
 | `POST` | `/api/v1/inference/complete` | Optional/non-stream use | Optional (`INFERENCE_REQUIRE_AUTH=true`) |
 | `GET` | `/api/v1/sessions/{session_id}/workspace` | Yes (restore workspace) | No (session ID based) |
 | `PUT` | `/api/v1/sessions/{session_id}/workspace` | Yes (autosync) | No (session ID based) |
+| `GET` | `/api/v1/tasks/packs` | Yes (task library catalog) | No |
+| `GET` | `/api/v1/tasks/packs/{slug}` | Yes (load full task pack) | No |
+| `POST` | `/api/v1/tasks/validate` | Yes (validate loaded tasks) | No |
 | `POST` | `/api/v1/sessions/bootstrap` | Legacy/optional path | No |
 
 Notes:
