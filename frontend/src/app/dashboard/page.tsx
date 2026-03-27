@@ -26,11 +26,31 @@ export default function DashboardPage() {
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "synced" | "error">("idle");
   const [packCatalog, setPackCatalog] = useState<TaskPackSummary[]>([]);
   const [packsLoading, setPacksLoading] = useState(true);
+  const [qualityScore, setQualityScore] = useState<{
+    overall_accuracy: number;
+    scored_tasks: number;
+  } | null>(null);
 
   const completed = useMemo(
     () => Object.values(annotations).filter((ann) => ann.status === "done").length,
     [annotations]
   );
+
+  useEffect(() => {
+    async function fetchQualityScore() {
+      if (!sessionId || completed <= 0) return;
+      try {
+        const score = await api.scoreSession(sessionId);
+        setQualityScore({
+          overall_accuracy: score.overall_accuracy,
+          scored_tasks: score.scored_tasks
+        });
+      } catch {
+        // silent: gold scoring may be unavailable
+      }
+    }
+    void fetchQualityScore();
+  }, [sessionId, completed]);
 
   useEffect(() => {
     if (!user || !sessionId) {
@@ -158,7 +178,14 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <section style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+      <section
+        style={{
+          marginTop: 18,
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: 12
+        }}
+      >
         <article className="card" style={{ padding: 14 }}>
           <h3 style={{ marginTop: 0 }}>Tasks Loaded</h3>
           <p style={{ fontSize: 26, margin: 0 }}>{tasks.length}</p>
@@ -170,6 +197,15 @@ export default function DashboardPage() {
         <article className="card" style={{ padding: 14 }}>
           <h3 style={{ marginTop: 0 }}>Current Pack</h3>
           <p style={{ margin: 0, color: "var(--muted)" }}>{activePackFile || "None"}</p>
+        </article>
+        <article className="card" style={{ padding: 14 }}>
+          <h3 style={{ marginTop: 0 }}>Quality Score</h3>
+          <p style={{ fontSize: 26, margin: 0 }}>
+            {qualityScore ? `${Math.round(qualityScore.overall_accuracy * 100)}%` : "—"}
+          </p>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--muted)" }}>
+            {qualityScore ? `${qualityScore.scored_tasks} gold tasks scored` : "No gold tasks"}
+          </p>
         </article>
       </section>
 

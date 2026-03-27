@@ -39,6 +39,12 @@ export interface InferenceModelOption {
   tag: string;
 }
 
+export interface QualityScore {
+  total_gold_tasks: number;
+  scored_tasks: number;
+  overall_accuracy: number;
+}
+
 export const api = {
   register: (body: { name: string; email: string; password: string; phone?: string }) =>
     request<AuthResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify(body) }),
@@ -82,7 +88,27 @@ export const api = {
   getTaskPacks: () =>
     request<{ packs: TaskPackSummary[] }>("/api/v1/tasks/packs"),
   getTaskPack: (slug: string) =>
-    request<TaskPackDetail>(`/api/v1/tasks/packs/${encodeURIComponent(slug)}`)
+    request<TaskPackDetail>(`/api/v1/tasks/packs/${encodeURIComponent(slug)}`),
+  scoreSession: (sessionId: string) =>
+    request<QualityScore>("/api/v1/tasks/score-session", {
+      method: "POST",
+      body: JSON.stringify({ session_id: sessionId })
+    }),
+  sessionMetrics: (sessionId: string) =>
+    request<{
+      total_tasks: number;
+      completed_tasks: number;
+      skipped_tasks: number;
+      pending_tasks: number;
+      completion_rate: number;
+      median_time_seconds: number;
+      total_time_seconds: number;
+      dimension_averages: Record<string, number>;
+    }>(`/api/v1/metrics/session/${sessionId}/summary`),
+  getWorkspaceHistory: (sessionId: string) =>
+    request<{ revisions: Array<{ id: string; revision_number: number; created_at: string }> }>(
+      `/api/v1/sessions/${sessionId}/workspace/history`
+    )
 };
 
 export interface TaskPackSummary {

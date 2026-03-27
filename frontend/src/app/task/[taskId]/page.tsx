@@ -68,9 +68,6 @@ export default function TaskPage() {
   const task = tasks[currentTaskIndex];
   const ann = task ? annotations[task.id] : undefined;
 
-  // goNext/goPrev are intentionally omitted to avoid effect churn on navigation callbacks.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!tasks.length) {
       router.push("/dashboard");
@@ -240,6 +237,19 @@ export default function TaskPage() {
         </section>
       ) : null}
 
+      {phase === 3 && task.guidelines && task.guidelines.length > 0 ? (
+        <details className="card" style={{ marginTop: 12, padding: 14 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 600 }}>Annotation Guidelines</summary>
+          <ul style={{ marginTop: 8, paddingLeft: 20 }}>
+            {task.guidelines.map((g, i) => (
+              <li key={i} style={{ marginBottom: 4, color: "var(--muted)" }}>
+                {g}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
       <section className="card" style={{ marginTop: 12, padding: 16 }}>
         {phase === 1 ? (
           <>
@@ -352,6 +362,17 @@ export default function TaskPage() {
                     );
                   })}
                 </div>
+              </div>
+            ) : null}
+
+            {task.type === "rating" ? (
+              <div style={{ marginBottom: 12 }}>
+                <h4 style={{ marginTop: 0 }}>Response</h4>
+                <article className="card" style={{ padding: 12 }}>
+                  <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>
+                    {task.responses[0]?.text || streamingText[0] || ""}
+                  </p>
+                </article>
               </div>
             ) : null}
 

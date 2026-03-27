@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from app.schemas.annotator import AnnotatorCreate, AnnotatorRead
+from app.schemas.annotation_validation import AnnotationIssue
 
 
 class BootstrapRequest(BaseModel):
@@ -35,3 +36,8 @@ class WorkspaceRead(BaseModel):
     task_times: dict[str, Any]
     active_pack_file: str | None
     updated_at: datetime
+
+
+class WorkspacePutResponse(BaseModel):
+    ok: bool
+    annotation_warnings: list[AnnotationIssue]

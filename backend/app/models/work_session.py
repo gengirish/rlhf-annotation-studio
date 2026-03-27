@@ -12,6 +12,7 @@ from app.db import Base
 
 if TYPE_CHECKING:
     from app.models.annotator import Annotator
+    from app.models.workspace_revision import WorkspaceRevision
 
 
 class WorkSession(Base):
@@ -37,3 +38,8 @@ class WorkSession(Base):
     )
 
     annotator: Mapped[Annotator] = relationship("Annotator", back_populates="sessions")
+    workspace_revisions: Mapped[list[WorkspaceRevision]] = relationship(
+        "WorkspaceRevision",
+        back_populates="session",
+        cascade="all, delete-orphan",
+    )
