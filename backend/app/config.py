@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
 
+    # Comma-separated annotator UUIDs allowed to assign reviews and approve/reject.
+    # If empty, any authenticated user may act as a reviewer (suitable for trusted deployments).
+    reviewer_annotator_ids: str = ""
+
     # Hugging Face Inference Providers (OpenAI-compatible router)
     hf_api_token: str | None = None
     hf_router_base_url: str = "https://router.huggingface.co/v1"

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
 if TYPE_CHECKING:
+    from app.models.review_assignment import ReviewAssignment
     from app.models.work_session import WorkSession
 
 
@@ -28,4 +29,14 @@ class Annotator(Base):
         "WorkSession",
         back_populates="annotator",
         cascade="all, delete-orphan",
+    )
+    review_assignments: Mapped[list[ReviewAssignment]] = relationship(
+        "ReviewAssignment",
+        foreign_keys="ReviewAssignment.annotator_id",
+        back_populates="annotator",
+    )
+    reviews_authored: Mapped[list[ReviewAssignment]] = relationship(
+        "ReviewAssignment",
+        foreign_keys="ReviewAssignment.reviewer_id",
+        back_populates="reviewer",
     )

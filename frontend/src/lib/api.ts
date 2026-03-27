@@ -45,6 +45,42 @@ export interface QualityScore {
   overall_accuracy: number;
 }
 
+export interface SessionMetrics {
+  total_tasks: number;
+  completed_tasks: number;
+  skipped_tasks: number;
+  pending_tasks: number;
+  completion_rate: number;
+  avg_time_seconds: number;
+  median_time_seconds: number;
+  total_time_seconds: number;
+  dimension_averages: Record<string, number>;
+  tasks_by_type: Record<string, number>;
+}
+
+export interface TimelinePoint {
+  revision_number: number;
+  created_at: string;
+  completed_count: number;
+}
+
+export interface SessionTimeline {
+  points: TimelinePoint[];
+}
+
+export interface ReviewAssignment {
+  id: string;
+  task_pack_id: string;
+  task_id: string;
+  annotator_id: string;
+  status: string;
+  annotation_json: Record<string, unknown> | null;
+  reviewer_id: string | null;
+  reviewer_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export const api = {
   register: (body: { name: string; email: string; password: string; phone?: string }) =>
     request<AuthResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify(body) }),
@@ -94,17 +130,24 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ session_id: sessionId })
     }),
-  sessionMetrics: (sessionId: string) =>
-    request<{
-      total_tasks: number;
-      completed_tasks: number;
-      skipped_tasks: number;
-      pending_tasks: number;
-      completion_rate: number;
-      median_time_seconds: number;
-      total_time_seconds: number;
-      dimension_averages: Record<string, number>;
-    }>(`/api/v1/metrics/session/${sessionId}/summary`),
+  getSessionMetrics: (sessionId: string) =>
+    request<SessionMetrics>(`/api/v1/metrics/session/${sessionId}/summary`),
+  getSessionTimeline: (sessionId: string) =>
+    request<SessionTimeline>(`/api/v1/metrics/session/${sessionId}/timeline`),
+  getReviewQueue: () =>
+    request<{ assignments: ReviewAssignment[] }>("/api/v1/reviews/queue"),
+  getPendingReviews: () =>
+    request<{ assignments: ReviewAssignment[] }>("/api/v1/reviews/pending"),
+  updateReview: (assignmentId: string, body: { status: string; reviewer_notes?: string }) =>
+    request<ReviewAssignment>(`/api/v1/reviews/${assignmentId}`, {
+      method: "PUT",
+      body: JSON.stringify(body)
+    }),
+  submitReview: (assignmentId: string, annotation: Record<string, unknown>) =>
+    request<ReviewAssignment>(`/api/v1/reviews/${assignmentId}/submit`, {
+      method: "POST",
+      body: JSON.stringify({ annotation_json: annotation })
+    }),
   getWorkspaceHistory: (sessionId: string) =>
     request<{ revisions: Array<{ id: string; revision_number: number; created_at: string }> }>(
       `/api/v1/sessions/${sessionId}/workspace/history`

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -168,7 +169,7 @@ export default function DashboardPage() {
             Session sync: <b>{syncState}</b>
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <button className="btn" onClick={restoreWorkspace}>
             Restore from server
           </button>
@@ -231,6 +232,21 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="card" style={{ marginTop: 18, padding: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Insights and quality</h2>
+        <p style={{ margin: "0 0 14px", color: "var(--muted)" }}>
+          Session metrics and review workflow.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <Link href="/analytics" className="btn btn-primary">
+            View Analytics
+          </Link>
+          <Link href="/reviews" className="btn btn-primary">
+            Review Queue
+          </Link>
+        </div>
       </section>
 
       {tasks.length > 0 ? (
