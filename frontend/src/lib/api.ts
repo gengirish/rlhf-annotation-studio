@@ -68,6 +68,46 @@ export interface SessionTimeline {
   points: TimelinePoint[];
 }
 
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  plan_tier: string;
+  max_seats: number;
+  max_packs: number;
+  created_at: string;
+  used_seats?: number;
+  used_packs?: number;
+}
+
+export interface OrgMember {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface CreateOrgBody {
+  name: string;
+  slug: string;
+}
+
+export interface UpdateOrgBody {
+  name?: string;
+  slug?: string;
+}
+
+export interface AddOrgMemberBody {
+  email: string;
+}
+
+export interface TaskPackUpsertBody {
+  name: string;
+  slug: string;
+  description: string;
+  language: string;
+  tasks: TaskItem[];
+}
+
 export interface ReviewAssignment {
   id: string;
   task_pack_id: string;
@@ -151,7 +191,39 @@ export const api = {
   getWorkspaceHistory: (sessionId: string) =>
     request<{ revisions: Array<{ id: string; revision_number: number; created_at: string }> }>(
       `/api/v1/sessions/${sessionId}/workspace/history`
-    )
+    ),
+  getOrg: (orgId: string) =>
+    request<Organization>(`/api/v1/orgs/${encodeURIComponent(orgId)}`),
+  updateOrg: (orgId: string, body: UpdateOrgBody) =>
+    request<Organization>(`/api/v1/orgs/${encodeURIComponent(orgId)}`, {
+      method: "PUT",
+      body: JSON.stringify(body)
+    }),
+  getOrgMembers: async (orgId: string): Promise<OrgMember[]> => {
+    const r = await request<OrgMember[] | { members: OrgMember[] }>(
+      `/api/v1/orgs/${encodeURIComponent(orgId)}/members`
+    );
+    return Array.isArray(r) ? r : r.members;
+  },
+  createOrg: (body: CreateOrgBody) =>
+    request<Organization>("/api/v1/orgs", { method: "POST", body: JSON.stringify(body) }),
+  addOrgMember: (orgId: string, email: string) =>
+    request<OrgMember>(`/api/v1/orgs/${encodeURIComponent(orgId)}/members`, {
+      method: "POST",
+      body: JSON.stringify({ email } satisfies AddOrgMemberBody)
+    }),
+  createTaskPack: (body: TaskPackUpsertBody) =>
+    request<TaskPackDetail>("/api/v1/tasks/packs", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  updateTaskPack: (slug: string, body: TaskPackUpsertBody) =>
+    request<TaskPackDetail>(`/api/v1/tasks/packs/${encodeURIComponent(slug)}`, {
+      method: "PUT",
+      body: JSON.stringify(body)
+    }),
+  deleteTaskPack: (slug: string) =>
+    requestEmpty(`/api/v1/tasks/packs/${encodeURIComponent(slug)}`, { method: "DELETE" })
 };
 
 export interface TaskPackSummary {

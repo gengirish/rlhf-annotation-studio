@@ -4,13 +4,14 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
 if TYPE_CHECKING:
+    from app.models.organization import Organization
     from app.models.review_assignment import ReviewAssignment
     from app.models.work_session import WorkSession
 
@@ -21,10 +22,20 @@ class Annotator(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    org_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    organization: Mapped[Organization | None] = relationship(
+        "Organization",
+        back_populates="annotators",
+    )
     sessions: Mapped[list[WorkSession]] = relationship(
         "WorkSession",
         back_populates="annotator",

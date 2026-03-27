@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.db import warm_pool
-from app.routers import auth, health, inference, metrics, reviews, sessions, tasks
+from app.routers import auth, health, inference, metrics, orgs, reviews, sessions, tasks
 
 
 @asynccontextmanager
@@ -44,6 +44,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router, prefix="/api/v1")
     app.include_router(auth.router, prefix="/api/v1")
+    app.include_router(orgs.router, prefix="/api/v1")
     app.include_router(inference.router, prefix="/api/v1")
     app.include_router(sessions.router, prefix="/api/v1")
     app.include_router(tasks.router, prefix="/api/v1")

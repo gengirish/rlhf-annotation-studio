@@ -246,6 +246,12 @@ export default function DashboardPage() {
           <Link href="/reviews" className="btn btn-primary">
             Review Queue
           </Link>
+          <Link href="/settings" className="btn btn-primary">
+            Settings
+          </Link>
+          <Link href="/author" className="btn btn-primary">
+            Author Tasks
+          </Link>
         </div>
       </section>
 
