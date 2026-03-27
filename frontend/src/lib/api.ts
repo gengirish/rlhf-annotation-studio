@@ -222,8 +222,19 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(body)
     }),
-  deleteTaskPack: (slug: string) =>
-    requestEmpty(`/api/v1/tasks/packs/${encodeURIComponent(slug)}`, { method: "DELETE" })
+  deleteTaskPack: async (slug: string) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("rlhf_authToken") : null;
+    const res = await fetch(`${API_BASE}/api/v1/tasks/packs/${encodeURIComponent(slug)}`, {
+      method: "DELETE",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { detail?: string };
+      throw new ApiError(res.status, body.detail || "Delete failed");
+    }
+  }
 };
 
 export interface TaskPackSummary {
