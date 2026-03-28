@@ -19,7 +19,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
     phone: str | None = None
-    role: str = Field(default="annotator", pattern="^(admin|reviewer|annotator)$")
+    role: str = Field(default="annotator", pattern="^(reviewer|annotator)$")
 
 
 class LoginRequest(BaseModel):
