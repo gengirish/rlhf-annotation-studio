@@ -58,17 +58,75 @@ FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for the RLHF Annota
 
 ## API (v1)
 
+### Auth
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/auth/register` | Create account → `{ token, annotator, session_id }` |
+| POST | `/api/v1/auth/login` | Login → `{ token, annotator, session_id }` (annotator includes `role` and `org_id`) |
+
+### Sessions & Workspace
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/sessions/bootstrap` | Legacy bootstrap (no password) |
+| GET | `/api/v1/sessions/{id}/workspace` | Load tasks, annotations, timings (JWT) |
+| PUT | `/api/v1/sessions/{id}/workspace` | Save workspace snapshot (JWT) |
+| GET | `/api/v1/sessions/{id}/workspace/history` | Last 20 workspace revisions (JWT) |
+
+### Tasks
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/tasks/packs` | List all task packs |
+| GET | `/api/v1/tasks/packs/{slug}` | Full task pack with tasks_json |
+| POST | `/api/v1/tasks/packs` | Create task pack (JWT) |
+| PUT | `/api/v1/tasks/packs/{slug}` | Update task pack (JWT) |
+| DELETE | `/api/v1/tasks/packs/{slug}` | Delete task pack (JWT) |
+| POST | `/api/v1/tasks/validate` | Validate task array |
+| POST | `/api/v1/tasks/score-session` | Score session against gold tasks (JWT) |
+
+### Reviews (role-gated)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/reviews/queue` | Current user's assignments (JWT) |
+| GET | `/api/v1/reviews/pending` | Submitted reviews awaiting approval (admin/reviewer) |
+| GET | `/api/v1/reviews/team` | All team assignments, `?status=`/`?annotator_id=` filters (admin/reviewer) |
+| POST | `/api/v1/reviews/assign` | Assign single task to annotator (admin/reviewer) |
+| POST | `/api/v1/reviews/bulk-assign` | Assign entire task pack to annotator (admin/reviewer) |
+| PUT | `/api/v1/reviews/{id}` | Approve/reject submission (admin/reviewer) |
+| POST | `/api/v1/reviews/{id}/submit` | Annotator submits annotation (JWT, owner only) |
+
+### Organizations
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/orgs` | Create org (creator becomes admin) |
+| GET | `/api/v1/orgs/{id}` | Get org details (member) |
+| PUT | `/api/v1/orgs/{id}` | Update org settings (admin only) |
+| GET | `/api/v1/orgs/{id}/members` | List org members |
+| POST | `/api/v1/orgs/{id}/members` | Add member by email |
+| PUT | `/api/v1/orgs/{id}/members/{mid}/role` | Change member role (admin only) |
+| GET | `/api/v1/orgs/{id}/team-stats` | Per-member annotation stats (admin/reviewer) |
+
+### Metrics
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/metrics/session/{id}/summary` | Session completion stats (JWT) |
+| GET | `/api/v1/metrics/session/{id}/timeline` | Completion timeline (JWT) |
+
+### Inference
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/health` | Liveness |
-| POST | `/api/v1/sessions/bootstrap` | Body `{ "annotator": { "name", "email", "phone" } }` → `{ annotator, session_id }` |
-| GET | `/api/v1/sessions/{session_id}/workspace` | Load tasks, annotations, timings |
-| PUT | `/api/v1/sessions/{session_id}/workspace` | Body `{ tasks, annotations, task_times, active_pack_file }` |
-| GET | `/api/v1/tasks/packs` | List all task packs (slug, name, description, language, task_count) |
-| GET | `/api/v1/tasks/packs/{slug}` | Full task pack with tasks_json array |
-| POST | `/api/v1/tasks/validate` | Validate an array of task items |
-| GET | `/api/v1/inference/status` | Whether inference is enabled and a Hugging Face token is configured (no secrets returned) |
-| POST | `/api/v1/inference/complete` | Live completions: body `{ prompt, system?, slots: [{ label?, hf_model?, temperature?, seed? }] }` → `{ slots: [{ label, text, model, error }] }` |
+| GET | `/api/v1/inference/status` | Whether inference is enabled |
+| GET | `/api/v1/inference/models` | Available HF models |
+| POST | `/api/v1/inference/stream` | Live streaming completions (optional JWT) |
+| POST | `/api/v1/inference/complete` | Multi-slot parallel completions (optional JWT) |
+
+### Roles
+
+Every annotator has a `role` column: `admin`, `reviewer`, or `annotator` (default).
+- `annotator` — standard access: own queue, submit annotations
+- `reviewer` — can assign tasks, approve/reject submissions, view team stats
+- `admin` — can change roles, manage org settings, all reviewer capabilities
+- Org creator is auto-promoted to admin; roles are changed via `PUT /orgs/{id}/members/{mid}/role`
 
 ### Hugging Face live responses
 
@@ -89,6 +147,9 @@ FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for the RLHF Annota
 | `DEBUG` | `true` to echo SQL |
 | `HF_API_TOKEN` / `HF_TOKEN` | Hugging Face token for Inference Providers router |
 | `HF_DEFAULT_MODEL` | Default Hub model id for `/inference/complete` |
+| `JWT_SECRET` | Secret key for signing JWT tokens |
+| `JWT_EXPIRE_MINUTES` | Token expiration (default `1440` = 24h) |
+| `JWT_ALGORITHM` | JWT algorithm (default `HS256`) |
 | `INFERENCE_REQUIRE_AUTH` | `true` to require `Authorization: Bearer` (JWT) on inference routes |
 | `INFERENCE_MAX_TOKENS` | Max new tokens per completion (default `1024`) |
 | `INFERENCE_TIMEOUT_SECONDS` | HTTP timeout to HF router (default `120`) |

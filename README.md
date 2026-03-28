@@ -56,17 +56,28 @@ See `deploy/DEPLOY-VERCEL-FLY.md` for the exact CLI workflow.
 ```
 RLHF/
 ├── frontend/                         ← Next.js App Router frontend
-│   ├── src/app/                      ← Auth, dashboard, task routes
+│   ├── src/app/
+│   │   ├── auth/                     ← Login / register
+│   │   ├── dashboard/                ← Task library, stats, session sync
+│   │   ├── task/[taskId]/            ← Annotation workflow
+│   │   ├── reviews/                  ← Review queue + pending + team
+│   │   ├── team/                     ← Team management (admin/reviewer)
+│   │   ├── analytics/                ← Session metrics
+│   │   ├── settings/                 ← Org settings
+│   │   └── author/                   ← Task authoring
+│   ├── src/lib/                      ← API client, Zustand store
 │   └── tests/e2e/                    ← Playwright E2E tests
-├── backend/                          ← FastAPI + Neon PostgreSQL (optional)
-│   ├── app/                          ← API routers, models, services
-│   ├── src/rlhf_api/                 ← src-layout package entrypoint
+├── backend/                          ← FastAPI + Neon PostgreSQL
+│   ├── app/
+│   │   ├── auth.py                   ← JWT auth + role-based dependencies
+│   │   ├── routers/                  ← health, auth, sessions, tasks, reviews, orgs, inference, metrics
+│   │   ├── models/                   ← Annotator (with role), Organization, ReviewAssignment, etc.
+│   │   └── schemas/                  ← Pydantic request/response models
+│   ├── alembic/versions/             ← DB migrations (001–007)
+│   ├── tasks/                        ← JSON task pack source files
 │   └── README.md
 ├── docker/
 │   └── docker-compose.yml            ← Full-stack local orchestration
-├── tasks/
-│   ├── code-review-comparisons.json  ← Code review annotation tasks
-│   └── safety-alignment.json         ← Safety & alignment evaluation tasks
 ├── guidelines/
 │   ├── comparison-rubric.md          ← How to annotate comparison tasks
 │   ├── rating-rubric.md              ← How to annotate rating tasks
@@ -75,6 +86,7 @@ RLHF/
 ├── templates/
 │   ├── task-template.md              ← JSON schema for creating new tasks
 │   └── annotation-export-example.md  ← Example of what exported annotations look like
+├── deploy/                           ← Deployment guides (Vercel + Fly)
 ├── exports/                          ← Save your exported annotations here
 └── README.md
 ```
@@ -149,30 +161,114 @@ Minimal example:
 
 ---
 
+## Roles and Team Workflows
+
+Every annotator has a **role** that controls what they can access:
+
+| Role | Capabilities |
+|------|-------------|
+| `annotator` | Load task packs, annotate tasks, view own review queue, submit annotations |
+| `reviewer` | Everything annotators can do, plus: view pending reviews, approve/reject submissions, assign tasks, view team stats, bulk-assign task packs |
+| `admin` | Everything reviewers can do, plus: change member roles, update org settings, manage org membership |
+
+### How roles are assigned
+
+- New users default to `annotator`.
+- The user who creates an organization is automatically promoted to `admin`.
+- Admins can change any org member's role from the **Team Management** page (`/team`) or via the API.
+
+### Team Management (`/team`)
+
+Accessible to `admin` and `reviewer` roles. Features:
+- **Members table** — name, email, role, and per-member annotation stats (assigned/submitted/approved/rejected)
+- **Role management** — admins can change any member's role via dropdown
+- **Bulk assign** — select a task pack and an annotator, assign all tasks in one click
+- **Team reviews** — filterable table of all review assignments with approve/reject actions
+
+### Review workflow
+
+```
+Admin/Reviewer assigns task pack to annotator
+  → Annotator sees tasks in their Review Queue (/reviews)
+  → Annotator completes and submits annotation
+  → Status changes to "submitted"
+  → Reviewer/Admin sees it in Pending Reviews
+  → Reviewer approves or rejects (with optional notes)
+  → Status becomes "approved" or "rejected"
+```
+
+---
+
 ## API Endpoints and Auth Expectations
 
 When `API_BASE` is configured, the UI uses these endpoints:
 
-| Method | Path | Used by UI | Auth required |
-|-----|-----|-----|-----|
-| `POST` | `/api/v1/auth/register` | Yes (new user flow) | No |
-| `POST` | `/api/v1/auth/login` | Yes (returning user flow) | No |
-| `GET` | `/api/v1/health` | Optional diagnostics | No |
-| `GET` | `/api/v1/inference/status` | Yes (capability check) | No |
-| `GET` | `/api/v1/inference/models` | Yes (model picker) | No |
-| `POST` | `/api/v1/inference/stream` | Yes (live streaming text) | Optional (`INFERENCE_REQUIRE_AUTH=true`) |
-| `POST` | `/api/v1/inference/complete` | Optional/non-stream use | Optional (`INFERENCE_REQUIRE_AUTH=true`) |
-| `GET` | `/api/v1/sessions/{session_id}/workspace` | Yes (restore workspace) | No (session ID based) |
-| `PUT` | `/api/v1/sessions/{session_id}/workspace` | Yes (autosync) | No (session ID based) |
-| `GET` | `/api/v1/tasks/packs` | Yes (task library catalog) | No |
-| `GET` | `/api/v1/tasks/packs/{slug}` | Yes (load full task pack) | No |
-| `POST` | `/api/v1/tasks/validate` | Yes (validate loaded tasks) | No |
-| `POST` | `/api/v1/sessions/bootstrap` | Legacy/optional path | No |
+### Auth
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/auth/register` | No | Create account → JWT + session_id |
+| `POST` | `/api/v1/auth/login` | No | Login → JWT + session_id (response includes `role` and `org_id`) |
+
+### Health & Inference
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/v1/health` | No | Liveness check |
+| `GET` | `/api/v1/inference/status` | No | Whether inference is enabled |
+| `GET` | `/api/v1/inference/models` | No | Available HF model list |
+| `POST` | `/api/v1/inference/stream` | Optional | Live streaming text generation |
+| `POST` | `/api/v1/inference/complete` | Optional | Multi-slot parallel completions |
+
+### Sessions & Workspace
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/sessions/bootstrap` | No | Legacy bootstrap path |
+| `GET` | `/api/v1/sessions/{id}/workspace` | JWT | Load workspace snapshot |
+| `PUT` | `/api/v1/sessions/{id}/workspace` | JWT | Save workspace snapshot |
+| `GET` | `/api/v1/sessions/{id}/workspace/history` | JWT | Last 20 workspace revisions |
+
+### Tasks
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/v1/tasks/packs` | No | List task pack catalog |
+| `GET` | `/api/v1/tasks/packs/{slug}` | No | Full task pack with tasks |
+| `POST` | `/api/v1/tasks/packs` | JWT | Create task pack |
+| `PUT` | `/api/v1/tasks/packs/{slug}` | JWT | Update task pack |
+| `DELETE` | `/api/v1/tasks/packs/{slug}` | JWT | Delete task pack |
+| `POST` | `/api/v1/tasks/validate` | No | Validate task array |
+| `POST` | `/api/v1/tasks/score-session` | JWT | Score session against gold tasks |
+
+### Reviews (role-gated)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/v1/reviews/queue` | JWT | Current user's assigned tasks |
+| `GET` | `/api/v1/reviews/pending` | JWT (admin/reviewer) | All submitted reviews awaiting approval |
+| `GET` | `/api/v1/reviews/team` | JWT (admin/reviewer) | All team review assignments (filterable) |
+| `POST` | `/api/v1/reviews/assign` | JWT (admin/reviewer) | Assign a single task to an annotator |
+| `POST` | `/api/v1/reviews/bulk-assign` | JWT (admin/reviewer) | Assign entire task pack to an annotator |
+| `PUT` | `/api/v1/reviews/{id}` | JWT (admin/reviewer) | Approve/reject a submission |
+| `POST` | `/api/v1/reviews/{id}/submit` | JWT | Annotator submits their annotation |
+
+### Organizations
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/orgs` | JWT | Create org (creator becomes admin) |
+| `GET` | `/api/v1/orgs/{id}` | JWT (member) | Get org details |
+| `PUT` | `/api/v1/orgs/{id}` | JWT (admin) | Update org settings |
+| `GET` | `/api/v1/orgs/{id}/members` | JWT (member) | List org members |
+| `POST` | `/api/v1/orgs/{id}/members` | JWT (member) | Add member by email |
+| `PUT` | `/api/v1/orgs/{id}/members/{mid}/role` | JWT (admin) | Change member role |
+| `GET` | `/api/v1/orgs/{id}/team-stats` | JWT (admin/reviewer) | Per-member annotation stats |
+
+### Metrics
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/v1/metrics/session/{id}/summary` | JWT | Session completion stats |
+| `GET` | `/api/v1/metrics/session/{id}/timeline` | JWT | Completion timeline |
 
 Notes:
-- Current UI auth flow uses `/auth/register` and `/auth/login` and stores JWT in localStorage.
-- Session workspace routes currently rely on possession of `session_id` (not JWT enforcement).
+- Auth uses JWT stored in localStorage. Login/register return token, annotator (with role), and session_id.
 - Inference routes enforce JWT only when `INFERENCE_REQUIRE_AUTH=true`.
+- Review and org management endpoints enforce role-based access (admin or reviewer required).
 
 ---
 
