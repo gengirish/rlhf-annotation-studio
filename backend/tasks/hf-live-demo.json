@@ -1,42 +1,72 @@
 [
   {
-    "id": "hf-live-demo-1",
+    "id": "hf-live-1",
     "type": "comparison",
-    "title": "Live model comparison (Hugging Face)",
-    "prompt": "In 2–3 sentences, what is a closure in JavaScript?",
+    "title": "Live Model Comparison — Code Explanation",
+    "prompt": "In 2–3 sentences, what is a closure in JavaScript and why is it useful?",
     "guidelines": [
-      "Both answers are generated live via your FastAPI server and Hugging Face Inference Providers.",
-      "Compare clarity and technical accuracy."
+      "Both responses are generated live via Hugging Face Inference API — you can edit the prompt before sending.",
+      "Select two different models from the dropdowns to compare their outputs.",
+      "Compare clarity, technical accuracy, and conciseness."
     ],
     "inference": {
       "provider": "hf",
-      "system": "You are a concise programming tutor. Answer in markdown. Keep under 120 words."
+      "editable_prompt": true,
+      "system": "You are a concise programming tutor. Answer in markdown. Keep under 150 words."
     },
     "responses": [
       {
         "label": "Response A",
-        "model": "HF — slot A",
+        "model": "Qwen/Qwen2.5-Coder-32B-Instruct",
         "text": "",
         "seed": 101
       },
       {
         "label": "Response B",
-        "model": "HF — slot B",
+        "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
         "text": "",
         "seed": 102
       }
     ],
     "dimensions": [
+      { "name": "Helpfulness", "description": "Does it answer the question clearly and completely?", "scale": 5 },
+      { "name": "Accuracy", "description": "Is the technical content correct?", "scale": 5 },
+      { "name": "Conciseness", "description": "Is the answer appropriately brief without losing key details?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "hf-live-2",
+    "type": "comparison",
+    "title": "Live Model Comparison — Bug Diagnosis",
+    "prompt": "This Python code has a bug. Find it and explain the fix:\n\ndef merge_dicts(a, b, result={}):\n    result.update(a)\n    result.update(b)\n    return result",
+    "guidelines": [
+      "Both responses are generated live — you can edit the prompt or try your own.",
+      "Compare how well each model identifies the mutable default argument bug.",
+      "Check whether the explanation would help a junior developer understand the issue."
+    ],
+    "inference": {
+      "provider": "hf",
+      "editable_prompt": true,
+      "system": "You are an expert code reviewer. Identify bugs precisely. Use markdown with code blocks."
+    },
+    "responses": [
       {
-        "name": "Helpfulness",
-        "description": "Does it answer the question clearly?",
-        "scale": 5
+        "label": "Response A",
+        "model": "Qwen/Qwen2.5-Coder-32B-Instruct",
+        "text": "",
+        "seed": 201
       },
       {
-        "name": "Accuracy",
-        "description": "Is the technical content correct?",
-        "scale": 5
+        "label": "Response B",
+        "model": "mistralai/Mistral-Small-24B-Instruct-2501",
+        "text": "",
+        "seed": 202
       }
+    ],
+    "dimensions": [
+      { "name": "Bug Identification", "description": "Does it correctly identify the mutable default argument issue?", "scale": 5 },
+      { "name": "Explanation Quality", "description": "Is the explanation clear enough for a junior developer?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the proposed fix correct and idiomatic?", "scale": 5 }
     ]
   }
 ]

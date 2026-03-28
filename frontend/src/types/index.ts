@@ -4,6 +4,7 @@ export interface TaskResponse {
   label: string;
   model?: string;
   text: string;
+  seed?: number;
 }
 
 export interface TaskDimension {
@@ -12,12 +13,19 @@ export interface TaskDimension {
   scale: number;
 }
 
+export interface TaskInference {
+  provider: string;
+  editable_prompt?: boolean;
+  system?: string;
+}
+
 export interface TaskItem {
   id: string;
   type: TaskType;
   title: string;
   prompt: string;
   guidelines?: string[];
+  inference?: TaskInference;
   responses: TaskResponse[];
   dimensions: TaskDimension[];
 }

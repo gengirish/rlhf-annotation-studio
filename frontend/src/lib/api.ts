@@ -142,6 +142,15 @@ export const api = {
       },
       body: JSON.stringify(body)
     }),
+  inferenceComplete: (body: {
+    prompt: string;
+    system?: string;
+    slots: Array<{ label?: string; hf_model?: string; temperature?: number; seed?: number }>;
+  }) =>
+    request<{ slots: Array<{ label: string; text: string | null; model: string | null; error: string | null }> }>(
+      "/api/v1/inference/complete",
+      { method: "POST", body: JSON.stringify(body) }
+    ),
   getWorkspace: (sessionId: string) =>
     request<{
       session_id: string;

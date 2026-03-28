@@ -61,7 +61,7 @@ PACK_META = [
         "file": "hf-live-demo.json",
         "slug": "hf-live-demo",
         "name": "Hugging Face Live Demo",
-        "description": "Live model comparison tasks using Hugging Face Inference API",
+        "description": "Live model comparison tasks — edit prompts, select 2 models, compare responses side by side",
         "language": "python",
     },
     {
