@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { api, type ReviewAssignment } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 
-type Tab = "assignments" | "pending";
+type Tab = "assignments" | "pending" | "team";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; border: string }> = {
   assigned: { bg: "#fffbeb", color: "#b45309", border: "#f59e0b" },
@@ -77,9 +77,13 @@ export default function ReviewsPage() {
   const [tab, setTab] = useState<Tab>("assignments");
   const [queue, setQueue] = useState<ReviewAssignment[]>([]);
   const [pending, setPending] = useState<ReviewAssignment[]>([]);
+  const [teamReviews, setTeamReviews] = useState<ReviewAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [notesById, setNotesById] = useState<Record<string, string>>({});
   const [actingId, setActingId] = useState<string | null>(null);
+  const [annotatorNames, setAnnotatorNames] = useState<Record<string, string>>({});
+
+  const canTeamReviews = user?.role === "admin" || user?.role === "reviewer";
 
   useEffect(() => {
     if (!user || !sessionId) {
@@ -90,20 +94,44 @@ export default function ReviewsPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [q, p] = await Promise.all([api.getReviewQueue(), api.getPendingReviews()]);
-      setQueue(q.assignments ?? []);
-      setPending(p.assignments ?? []);
+      if (tab === "team") {
+        const data = await api.getTeamReviews();
+        setTeamReviews(Array.isArray(data) ? data : []);
+      } else {
+        const [q, p] = await Promise.all([api.getReviewQueue(), api.getPendingReviews()]);
+        const qList = Array.isArray(q) ? q : (q as { assignments?: ReviewAssignment[] }).assignments ?? [];
+        const pList = Array.isArray(p) ? p : (p as { assignments?: ReviewAssignment[] }).assignments ?? [];
+        setQueue(qList);
+        setPending(pList);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to load reviews");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tab]);
 
   useEffect(() => {
     if (!sessionId) return;
+    if (tab === "team" && !canTeamReviews) return;
     void loadData();
-  }, [sessionId, loadData]);
+  }, [sessionId, tab, canTeamReviews, loadData]);
+
+  useEffect(() => {
+    if (!user?.org_id) return;
+    void api
+      .getOrgMembers(user.org_id)
+      .then((members) => {
+        const map: Record<string, string> = {};
+        members.forEach((m) => {
+          map[m.id] = m.name;
+        });
+        setAnnotatorNames(map);
+      })
+      .catch(() => {
+        /* optional */
+      });
+  }, [user?.org_id]);
 
   async function handleDecision(assignmentId: string, status: "approved" | "rejected") {
     const notes = notesById[assignmentId]?.trim();
@@ -164,17 +192,197 @@ export default function ReviewsPage() {
         </Link>
       </header>
 
-      <div style={{ marginTop: 18, display: "flex", gap: 8 }}>
+      <div style={{ marginTop: 18, display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button type="button" style={tabBtn(tab === "assignments")} onClick={() => setTab("assignments")}>
           My Assignments
         </button>
         <button type="button" style={tabBtn(tab === "pending")} onClick={() => setTab("pending")}>
           Pending Review
         </button>
+        {canTeamReviews ? (
+          <button type="button" style={tabBtn(tab === "team")} onClick={() => setTab("team")}>
+            Team Reviews
+          </button>
+        ) : null}
       </div>
 
       {loading ? (
         <p style={{ marginTop: 18, color: "var(--muted)" }}>Loading…</p>
+      ) : tab === "team" ? (
+        <section className="card" style={{ marginTop: 18, padding: 16 }}>
+          <h2 style={{ marginTop: 0 }}>Team reviews</h2>
+          {teamReviews.length === 0 ? (
+            <p style={{ color: "var(--muted)" }}>No team assignments.</p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: 14
+                }}
+              >
+                <thead>
+                  <tr>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        borderBottom: "1px solid var(--border)"
+                      }}
+                    >
+                      Task ID
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        borderBottom: "1px solid var(--border)"
+                      }}
+                    >
+                      Annotator
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        borderBottom: "1px solid var(--border)"
+                      }}
+                    >
+                      Status
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        borderBottom: "1px solid var(--border)"
+                      }}
+                    >
+                      Reviewer notes
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        borderBottom: "1px solid var(--border)"
+                      }}
+                    >
+                      Date
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        borderBottom: "1px solid var(--border)"
+                      }}
+                    />
+                  </tr>
+                </thead>
+                <tbody>
+                  {teamReviews.map((a) => {
+                    const submitted = a.status.toLowerCase() === "submitted";
+                    return (
+                      <tr key={a.id}>
+                        <td
+                          style={{
+                            padding: "10px 8px",
+                            borderBottom: "1px solid var(--border)"
+                          }}
+                        >
+                          {a.task_id}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 8px",
+                            borderBottom: "1px solid var(--border)"
+                          }}
+                        >
+                          {annotatorNames[a.annotator_id] ?? a.annotator_id}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 8px",
+                            borderBottom: "1px solid var(--border)"
+                          }}
+                        >
+                          <StatusBadge status={a.status} />
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 8px",
+                            borderBottom: "1px solid var(--border)",
+                            maxWidth: 280,
+                            wordBreak: "break-word"
+                          }}
+                        >
+                          {submitted ? (
+                            <>
+                              <textarea
+                                className="input"
+                                rows={2}
+                                value={notesById[a.id] ?? ""}
+                                onChange={(e) =>
+                                  setNotesById((prev) => ({ ...prev, [a.id]: e.target.value }))
+                                }
+                                placeholder="Optional notes…"
+                                style={{ width: "100%", resize: "vertical" }}
+                              />
+                              {a.reviewer_notes ? (
+                                <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--muted)" }}>
+                                  Existing: {a.reviewer_notes}
+                                </p>
+                              ) : null}
+                            </>
+                          ) : (
+                            (a.reviewer_notes ?? "—")
+                          )}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 8px",
+                            borderBottom: "1px solid var(--border)",
+                            whiteSpace: "nowrap",
+                            fontSize: 13,
+                            color: "var(--muted)"
+                          }}
+                        >
+                          {new Date(a.updated_at).toLocaleString()}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 8px",
+                            borderBottom: "1px solid var(--border)"
+                          }}
+                        >
+                          {submitted ? (
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                disabled={actingId === a.id}
+                                onClick={() => void handleDecision(a.id, "approved")}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-danger"
+                                disabled={actingId === a.id}
+                                onClick={() => void handleDecision(a.id, "rejected")}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          ) : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       ) : tab === "assignments" ? (
         <section className="card" style={{ marginTop: 18, padding: 16 }}>
           <h2 style={{ marginTop: 0 }}>My Assignments</h2>

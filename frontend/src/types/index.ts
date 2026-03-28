@@ -51,4 +51,6 @@ export interface AuthUser {
   name: string;
   email: string;
   phone?: string | null;
+  role?: string;
+  org_id?: string | null;
 }

@@ -13,6 +13,11 @@ class ReviewAssignRequest(BaseModel):
     annotator_id: uuid.UUID
 
 
+class BulkAssignRequest(BaseModel):
+    task_pack_id: uuid.UUID
+    annotator_id: uuid.UUID
+
+
 class ReviewAssignmentUpdate(BaseModel):
     status: str = Field(min_length=1, max_length=32)
     reviewer_notes: str | None = None

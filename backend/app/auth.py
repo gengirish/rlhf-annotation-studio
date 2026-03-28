@@ -75,6 +75,28 @@ async def get_current_user(
     return await get_annotator_from_bearer_token(credentials.credentials, db)
 
 
+ROLE_ADMIN = "admin"
+ROLE_REVIEWER = "reviewer"
+ROLE_ANNOTATOR = "annotator"
+VALID_ROLES = {ROLE_ADMIN, ROLE_REVIEWER, ROLE_ANNOTATOR}
+
+
+def require_role(*allowed_roles: str):
+    """Return a FastAPI dependency that checks the current user has one of the allowed roles."""
+    async def _check(current_user: Annotator = Depends(get_current_user)) -> Annotator:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role '{current_user.role}' not authorized. Requires: {', '.join(allowed_roles)}",
+            )
+        return current_user
+    return _check
+
+
+require_admin = require_role(ROLE_ADMIN)
+require_reviewer_or_admin = require_role(ROLE_ADMIN, ROLE_REVIEWER)
+
+
 async def require_inference_caller(
     settings: Annotated[Settings, Depends(get_settings)],
     credentials: Annotated[

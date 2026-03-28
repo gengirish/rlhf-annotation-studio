@@ -230,7 +230,24 @@ export default function DashboardPage() {
         }}
       >
         <div>
-          <h1 style={{ margin: 0 }}>Welcome, {user?.name || "Annotator"}</h1>
+          <h1 style={{ margin: 0 }}>
+            Welcome, {user?.name || "Annotator"}
+            {user?.role && user.role !== "annotator" ? (
+              <span
+                style={{
+                  fontSize: 12,
+                  marginLeft: 8,
+                  padding: "2px 8px",
+                  borderRadius: 12,
+                  background: user.role === "admin" ? "#6366f1" : "#10b981",
+                  color: "#fff",
+                  verticalAlign: "middle"
+                }}
+              >
+                {user.role}
+              </span>
+            ) : null}
+          </h1>
           <p style={{ margin: "6px 0 0", color: "var(--muted)" }}>
             Session sync: <b>{syncState}</b>
           </p>
@@ -332,6 +349,11 @@ export default function DashboardPage() {
           <Link href="/reviews" className="btn btn-primary">
             Review Queue
           </Link>
+          {user?.role && (user.role === "admin" || user.role === "reviewer") ? (
+            <Link href="/team" className="btn btn-primary">
+              Team Management
+            </Link>
+          ) : null}
           <Link href="/settings" className="btn btn-primary">
             Settings
           </Link>

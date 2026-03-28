@@ -29,7 +29,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 export interface AuthResponse {
   token: string;
-  annotator: { id: string; name: string; email: string; phone?: string | null };
+  annotator: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string | null;
+    role?: string;
+    org_id?: string | null;
+  };
   session_id: string;
 }
 
@@ -84,6 +91,7 @@ export interface OrgMember {
   id: string;
   name: string;
   email: string;
+  role?: string;
 }
 
 export interface CreateOrgBody {
@@ -197,6 +205,18 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ annotation_json: annotation })
     }),
+  getTeamReviews: (params?: { status?: string; annotator_id?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.annotator_id) qs.set("annotator_id", params.annotator_id);
+    const q = qs.toString();
+    return request<ReviewAssignment[]>(`/api/v1/reviews/team${q ? `?${q}` : ""}`);
+  },
+  bulkAssign: (body: { task_pack_id: string; annotator_id: string }) =>
+    request<ReviewAssignment[]>("/api/v1/reviews/bulk-assign", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
   getWorkspaceHistory: (sessionId: string) =>
     request<{ revisions: Array<{ id: string; revision_number: number; created_at: string }> }>(
       `/api/v1/sessions/${sessionId}/workspace/history`
@@ -214,6 +234,18 @@ export const api = {
     );
     return Array.isArray(r) ? r : r.members;
   },
+  updateMemberRole: (orgId: string, memberId: string, role: string) =>
+    request<OrgMember & { role: string }>(
+      `/api/v1/orgs/${encodeURIComponent(orgId)}/members/${encodeURIComponent(memberId)}/role`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ role })
+      }
+    ),
+  getTeamStats: (orgId: string) =>
+    request<Array<{ annotator: OrgMember & { role: string }; stats: Record<string, number> }>>(
+      `/api/v1/orgs/${encodeURIComponent(orgId)}/team-stats`
+    ),
   createOrg: (body: CreateOrgBody) =>
     request<Organization>("/api/v1/orgs", { method: "POST", body: JSON.stringify(body) }),
   addOrgMember: (orgId: string, email: string) =>

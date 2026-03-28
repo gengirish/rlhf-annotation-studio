@@ -43,7 +43,9 @@ export default function AuthPage() {
           id: payload.annotator.id,
           name: payload.annotator.name,
           email: payload.annotator.email,
-          phone: payload.annotator.phone
+          phone: payload.annotator.phone,
+          role: payload.annotator.role,
+          org_id: payload.annotator.org_id
         },
         token: payload.token,
         sessionId: payload.session_id

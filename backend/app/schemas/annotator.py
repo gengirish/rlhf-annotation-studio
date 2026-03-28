@@ -15,6 +15,8 @@ class AnnotatorRead(BaseModel):
     name: str
     email: str
     phone: str | None
+    role: str = "annotator"
+    org_id: uuid.UUID | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
