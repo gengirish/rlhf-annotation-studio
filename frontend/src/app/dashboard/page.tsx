@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 import type { TaskPackSummary } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 import { fetchTaskPack } from "@/lib/task-packs";
-import type { WorkspaceSnapshot } from "@/types";
+import type { TaskItem, WorkspaceSnapshot } from "@/types";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -151,6 +151,72 @@ export default function DashboardPage() {
     }
   }
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleJsonUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed: unknown = JSON.parse(text);
+
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          toast.error("JSON must be a non-empty array of tasks");
+          return;
+        }
+
+        const issues: string[] = [];
+        (parsed as Record<string, unknown>[]).forEach((t, i) => {
+          if (!t.id) issues.push(`Task ${i}: missing "id"`);
+          if (!t.type) issues.push(`Task ${i}: missing "type"`);
+          if (!t.title) issues.push(`Task ${i}: missing "title"`);
+          if (!t.prompt) issues.push(`Task ${i}: missing "prompt"`);
+          if (!Array.isArray(t.responses) || (t.responses as unknown[]).length === 0)
+            issues.push(`Task ${i}: missing or empty "responses"`);
+          if (!Array.isArray(t.dimensions) || (t.dimensions as unknown[]).length === 0)
+            issues.push(`Task ${i}: missing or empty "dimensions"`);
+        });
+
+        if (issues.length > 0) {
+          toast.error(`Validation failed:\n${issues.slice(0, 5).join("\n")}`);
+          return;
+        }
+
+        const tasks = parsed as TaskItem[];
+        const packName = file.name.replace(/\.json$/i, "");
+
+        try {
+          const validation = await api.validateTasks(tasks);
+          if (!validation.ok) {
+            toast.error(
+              `Server validation: ${validation.issues?.length ?? 0} issue(s) found`
+            );
+            return;
+          }
+        } catch {
+          // server validation unavailable — rely on client-side checks above
+        }
+
+        loadTasks(tasks, packName);
+        toast.success(`Loaded ${tasks.length} tasks from ${file.name}`);
+        router.push("/task/0");
+      } catch (err) {
+        toast.error(
+          err instanceof SyntaxError
+            ? "Invalid JSON file"
+            : err instanceof Error
+              ? err.message
+              : "Failed to load file"
+        );
+      } finally {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    },
+    [loadTasks, router]
+  );
+
   return (
     <main className="container">
       <header
@@ -232,6 +298,26 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="card" style={{ marginTop: 18, padding: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Load from JSON</h2>
+        <p style={{ margin: "0 0 12px", color: "var(--muted)" }}>
+          Upload a local JSON file containing an array of annotation tasks.
+        </p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleJsonUpload}
+          style={{ display: "none" }}
+        />
+        <button
+          className="btn btn-primary"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Choose JSON File
+        </button>
       </section>
 
       <section className="card" style={{ marginTop: 18, padding: 16 }}>
