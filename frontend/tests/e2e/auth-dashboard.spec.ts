@@ -8,9 +8,24 @@ const MOCK_AUTH = {
     id: "f5f5432e-57cd-4b22-84df-a35395f60529",
     name: "E2E User",
     email: "e2e@example.com",
-    phone: null
+    phone: null,
+    role: "annotator",
+    org_id: null
   },
   session_id: "4b94db28-59c6-4716-a890-1c7e58eca66d"
+};
+
+const MOCK_AUTH_ADMIN = {
+  token: "fake-token-admin",
+  annotator: {
+    id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    name: "Admin User",
+    email: "admin@example.com",
+    phone: null,
+    role: "admin",
+    org_id: "org-001"
+  },
+  session_id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
 };
 
 const MOCK_PACK = {
@@ -35,12 +50,12 @@ const MOCK_TASK = {
   dimensions: [{ name: "correctness", description: "Correctness", scale: 5 }]
 };
 
-async function mockAllRoutes(page: Page) {
+async function mockAllRoutes(page: Page, auth = MOCK_AUTH) {
   await page.route("**/**/api/v1/auth/login", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify(MOCK_AUTH)
+      body: JSON.stringify(auth)
     });
   });
 
@@ -50,8 +65,8 @@ async function mockAllRoutes(page: Page) {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          session_id: MOCK_AUTH.session_id,
-          annotator_id: MOCK_AUTH.annotator.id,
+          session_id: auth.session_id,
+          annotator_id: auth.annotator.id,
           tasks: [],
           annotations: {},
           task_times: {},
@@ -157,10 +172,10 @@ async function mockAllRoutes(page: Page) {
   });
 }
 
-async function loginAndGoToDashboard(page: Page) {
-  await mockAllRoutes(page);
+async function loginAndGoToDashboard(page: Page, auth = MOCK_AUTH) {
+  await mockAllRoutes(page, auth);
   await page.goto("/auth");
-  await page.getByPlaceholder("Email").fill("e2e@example.com");
+  await page.getByPlaceholder("Email").fill(auth.annotator.email);
   await page.getByPlaceholder("Password").fill("password123");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
@@ -204,4 +219,45 @@ test("author page loads with pack form", async ({ page }) => {
   await loginAndGoToDashboard(page);
   await page.goto("/author");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
+});
+
+test("register form shows role dropdown without admin option", async ({ page }) => {
+  await page.goto("/auth");
+  await page.getByRole("button", { name: "Register" }).click();
+  await expect(page.getByPlaceholder("Full name")).toBeVisible();
+
+  const roleSelect = page.locator("select[name='role']");
+  await expect(roleSelect).toBeVisible();
+
+  const options = await roleSelect.locator("option").allTextContents();
+  expect(options).toContain("Annotator");
+  expect(options).toContain("Reviewer");
+  expect(options).not.toContain("Admin");
+});
+
+test("admin user sees role badge on dashboard", async ({ page }) => {
+  await loginAndGoToDashboard(page, MOCK_AUTH_ADMIN);
+  await expect(page.getByText("admin")).toBeVisible({ timeout: 10000 });
+});
+
+test("admin user sees Team Management link", async ({ page }) => {
+  await loginAndGoToDashboard(page, MOCK_AUTH_ADMIN);
+  await expect(page.getByRole("link", { name: "Team Management" })).toBeVisible({ timeout: 10000 });
+});
+
+test("annotator user does NOT see Team Management link", async ({ page }) => {
+  await loginAndGoToDashboard(page);
+  await expect(page.getByRole("link", { name: "Team Management" })).not.toBeVisible();
+});
+
+test("team page loads for admin user", async ({ page }) => {
+  await loginAndGoToDashboard(page, MOCK_AUTH_ADMIN);
+  await page.goto("/team");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
+});
+
+test("reviews page shows team tab for admin", async ({ page }) => {
+  await loginAndGoToDashboard(page, MOCK_AUTH_ADMIN);
+  await page.goto("/reviews");
+  await expect(page.getByRole("button", { name: /team/i })).toBeVisible({ timeout: 15000 });
 });
