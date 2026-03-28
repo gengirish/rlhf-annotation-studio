@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import create_access_token, hash_password, verify_password
+from app.auth import VALID_ROLES, create_access_token, hash_password, verify_password
 from app.db import get_db
 from app.models.annotator import Annotator
 from app.models.work_session import WorkSession
@@ -19,6 +19,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
     phone: str | None = None
+    role: str = Field(default="annotator", pattern="^(admin|reviewer|annotator)$")
 
 
 class LoginRequest(BaseModel):
@@ -43,6 +44,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
         email=str(body.email),
         password_hash=hash_password(body.password),
         phone=body.phone,
+        role=body.role,
     )
     db.add(annotator)
     await db.flush()

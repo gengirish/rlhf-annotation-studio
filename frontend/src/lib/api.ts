@@ -130,7 +130,7 @@ export interface ReviewAssignment {
 }
 
 export const api = {
-  register: (body: { name: string; email: string; password: string; phone?: string }) =>
+  register: (body: { name: string; email: string; password: string; phone?: string; role?: string }) =>
     request<AuthResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify(body) }),
   login: (body: { email: string; password: string }) =>
     request<AuthResponse>("/api/v1/auth/login", { method: "POST", body: JSON.stringify(body) }),

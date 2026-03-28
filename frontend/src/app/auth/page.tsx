@@ -16,7 +16,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   const title = useMemo(
-    () => (mode === "login" ? "Sign in to continue" : "Create your annotator account"),
+    () => (mode === "login" ? "Sign in to continue" : "Create your account"),
     [mode]
   );
 
@@ -31,7 +31,8 @@ export default function AuthPage() {
               name: String(fd.get("name") || ""),
               email: String(fd.get("email") || ""),
               password: String(fd.get("password") || ""),
-              phone: String(fd.get("phone") || "")
+              phone: String(fd.get("phone") || "") || undefined,
+              role: String(fd.get("role") || "annotator"),
             })
           : await api.login({
               email: String(fd.get("email") || ""),
@@ -83,6 +84,21 @@ export default function AuthPage() {
             <>
               <input className="input" name="name" placeholder="Full name" required />
               <input className="input" name="phone" placeholder="Phone (optional)" />
+              <div>
+                <label style={{ fontSize: 13, color: "var(--muted)", marginBottom: 4, display: "block" }}>
+                  Role
+                </label>
+                <select
+                  className="input"
+                  name="role"
+                  defaultValue="annotator"
+                  style={{ width: "100%", padding: "8px 12px", cursor: "pointer" }}
+                >
+                  <option value="annotator">Annotator</option>
+                  <option value="reviewer">Reviewer</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
             </>
           ) : null}
           <input className="input" name="email" type="email" placeholder="Email" required />
