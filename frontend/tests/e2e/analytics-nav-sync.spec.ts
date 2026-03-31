@@ -1,7 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-test.setTimeout(60_000);
-
 /* ───── Mock data ───── */
 
 const MOCK_AUTH = {

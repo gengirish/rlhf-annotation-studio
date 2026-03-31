@@ -1,7 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-test.setTimeout(60_000);
-
 /* ───── Mock data ───── */
 
 const MOCK_AUTH = {
@@ -473,13 +471,6 @@ test.describe("Reviews page", () => {
     await expect(page.getByRole("button", { name: "Pending Review" })).toBeVisible();
   });
 
-  test("annotator does NOT see Team Reviews tab", async ({ page }) => {
-    await loginAndGoToDashboard(page);
-    await page.goto("/reviews");
-    await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 30000 });
-    await expect(page.getByRole("button", { name: /team/i })).not.toBeVisible();
-  });
-
   test("shows empty state for no assignments", async ({ page }) => {
     await loginAndGoToDashboard(page);
     await page.goto("/reviews");
@@ -500,18 +491,6 @@ test.describe("Reviews page", () => {
     await page.getByRole("button", { name: "Pending Review" }).click();
     await expect(page.getByRole("button", { name: "Approve" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole("button", { name: "Reject" })).toBeVisible({ timeout: 10000 });
-  });
-
-  test("admin sees Team Reviews tab", async ({ page }) => {
-    await loginAndGoToDashboard(page, { auth: MOCK_AUTH_ADMIN, reviewData: MOCK_REVIEW_ASSIGNMENTS, teamMembers: MOCK_TEAM_MEMBERS });
-    await page.goto("/reviews");
-    await expect(page.getByRole("button", { name: /team/i })).toBeVisible({ timeout: 15000 });
-  });
-
-  test("reviewer sees Team Reviews tab", async ({ page }) => {
-    await loginAndGoToDashboard(page, { auth: MOCK_AUTH_REVIEWER, reviewData: MOCK_REVIEW_ASSIGNMENTS });
-    await page.goto("/reviews");
-    await expect(page.getByRole("button", { name: /team/i })).toBeVisible({ timeout: 15000 });
   });
 });
 
@@ -672,5 +651,106 @@ test.describe("Settings & Author pages", () => {
     await loginAndGoToDashboard(page);
     await page.getByRole("link", { name: "Author Tasks" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
+  });
+});
+
+/* ═════════════════════════════════════════════
+   REVIEW APPROVE / REJECT FLOW
+   ═════════════════════════════════════════════ */
+
+test.describe("Review approve/reject flow", () => {
+  test("approve action sends API call", async ({ page }) => {
+    let capturedBody: { status?: string; reviewer_notes?: string | null } | null = null;
+    await mockAllRoutes(page, { auth: MOCK_AUTH_REVIEWER, reviewData: MOCK_REVIEW_ASSIGNMENTS });
+    await page.route("**/**/api/v1/reviews/**", async (route) => {
+      if (route.request().method() === "PUT") {
+        capturedBody = JSON.parse(route.request().postData() || "{}");
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ...MOCK_REVIEW_ASSIGNMENTS[0],
+            status: capturedBody?.status ?? "approved",
+            reviewer_notes: capturedBody?.reviewer_notes ?? null
+          })
+        });
+        return;
+      }
+      await route.fallback();
+    });
+    await page.goto("/auth");
+    await page.getByPlaceholder("Email").fill(MOCK_AUTH_REVIEWER.annotator.email);
+    await page.getByPlaceholder("Password").fill("password123");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await page.goto("/reviews");
+    await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
+    await page.getByRole("button", { name: "Pending Review" }).click();
+    await expect(page.getByRole("button", { name: "Approve" })).toBeVisible({ timeout: 15000 });
+    await page.getByRole("button", { name: "Approve" }).first().click();
+    await expect.poll(() => capturedBody).not.toBeNull();
+    expect(capturedBody!.status).toBe("approved");
+  });
+
+  test("reject action sends API call with notes", async ({ page }) => {
+    let capturedBody: { status?: string; reviewer_notes?: string | null } | null = null;
+    await mockAllRoutes(page, { auth: MOCK_AUTH_REVIEWER, reviewData: MOCK_REVIEW_ASSIGNMENTS });
+    await page.route("**/**/api/v1/reviews/**", async (route) => {
+      if (route.request().method() === "PUT") {
+        capturedBody = JSON.parse(route.request().postData() || "{}");
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ...MOCK_REVIEW_ASSIGNMENTS[0],
+            status: capturedBody?.status ?? "rejected",
+            reviewer_notes: capturedBody?.reviewer_notes ?? null
+          })
+        });
+        return;
+      }
+      await route.fallback();
+    });
+    await page.goto("/auth");
+    await page.getByPlaceholder("Email").fill(MOCK_AUTH_REVIEWER.annotator.email);
+    await page.getByPlaceholder("Password").fill("password123");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await page.goto("/reviews");
+    await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
+    await page.getByRole("button", { name: "Pending Review" }).click();
+    await expect(page.getByRole("button", { name: "Reject" })).toBeVisible({ timeout: 15000 });
+    await page.getByPlaceholder("Optional notes for the annotator…").fill("Needs clearer justification");
+    await page.getByRole("button", { name: "Reject" }).first().click();
+    await expect.poll(() => capturedBody).not.toBeNull();
+    expect(capturedBody!.status).toBe("rejected");
+    expect(capturedBody!.reviewer_notes).toBe("Needs clearer justification");
+  });
+
+  test("annotator cannot see Team Reviews tab", async ({ page }) => {
+    await loginAndGoToDashboard(page, { reviewData: MOCK_REVIEW_ASSIGNMENTS });
+    await page.goto("/reviews");
+    await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("button", { name: "Team Reviews" })).not.toBeVisible();
+  });
+});
+
+/* ═════════════════════════════════════════════
+   RBAC ON REVIEWS
+   ═════════════════════════════════════════════ */
+
+test.describe("RBAC on reviews", () => {
+  test("reviewer sees Team Reviews tab", async ({ page }) => {
+    await loginAndGoToDashboard(page, { auth: MOCK_AUTH_REVIEWER, reviewData: MOCK_REVIEW_ASSIGNMENTS });
+    await page.goto("/reviews");
+    await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("button", { name: "Team Reviews" })).toBeVisible();
+  });
+
+  test("admin sees Team Reviews tab", async ({ page }) => {
+    await loginAndGoToDashboard(page, { auth: MOCK_AUTH_ADMIN, reviewData: MOCK_REVIEW_ASSIGNMENTS });
+    await page.goto("/reviews");
+    await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("button", { name: "Team Reviews" })).toBeVisible();
   });
 });

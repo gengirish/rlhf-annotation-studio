@@ -360,6 +360,50 @@ Works in any modern browser: Chrome, Firefox, Edge, Safari. Run with `frontend` 
 
 ---
 
+## Testing
+
+The project has three test layers. All commands below assume you are in the repo root.
+
+### Backend unit tests (pytest)
+
+```bash
+cd backend
+pip install -e ".[dev]"
+python -m pytest -q
+```
+
+Covers auth, workspace, orgs, reviews, tasks, metrics, annotation validation, and gold scoring (82 tests).
+
+### Frontend unit tests (Vitest)
+
+```bash
+cd frontend
+npm run test          # single run
+npm run test:watch    # watch mode
+```
+
+Covers Zustand store actions and the API client (26 tests).
+
+### Frontend E2E tests (Playwright)
+
+```bash
+cd frontend
+npx playwright install chromium
+npm run test:e2e
+```
+
+Covers auth, dashboard, task annotation, export/validation, responsive layout, reviews, settings, author, and analytics (6 spec files).
+
+### Run everything
+
+```bash
+npm run test:all
+```
+
+CI runs all three layers on every push to `master` and on pull requests (see `.github/workflows/ci.yml`).
+
+---
+
 ## Release Gate
 
 A production release is blocked unless **all three** checks are complete:

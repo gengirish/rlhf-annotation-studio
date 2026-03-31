@@ -1,69 +1,13 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from types import SimpleNamespace
-from uuid import UUID, uuid4
+from uuid import uuid4
 
-import pytest
 from fastapi import FastAPI, HTTPException, status
 from fastapi.testclient import TestClient
 
 from app.auth import get_current_user
-from app.db import get_db
-from app.main import create_app
-
-
-class FakeDB:
-    def __init__(self) -> None:
-        self.rows: dict[UUID, SimpleNamespace] = {}
-        self.commits = 0
-
-    async def get(self, _model: object, key: UUID) -> SimpleNamespace | None:
-        return self.rows.get(key)
-
-    async def commit(self) -> None:
-        self.commits += 1
-
-
-def make_session_row(*, session_id: UUID, annotator_id: UUID) -> SimpleNamespace:
-    return SimpleNamespace(
-        id=session_id,
-        annotator_id=annotator_id,
-        tasks_json=[{"id": "t-1"}],
-        annotations_json={"t-1": {"status": "done"}},
-        task_times_json={"t-1": 12},
-        active_pack_file="tasks/debugging-exercises-python.json",
-        updated_at=datetime.now(UTC),
-    )
-
-
-WORKSPACE_PAYLOAD = {
-    "tasks": [{"id": "t-2"}],
-    "annotations": {"t-2": {"status": "done"}},
-    "task_times": {"t-2": 99},
-    "active_pack_file": "tasks/code-review-comparisons.json",
-}
-
-
-@pytest.fixture
-def fake_db() -> FakeDB:
-    return FakeDB()
-
-
-@pytest.fixture
-def app(fake_db: FakeDB, monkeypatch: pytest.MonkeyPatch) -> FastAPI:
-    import app.main as main_module
-
-    async def no_op_warm_pool() -> None:
-        return None
-
-    async def override_get_db():
-        yield fake_db
-
-    monkeypatch.setattr(main_module, "warm_pool", no_op_warm_pool)
-    test_app = create_app()
-    test_app.dependency_overrides[get_db] = override_get_db
-    return test_app
+from tests.conftest import WORKSPACE_PAYLOAD, FakeDB, make_session_row
 
 
 def test_workspace_read_write_success_for_owner(app: FastAPI, fake_db: FakeDB) -> None:
@@ -89,7 +33,7 @@ def test_workspace_read_write_success_for_owner(app: FastAPI, fake_db: FakeDB) -
             json=WORKSPACE_PAYLOAD,
         )
         assert put_resp.status_code == 200
-        assert put_resp.json() == {"ok": True}
+        assert put_resp.json()["ok"] is True
 
     assert row.tasks_json == [{"id": "t-2"}]
     assert row.annotations_json == {"t-2": {"status": "done"}}

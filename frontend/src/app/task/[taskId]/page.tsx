@@ -180,13 +180,30 @@ export default function TaskPage() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName)) return;
-      if (phase !== 3) return;
+      if (phase !== 3 || !task) return;
+      if (task.type === "comparison") {
+        if (e.key === "1") {
+          e.preventDefault();
+          updateAnnotation(task.id, { preference: 0, status: "active" });
+          return;
+        }
+        if (e.key === "2") {
+          e.preventDefault();
+          updateAnnotation(task.id, { preference: 1, status: "active" });
+          return;
+        }
+        if (e.key === "3") {
+          e.preventDefault();
+          updateAnnotation(task.id, { preference: -1, status: "active" });
+          return;
+        }
+      }
       if (e.key === "ArrowRight" || e.key.toLowerCase() === "n") goNext();
       if (e.key === "ArrowLeft" || e.key.toLowerCase() === "p") goPrev();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, goNext, goPrev]);
+  }, [phase, goNext, goPrev, task, updateAnnotation]);
 
   async function beginStreaming() {
     if (!task) return;
@@ -272,6 +289,17 @@ export default function TaskPage() {
     if (!ann?.justification || ann.justification.trim().length < 10) {
       toast.error("Add at least 10 characters in justification");
       return;
+    }
+    if (task.type === "comparison" && ann.preference === undefined) {
+      toast.error("Select a preference (A, B, or Tie)");
+      return;
+    }
+    for (const dimension of task.dimensions) {
+      const score = ann?.dimensions?.[dimension.name];
+      if (score === undefined || score === null) {
+        toast.error("Rate all dimensions before submitting");
+        return;
+      }
     }
     updateAnnotation(task.id, { status: "done", completedAt: new Date().toISOString() });
     goNext();
@@ -425,7 +453,16 @@ export default function TaskPage() {
               </div>
             ) : null}
 
-            <div style={{ display: "grid", gridTemplateColumns: task.responses.length === 2 ? "1fr 1fr" : "1fr", gap: 10 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  task.responses.length === 2
+                    ? "repeat(auto-fit, minmax(min(100%, 280px), 1fr))"
+                    : "1fr",
+                gap: 10
+              }}
+            >
               {task.responses.map((response, idx) => (
                 <article key={response.label} className="card" style={{ padding: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -467,7 +504,17 @@ export default function TaskPage() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: task.responses.length === 2 ? "1fr 1fr" : "1fr", gap: 10, marginBottom: 12 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  task.responses.length === 2
+                    ? "repeat(auto-fit, minmax(min(100%, 280px), 1fr))"
+                    : "1fr",
+                gap: 10,
+                marginBottom: 12
+              }}
+            >
               {task.responses.map((response, idx) => {
                 const text = streamingText[idx] || response.text || "";
                 return (

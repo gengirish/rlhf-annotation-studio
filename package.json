@@ -9,7 +9,9 @@
     "frontend:lint": "npm --prefix frontend run lint",
     "frontend:e2e": "npm --prefix frontend run test:e2e",
     "vercel-build": "npm --prefix frontend run build",
-    "backend:test": "python -m pytest -q",
+    "backend:test": "cd backend && python -m pytest -q",
+    "frontend:test": "npm --prefix frontend run test",
+    "test:all": "npm run backend:test && npm run frontend:test && npm run frontend:e2e",
     "sync-fly-url": "node scripts/sync-vercel-fly-rewrite.mjs"
   },
   "dependencies": {

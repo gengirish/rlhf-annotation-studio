@@ -1,7 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-test.setTimeout(60_000);
-
 /* ───── Mock data ───── */
 
 const MOCK_AUTH = {
@@ -370,5 +368,71 @@ test.describe("Author page — editing", () => {
     await page.getByRole("button", { name: "Load" }).click();
     await expect(page.getByText("Pack loaded for editing")).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Save pack (update)" })).toBeVisible();
+  });
+});
+
+/* ═════════════════════════════════════════════
+   SETTINGS INVITE FLOW
+   ═════════════════════════════════════════════ */
+
+test.describe("Settings invite flow", () => {
+  test("invite member by email shows success feedback", async ({ page }) => {
+    let invitePayload: { email?: string } | null = null;
+    await mockAllRoutes(page);
+    await page.route("**/**/api/v1/orgs/**", async (route) => {
+      const url = route.request().url();
+      if (url.includes("/members") && route.request().method() === "POST") {
+        invitePayload = JSON.parse(route.request().postData() || "{}");
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "invited-member",
+            name: "",
+            email: invitePayload?.email ?? "",
+            role: "annotator"
+          })
+        });
+        return;
+      }
+      await route.fallback();
+    });
+    await page.goto("/auth");
+    await page.evaluate(() => localStorage.setItem("rlhf_active_org_id", "org-001"));
+    await page.getByPlaceholder("Email").fill(MOCK_AUTH.annotator.email);
+    await page.getByPlaceholder("Password").fill("password123");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await page.goto("/settings");
+    await expect(page.getByRole("heading", { name: "Team members" })).toBeVisible({ timeout: 15000 });
+    await page.getByPlaceholder("teammate@example.com").fill("invitee@example.com");
+    await page.getByRole("button", { name: "Add member" }).click();
+    await expect(page.getByText("Invitation sent")).toBeVisible({ timeout: 10000 });
+    expect(invitePayload?.email).toBe("invitee@example.com");
+  });
+});
+
+/* ═════════════════════════════════════════════
+   AUTHOR DELETE PACK
+   ═════════════════════════════════════════════ */
+
+test.describe("Author delete pack", () => {
+  test("delete pack button triggers confirmation", async ({ page }) => {
+    await loginAndGoToDashboard(page);
+    await page.getByRole("link", { name: "Author Tasks" }).click();
+    await expect(page.getByPlaceholder("my-pack-slug")).toBeVisible({ timeout: 15000 });
+    await page.getByPlaceholder("my-pack-slug").fill("my-comparison-pack");
+    await page.getByRole("button", { name: "Load" }).click();
+    await expect(page.getByText("Pack loaded for editing")).toBeVisible({ timeout: 10000 });
+
+    let dialogMessage = "";
+    page.once("dialog", (dialog) => {
+      dialogMessage = dialog.message();
+      void dialog.dismiss();
+    });
+    await page.getByRole("button", { name: "Delete pack" }).click();
+    expect(dialogMessage).toContain("Delete pack");
+    expect(dialogMessage).toContain("my-comparison-pack");
+    await expect(page.getByRole("button", { name: "Delete pack" })).toBeVisible();
   });
 });
