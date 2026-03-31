@@ -1,0 +1,113 @@
+[
+  {
+    "id": "debug-1",
+    "type": "comparison",
+    "title": "The Config Loader — IDisposable Resource Leak and Null Reference",
+    "prompt": "An AI-generated C# utility reads configuration from a JSON file and returns a settings object. A tester reports that the application sometimes throws `NullReferenceException` and that file handles accumulate over time when the method is called repeatedly. Identify the bugs and provide a corrected version.\n\n```csharp\nusing System;\nusing System.IO;\nusing System.Text.Json;\n\npublic class ConfigLoader\n{\n    public Config Load(string path)\n    {\n        var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);\n        var reader = new StreamReader(stream);\n        var json = reader.ReadToEnd();\n        var config = JsonSerializer.Deserialize<Config>(json);\n        return config;\n    }\n}\n\npublic class Config\n{\n    public string ServerUrl { get; set; }\n    public int Port { get; set; }\n}\n```\n\nWhen called repeatedly under load:\n```\nSystem.IO.IOException: Too many open files\n```\n\nWhen the JSON file contains `\"null\"` or is empty:\n```\nSystem.NullReferenceException: Object reference not set to an instance of an object.\n```\n\nTwo bugs: file handles leak because streams are never disposed, and a null config is returned without validation.",
+    "guidelines": [
+      "The response MUST identify that `FileStream` and `StreamReader` implement `IDisposable` and are never disposed, causing file handle leaks",
+      "Should explain the `using` statement/declaration pattern — `using var` ensures `Dispose()` is called when the variable goes out of scope, even if an exception is thrown",
+      "Must identify that `JsonSerializer.Deserialize<T>()` can return null (e.g., for JSON `\"null\"` or empty content), and the returned value is used without validation",
+      "The fix must add `using` to both stream and reader AND add a null check after deserialization",
+      "Bonus: mentions that the GC does NOT call `Dispose()` — it may eventually call the finalizer, but relying on that is incorrect and non-deterministic"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "There are **two bugs** here — a resource leak and a null reference — both extremely common in AI-generated C# code.\n\n**Bug 1: Resource Leak — Missing `using` (IDisposable)**\n\n`FileStream` and `StreamReader` both implement `IDisposable`. They hold unmanaged resources (file handles). Without calling `Dispose()`, these handles remain open until the garbage collector eventually runs. But here's the critical point: **the GC does NOT call `Dispose()`** — it may call a finalizer if one exists, but that's non-deterministic and unreliable.\n\nUnder load, each call to `Load()` opens a file handle that never closes. Eventually, the OS limit is reached and you get `IOException: Too many open files`.\n\n**Bug 2: Null Reference — No Validation of Deserialized Result**\n\n`JsonSerializer.Deserialize<Config>(json)` returns `null` when:\n- The JSON content is literally `\"null\"`\n- The file is empty (though this may throw `JsonException` instead)\n- Deserialization fails to produce an object\n\nReturning `null` from `Load()` means any caller doing `config.ServerUrl` gets a `NullReferenceException`.\n\n**Fix:**\n\n```csharp\npublic class ConfigLoader\n{\n    public Config Load(string path)\n    {\n        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);\n        using var reader = new StreamReader(stream);\n        var json = reader.ReadToEnd();\n        var config = JsonSerializer.Deserialize<Config>(json);\n\n        if (config == null)\n            throw new InvalidOperationException($\"Failed to deserialize config from {path}\");\n\n        return config;\n    }\n}\n```\n\n**Key changes:**\n1. `using var` ensures `Dispose()` is called when the variables go out of scope — even if an exception is thrown mid-method\n2. Null check after deserialization throws a descriptive exception instead of letting a null propagate silently\n\n**Alternative — even simpler:**\n\n```csharp\npublic Config Load(string path)\n{\n    var json = File.ReadAllText(path);\n    return JsonSerializer.Deserialize<Config>(json)\n        ?? throw new InvalidOperationException($\"Failed to deserialize config from {path}\");\n}\n```\n\n`File.ReadAllText` handles stream management internally, and the null-coalescing throw provides a clean one-liner for null validation.\n\n**Rule:** In C#, every `IDisposable` object should be wrapped in a `using` statement. Never rely on GC for resource cleanup."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The streams are not being closed. Add `using` statements:\n\n```csharp\npublic Config Load(string path)\n{\n    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);\n    using var reader = new StreamReader(stream);\n    var json = reader.ReadToEnd();\n    var config = JsonSerializer.Deserialize<Config>(json);\n    return config;\n}\n```\n\n`using var` ensures the stream and reader are disposed when the method returns."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The problem is that you need to close the file after reading. Add `Close()` calls:\n\n```csharp\npublic Config Load(string path)\n{\n    var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);\n    var reader = new StreamReader(stream);\n    var json = reader.ReadToEnd();\n    var config = JsonSerializer.Deserialize<Config>(json);\n    reader.Close();\n    stream.Close();\n    return config;\n}\n```\n\nCalling `Close()` on the reader and stream releases the file handles. This prevents the file handle leak."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it identify both bugs: missing IDisposable disposal AND null reference from Deserialize?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain the IDisposable pattern, why GC doesn't call Dispose, and when Deserialize returns null?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Does the fix use `using` statements AND validate the deserialized result?", "scale": 5 },
+      { "name": "Exception Safety", "description": "Does it explain that `using` ensures disposal even when exceptions are thrown (unlike manual Close)?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer always use `using` for IDisposable and validate external data?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-2",
+    "type": "comparison",
+    "title": "The User Cache — async void and LINQ Deferred Execution",
+    "prompt": "An AI-generated C# service fetches user data from an API and caches it. When the API throws an exception, the application crashes without any way to catch the error. Additionally, the cached data sometimes appears stale or re-fetches unnecessarily. Identify the bugs and provide a corrected version.\n\n```csharp\nusing System;\nusing System.Collections.Generic;\nusing System.Linq;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\npublic class UserService\n{\n    private readonly HttpClient _client = new HttpClient();\n    private IEnumerable<User> _cachedUsers;\n\n    public async void RefreshUsersAsync()\n    {\n        var response = await _client.GetStringAsync(\"https://api.example.com/users\");\n        var users = ParseUsers(response);\n        _cachedUsers = users.Where(u => u.IsActive);\n    }\n\n    public List<User> GetActiveUsers()\n    {\n        if (_cachedUsers == null)\n            return new List<User>();\n        return _cachedUsers.ToList();\n    }\n\n    private List<User> ParseUsers(string json)\n    {\n        // Simplified - returns list of User objects\n        return new List<User>();\n    }\n}\n\npublic class User\n{\n    public string Name { get; set; }\n    public bool IsActive { get; set; }\n}\n```\n\nWhen the API throws:\n```\nUnhandled exception. System.Net.Http.HttpRequestException: ...\n  (Application crashes — no way to catch the exception)\n```\n\nThe `_cachedUsers` field stores a deferred LINQ query, not actual data. Each call to `GetActiveUsers()` re-executes the `Where` filter.",
+    "guidelines": [
+      "The response MUST identify that `async void` prevents callers from catching exceptions — exceptions in async void methods propagate to the SynchronizationContext and crash the application",
+      "Should explain the difference between `async void` and `async Task`: Task allows await/catch, void is fire-and-forget with no error handling",
+      "Must identify that `users.Where(u => u.IsActive)` stores a deferred query (IEnumerable), not a materialized result — it re-executes every time it's enumerated",
+      "The fix must change `async void` to `async Task` AND materialize the LINQ query with `.ToList()`",
+      "Bonus: notes that `async void` is only appropriate for event handlers and explains the LINQ deferred execution model"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "There are **two independent bugs** here — one about async exception handling, one about LINQ execution semantics.\n\n**Bug 1: `async void` — Unhandled Exception Crash**\n\n`RefreshUsersAsync` is `async void`. In C#, `async void` methods have fundamentally different exception behavior than `async Task`:\n\n- **`async Task`**: Exceptions are captured in the returned `Task`. The caller can `await` and catch them.\n- **`async void`**: There is no `Task` to capture the exception. Instead, the exception is thrown on the `SynchronizationContext` that was active when the method started. In console apps, this means `ThreadPool`, and the exception becomes unhandled → process crash.\n\nThe caller cannot write `try { RefreshUsersAsync(); } catch` because `RefreshUsersAsync()` returns `void` — it returns immediately, and the exception happens later on a different context.\n\n**When is `async void` appropriate?** Only for event handlers (e.g., `button_Click`), because the event delegate signature requires `void`. For all other cases, use `async Task`.\n\n**Bug 2: LINQ Deferred Execution — Storing a Query Instead of Results**\n\n`_cachedUsers = users.Where(u => u.IsActive)` stores the **query**, not the **result**. LINQ's `Where` returns an `IEnumerable<T>` that describes a filter operation but doesn't execute it. The filter runs only when the `IEnumerable` is enumerated (e.g., when `ToList()` is called in `GetActiveUsers`).\n\nConsequences:\n1. Every call to `GetActiveUsers()` re-runs the `Where` filter — unnecessary repeated work\n2. If the source collection were modified between calls, the results would change unexpectedly\n3. The cache isn't really caching — it's storing a lazy computation\n\n**Fix:**\n\n```csharp\npublic class UserService\n{\n    private readonly HttpClient _client = new HttpClient();\n    private List<User> _cachedUsers;\n\n    public async Task RefreshUsersAsync()\n    {\n        var response = await _client.GetStringAsync(\"https://api.example.com/users\");\n        var users = ParseUsers(response);\n        _cachedUsers = users.Where(u => u.IsActive).ToList();\n    }\n\n    public List<User> GetActiveUsers()\n    {\n        if (_cachedUsers == null)\n            return new List<User>();\n        return new List<User>(_cachedUsers);\n    }\n}\n```\n\n**Key changes:**\n1. `async void` → `async Task`: Callers can now `await RefreshUsersAsync()` and catch exceptions normally\n2. `.ToList()` materializes the query immediately — the cache stores actual data, not a deferred computation\n3. `GetActiveUsers` returns a copy of the list to prevent external mutation of the cache\n\n**Rule:** Never use `async void` except for event handlers. Always materialize LINQ queries with `.ToList()` or `.ToArray()` when storing results for later use."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "Change `async void` to `async Task` so you can catch exceptions:\n\n```csharp\npublic async Task RefreshUsersAsync()\n{\n    var response = await _client.GetStringAsync(\"https://api.example.com/users\");\n    var users = ParseUsers(response);\n    _cachedUsers = users.Where(u => u.IsActive);\n}\n```\n\n`async void` methods can't be awaited, so exceptions are unhandled. `async Task` lets the caller use `try/catch`."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The issue is that exceptions in async methods need to be caught differently. Wrap the body in try/catch:\n\n```csharp\npublic async void RefreshUsersAsync()\n{\n    try\n    {\n        var response = await _client.GetStringAsync(\"https://api.example.com/users\");\n        var users = ParseUsers(response);\n        _cachedUsers = users.Where(u => u.IsActive).ToList();\n    }\n    catch (Exception ex)\n    {\n        Console.WriteLine($\"Error refreshing users: {ex.Message}\");\n    }\n}\n```\n\nWrapping in try/catch inside the async method prevents the unhandled exception. Adding `.ToList()` materializes the LINQ query so the cache is stable."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it identify both bugs: async void exception behavior AND LINQ deferred execution?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain how async void exceptions propagate to SynchronizationContext and how LINQ defers execution?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Does the fix change to async Task AND materialize the LINQ query?", "scale": 5 },
+      { "name": "Best Practices", "description": "Does it note that async void is only for event handlers and explain when to materialize LINQ?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer avoid async void and understand deferred vs eager evaluation?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-3",
+    "type": "comparison",
+    "title": "The Data Processor — C++ Memory Leak and Raw Pointer Ownership",
+    "prompt": "An AI-generated C++ function reads integers from a file, filters positive values, and returns a dynamically allocated array. A tester reports that the program's memory usage grows without bound when the function is called repeatedly, and it crashes when given an empty file. Identify the bugs and provide a corrected version.\n\n```cpp\n#include <cstdlib>\n#include <fstream>\n#include <vector>\n\nint* processFile(const char* filename, int* outCount) {\n    std::ifstream file(filename);\n    if (!file.is_open()) {\n        *outCount = 0;\n        return nullptr;\n    }\n\n    std::vector<int> temp;\n    int value;\n    while (file >> value) {\n        if (value > 0)\n            temp.push_back(value);\n    }\n\n    int count = temp.size();\n    *outCount = count;\n\n    if (count == 0) {\n        return nullptr;\n    }\n\n    int* result = new int[count];\n    for (int i = 0; i < count; i++) {\n        result[i] = temp[i];\n    }\n    return result;\n}\n\nvoid caller() {\n    int count;\n    int* data = processFile(\"data.txt\", &count);\n    for (int i = 0; i < count; i++) {\n        // process data[i]\n    }\n    // Missing: delete[] data;\n}\n```\n\nWhen called repeatedly in a loop:\n```\n(Memory usage grows continuously — no memory is ever freed)\n```\n\nWhen `outCount` is passed as `nullptr`:\n```\nSegmentation fault (core dumped)\n```\n\nThe caller receives a raw pointer from `new int[]` but never frees it. Additionally, dereferencing `outCount` without a null check is undefined behavior.",
+    "guidelines": [
+      "The response MUST identify the memory leak: `new int[count]` allocates heap memory that the caller never `delete[]`s, causing unbounded growth",
+      "Should explain RAII (Resource Acquisition Is Initialization) — the modern C++ principle that resources should be managed by objects whose destructors automatically clean up",
+      "Must identify the null pointer dereference: `*outCount = 0` and `*outCount = count` crash if `outCount` is nullptr (undefined behavior)",
+      "The fix should replace raw `new`/`delete` with `std::vector<int>` returned by value, eliminating the ownership ambiguity entirely",
+      "Bonus: references the C++ Core Guidelines (R.20–R.24) and explains why returning raw owning pointers is an anti-pattern in modern C++"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "There are **three bugs** here, all rooted in C-style patterns that violate modern C++ guidelines.\n\n**Bug 1: Memory Leak — Raw `new` Without `delete`**\n\nThe function allocates with `new int[count]` and returns the raw pointer. The caller in `caller()` never calls `delete[] data`. Every invocation leaks the entire array. Under repeated calls, memory grows without bound.\n\nThis violates the **C++ Core Guidelines R.11**: \"Avoid calling `new` and `delete` explicitly.\" Raw `new`/`delete` requires manual discipline that humans (and AI) consistently fail at.\n\n**Bug 2: Null Pointer Dereference — Undefined Behavior**\n\nThe function dereferences `outCount` without checking if it's `nullptr`:\n- `*outCount = 0;` on line 4 of the function\n- `*outCount = count;` later\n\nIf a caller passes `nullptr`, this is **undefined behavior** — typically a segfault, but the compiler is allowed to do anything.\n\n**Bug 3: Unclear Ownership Contract**\n\nReturning `int*` gives no indication whether the caller must free the memory, or how (`free()` vs `delete` vs `delete[]`). This is error-prone by design.\n\n**Fix — Return `std::vector` (RAII):**\n\n```cpp\n#include <fstream>\n#include <vector>\n\nstd::vector<int> processFile(const char* filename) {\n    std::vector<int> result;\n    std::ifstream file(filename);\n    if (!file.is_open())\n        return result;\n\n    int value;\n    while (file >> value) {\n        if (value > 0)\n            result.push_back(value);\n    }\n    return result;\n}\n\nvoid caller() {\n    std::vector<int> data = processFile(\"data.txt\");\n    for (size_t i = 0; i < data.size(); i++) {\n        // process data[i]\n    }\n    // No manual delete — vector's destructor frees memory automatically\n}\n```\n\n**Why this is correct:**\n1. **No leak**: `std::vector` owns its memory. When it goes out of scope, its destructor frees the allocation automatically (RAII)\n2. **No null pointer issue**: The output count parameter is eliminated — `data.size()` provides the count\n3. **Clear ownership**: Returning by value makes ownership unambiguous — the caller owns the vector\n4. **No performance penalty**: Return Value Optimization (RVO) or move semantics ensure no unnecessary copies\n\n**RAII (Resource Acquisition Is Initialization)** is the foundational C++ principle: acquire resources in constructors, release in destructors. `std::vector`, `std::string`, `std::unique_ptr` — all RAII types. If you're writing `new` or `delete` in modern C++, you're almost certainly doing it wrong.\n\n**Rule:** Never return raw owning pointers. Use `std::vector` for dynamic arrays, `std::unique_ptr` for single objects, and `std::shared_ptr` when ownership is shared."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The caller needs to free the memory. Add `delete[]` after use:\n\n```cpp\nvoid caller() {\n    int count;\n    int* data = processFile(\"data.txt\", &count);\n    for (int i = 0; i < count; i++) {\n        // process data[i]\n    }\n    delete[] data;\n}\n```\n\n`delete[]` frees the array allocated by `new int[count]` in `processFile`. Always pair `new[]` with `delete[]`."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The memory leak is because you used `new` instead of `malloc`. Use `malloc` and `free` for C-style arrays:\n\n```cpp\nint* result = (int*)malloc(count * sizeof(int));\nfor (int i = 0; i < count; i++) {\n    result[i] = temp[i];\n}\nreturn result;\n```\n\nAnd in the caller:\n```cpp\nfree(data);\n```\n\n`malloc`/`free` is the standard C pattern for dynamic memory. It's more explicit about the allocation and deallocation."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it identify all bugs: memory leak (missing delete[]), null pointer UB, and unclear ownership?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain RAII, why raw new/delete is error-prone, and the C++ Core Guidelines?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Does the fix use std::vector (RAII) instead of raw pointers, eliminating the leak and ownership ambiguity?", "scale": 5 },
+      { "name": "Modern C++ Practices", "description": "Does it recommend RAII types (vector, unique_ptr) and reference Core Guidelines against raw new/delete?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand RAII and always prefer value types over raw pointer ownership?", "scale": 5 }
+    ]
+  }
+]

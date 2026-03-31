@@ -1,0 +1,121 @@
+[
+  {
+    "id": "cr-1",
+    "type": "comparison",
+    "title": "Python Error Handling Review",
+    "prompt": "Review this Python function and suggest improvements:\n\ndef get_user(id):\n    result = db.query(f\"SELECT * FROM users WHERE id = {id}\")\n    return result[0]",
+    "guidelines": [
+      "Look for security vulnerabilities (SQL injection, etc.)",
+      "Evaluate error handling suggestions",
+      "Check if the review identifies all major issues",
+      "Assess whether the suggested fix is production-ready"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "There are several issues with this function:\n\n**1. SQL Injection Vulnerability (Critical)**\nUsing f-strings for SQL queries allows SQL injection attacks. Use parameterized queries instead.\n\n**2. No Error Handling**\nIf the query returns no results, `result[0]` will raise an IndexError.\n\n**3. Using SELECT ***\nThis fetches unnecessary columns and exposes your schema.\n\n**Improved version:**\n```python\ndef get_user(user_id: int) -> dict | None:\n    try:\n        result = db.query(\n            \"SELECT id, name, email FROM users WHERE id = %s\",\n            (user_id,)\n        )\n        return result[0] if result else None\n    except DatabaseError as e:\n        logger.error(f\"Failed to fetch user {user_id}: {e}\")\n        raise\n```"
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The function has a bug - you should add a try/except:\n\n```python\ndef get_user(id):\n    try:\n        result = db.query(f\"SELECT * FROM users WHERE id = {id}\")\n        return result[0]\n    except:\n        return None\n```\n\nThis way if anything goes wrong it returns None instead of crashing."
+      }
+    ],
+    "dimensions": [
+      { "name": "Security Awareness", "description": "Does the review identify security issues?", "scale": 5 },
+      { "name": "Thoroughness", "description": "Are all major issues identified?", "scale": 5 },
+      { "name": "Fix Quality", "description": "Is the suggested fix correct and complete?", "scale": 5 },
+      { "name": "Educational Value", "description": "Does it help the developer learn?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "cr-2",
+    "type": "comparison",
+    "title": "React Component Optimization",
+    "prompt": "This React component re-renders too often. How would you optimize it?\n\nfunction UserList({ users, onSelect }) {\n  const sorted = users.sort((a, b) => a.name.localeCompare(b.name));\n  return (\n    <ul>\n      {sorted.map(user => (\n        <li key={user.id} onClick={() => onSelect(user)}>\n          {user.name} - {user.email}\n        </li>\n      ))}\n    </ul>\n  );\n}",
+    "guidelines": [
+      "Check if the optimization advice is correct",
+      "Evaluate whether mutation issues are identified (.sort mutates)",
+      "Assess use of React performance APIs (useMemo, useCallback, memo)",
+      "Consider if the explanation is clear for intermediate React developers"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "There are multiple optimization opportunities:\n\n**1. `.sort()` mutates the original array**\nThis causes bugs and unnecessary re-renders. Use `toSorted()` or spread first.\n\n**2. Missing memoization**\nThe sort runs on every render. Use `useMemo`.\n\n**3. Inline arrow function in onClick**\nCreates a new function reference each render, preventing `React.memo` optimization on child components.\n\n```jsx\nconst UserList = React.memo(function UserList({ users, onSelect }) {\n  const sorted = useMemo(\n    () => [...users].sort((a, b) => a.name.localeCompare(b.name)),\n    [users]\n  );\n\n  const handleClick = useCallback(\n    (user) => () => onSelect(user),\n    [onSelect]\n  );\n\n  return (\n    <ul>\n      {sorted.map(user => (\n        <li key={user.id} onClick={handleClick(user)}>\n          {user.name} - {user.email}\n        </li>\n      ))}\n    </ul>\n  );\n});\n```"
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "You should use `useMemo` to avoid re-sorting:\n\n```jsx\nfunction UserList({ users, onSelect }) {\n  const sorted = useMemo(() => users.sort((a, b) => \n    a.name.localeCompare(b.name)\n  ), [users]);\n\n  return (\n    <ul>\n      {sorted.map(user => (\n        <li key={user.id} onClick={() => onSelect(user)}>\n          {user.name} - {user.email}\n        </li>\n      ))}\n    </ul>\n  );\n}\n```\n\nWrapping the sort in useMemo means it only re-sorts when users changes."
+      }
+    ],
+    "dimensions": [
+      { "name": "Correctness", "description": "Is the optimization advice technically correct?", "scale": 5 },
+      { "name": "Completeness", "description": "Are all optimization opportunities addressed?", "scale": 5 },
+      { "name": "Code Quality", "description": "Is the optimized code clean and idiomatic React?", "scale": 5 },
+      { "name": "Explanation", "description": "Is the reasoning clearly explained?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "cr-3",
+    "type": "rating",
+    "title": "API Design Feedback",
+    "prompt": "Rate this response to: \"Design a REST API for a simple todo application with users.\"",
+    "guidelines": [
+      "Evaluate RESTful design principles (proper HTTP methods, status codes, resource naming)",
+      "Check for authentication/authorization considerations",
+      "Assess whether the response covers pagination, filtering, error responses",
+      "Consider real-world production readiness"
+    ],
+    "responses": [
+      {
+        "label": "API Design Response",
+        "model": "Model Gamma",
+        "text": "## Todo API Design\n\n### Authentication\n- POST /auth/register — Create account\n- POST /auth/login — Get JWT token\n- POST /auth/refresh — Refresh token\n\n### Users\n- GET /users/me — Get current user profile\n- PATCH /users/me — Update profile\n\n### Todos\n- GET /todos?status=pending&page=1&limit=20 — List user's todos (paginated)\n- POST /todos — Create todo\n- GET /todos/:id — Get single todo\n- PATCH /todos/:id — Update todo\n- DELETE /todos/:id — Delete todo\n\n### Response Format\n```json\n{\n  \"data\": { ... },\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 45\n  }\n}\n```\n\n### Error Format\n```json\n{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Title is required\",\n    \"details\": [...]\n  }\n}\n```\n\n### Status Codes\n- 200: Success\n- 201: Created\n- 204: Deleted (no content)\n- 400: Validation error\n- 401: Unauthorized\n- 403: Forbidden\n- 404: Not found\n- 429: Rate limited"
+      }
+    ],
+    "dimensions": [
+      { "name": "RESTful Design", "description": "Follows REST conventions correctly?", "scale": 5 },
+      { "name": "Completeness", "description": "Covers all necessary endpoints and concerns?", "scale": 5 },
+      { "name": "Security", "description": "Addresses authentication and authorization?", "scale": 5 },
+      { "name": "Production Readiness", "description": "Would this work in a real application?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "cr-4",
+    "type": "ranking",
+    "title": "Git Commit Message Quality",
+    "prompt": "A developer fixed a bug where users were logged out when switching tabs due to a race condition in the token refresh logic. Rank these commit messages from best to worst.",
+    "guidelines": [
+      "Good commit messages explain WHY, not just WHAT",
+      "Should be concise but informative",
+      "Should follow conventional commit format ideally",
+      "Should help future developers understand the change"
+    ],
+    "responses": [
+      {
+        "label": "Message A",
+        "model": "Style 1",
+        "text": "fix: prevent session loss on tab switch by serializing token refresh\n\nThe token refresh endpoint was being called concurrently when multiple\ntabs became active simultaneously, causing a race condition where the\nfirst response would invalidate the token used by the second request.\n\nAdded a mutex lock around the refresh flow to ensure only one refresh\nexecutes at a time. Other tabs wait for the lock and reuse the new token.\n\nFixes #847"
+      },
+      {
+        "label": "Message B",
+        "model": "Style 2",
+        "text": "fixed bug"
+      },
+      {
+        "label": "Message C",
+        "model": "Style 3",
+        "text": "Fix token refresh race condition\n\nUsers were getting logged out when switching between tabs because\nconcurrent refresh requests invalidated each other's tokens."
+      }
+    ],
+    "dimensions": [
+      { "name": "Descriptiveness", "description": "Does it explain what changed and why?", "scale": 5 },
+      { "name": "Conciseness", "description": "Is it appropriately brief without losing meaning?", "scale": 5 },
+      { "name": "Actionability", "description": "Would this help a future developer understand the context?", "scale": 5 }
+    ]
+  }
+]

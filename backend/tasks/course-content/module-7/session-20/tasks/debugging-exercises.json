@@ -1,0 +1,335 @@
+[
+  {
+    "id": "debug-1",
+    "type": "comparison",
+    "title": "The User Authentication — == vs .equals() for Strings",
+    "prompt": "A login system validates user credentials. It works for some users but fails for others, even when they type the correct password. The developer is baffled because the password clearly matches. Identify the bug and provide a corrected version.\n\n```java\npublic class AuthService {\n\n    public boolean authenticate(String username, String password) {\n        String storedPassword = fetchPasswordFromDatabase(username);\n        if (storedPassword == null) {\n            return false;\n        }\n        if (password == storedPassword) {\n            System.out.println(\"Login successful for \" + username);\n            return true;\n        }\n        System.out.println(\"Invalid password for \" + username);\n        return false;\n    }\n\n    private String fetchPasswordFromDatabase(String username) {\n        // Simulates a database lookup — returns a new String object\n        if (username.equals(\"admin\")) {\n            return new String(\"secret123\");\n        }\n        return null;\n    }\n\n    public static void main(String[] args) {\n        AuthService auth = new AuthService();\n        System.out.println(auth.authenticate(\"admin\", \"secret123\"));\n        // Expected: true\n        // Actual:   false\n    }\n}\n```\n\nActual output:\n```\nInvalid password for admin\nfalse\n```\n\nThe password is clearly `\"secret123\"` in both places, yet authentication fails.",
+    "guidelines": [
+      "The response MUST identify that `==` compares object references (memory addresses), not string content",
+      "Should explain that `new String(\"secret123\")` creates a new object on the heap, distinct from the interned string literal `\"secret123\"`",
+      "Should mention Java's String interning: literal strings are pooled and `==` works by accident with two literals, but breaks when strings come from constructors, user input, database queries, or network I/O",
+      "The fix must replace `==` with `.equals()` or `Objects.equals()` for value comparison",
+      "Bonus: mentions that `Objects.equals()` is null-safe and is the recommended modern approach"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the classic **`==` vs `.equals()`** bug in Java — one of the most common mistakes for both beginners and experienced developers.\n\n**What's happening:** The `==` operator compares **object references** (memory addresses), not string content. In Java, strings are objects, and two strings can contain identical characters but be different objects.\n\nThe method `fetchPasswordFromDatabase` returns `new String(\"secret123\")`, which creates a **new String object on the heap**. The parameter `password` holds the literal `\"secret123\"`, which lives in the **String pool**. They contain the same characters but are different objects, so `==` returns `false`.\n\n**Why it sometimes works:** Java **interns** string literals. If both strings were literals (e.g., `\"hello\" == \"hello\"`), they'd reference the same pooled object and `==` would return `true`. This makes the bug intermittent — it works in unit tests with literals but fails in production where strings come from databases, user input, or network responses.\n\n**Fix — use `.equals()` for value comparison:**\n\n```java\npublic boolean authenticate(String username, String password) {\n    String storedPassword = fetchPasswordFromDatabase(username);\n    if (storedPassword == null) {\n        return false;\n    }\n    if (password.equals(storedPassword)) {\n        System.out.println(\"Login successful for \" + username);\n        return true;\n    }\n    System.out.println(\"Invalid password for \" + username);\n    return false;\n}\n```\n\nOr better, use `Objects.equals()` which is null-safe:\n\n```java\nimport java.util.Objects;\n\nif (Objects.equals(password, storedPassword)) { ... }\n```\n\n**Rule:** Never use `==` to compare String (or any object) values. Use `.equals()` for content comparison. Reserve `==` for primitives and `null` checks."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The `==` operator doesn't compare the text of the strings. Change it to `.equals()`:\n\n```java\nif (password.equals(storedPassword)) {\n    System.out.println(\"Login successful for \" + username);\n    return true;\n}\n```\n\n`.equals()` compares the actual characters in the string instead of the memory address."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The problem is that `fetchPasswordFromDatabase` uses `new String()` which is inefficient. You should use string literals directly:\n\n```java\nprivate String fetchPasswordFromDatabase(String username) {\n    if (username.equals(\"admin\")) {\n        return \"secret123\"; // Use literal, not new String()\n    }\n    return null;\n}\n```\n\nWith string literals, `==` works correctly because Java interns them to the same object. The `new String()` constructor creates an unnecessary duplicate."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify reference vs value comparison as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain String interning, heap allocation, and why == works with literals?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the fix correct, robust, and does it solve the general problem (not just this test case)?", "scale": 5 },
+      { "name": "Null Safety", "description": "Does it address potential NullPointerException when calling .equals() on a possibly null reference?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer avoid == for objects in all future code?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-2",
+    "type": "comparison",
+    "title": "The Order Processor — ConcurrentModificationException",
+    "prompt": "An order processing system removes cancelled orders from a list. The code compiles fine but crashes at runtime. Identify the bug and provide a corrected version.\n\n```java\nimport java.util.ArrayList;\nimport java.util.List;\n\npublic class OrderProcessor {\n\n    public static List<String> removeCancelledOrders(List<String> orders) {\n        for (String order : orders) {\n            if (order.startsWith(\"CANCELLED\")) {\n                orders.remove(order);\n            }\n        }\n        return orders;\n    }\n\n    public static void main(String[] args) {\n        List<String> orders = new ArrayList<>();\n        orders.add(\"ORD-001: Widget\");\n        orders.add(\"CANCELLED-002: Gadget\");\n        orders.add(\"ORD-003: Sprocket\");\n        orders.add(\"CANCELLED-004: Doohickey\");\n        orders.add(\"ORD-005: Thingamajig\");\n\n        System.out.println(\"Before: \" + orders);\n        removeCancelledOrders(orders);\n        System.out.println(\"After: \" + orders);\n    }\n}\n```\n\nActual output:\n```\nBefore: [ORD-001: Widget, CANCELLED-002: Gadget, ORD-003: Sprocket, CANCELLED-004: Doohickey, ORD-005: Thingamajig]\nException in thread \"main\" java.util.ConcurrentModificationException\n\tat java.base/java.util.ArrayList$Itr.checkForComodification(...)\n\tat java.base/java.util.ArrayList$Itr.next(...)\n```",
+    "guidelines": [
+      "The response MUST explain that the enhanced for-loop uses an Iterator internally, and calling `orders.remove()` modifies the list's structural modification count, causing the iterator to detect the mismatch and throw ConcurrentModificationException",
+      "Should explain this is Java's fail-fast mechanism — it detects concurrent structural modification even in single-threaded code",
+      "The fix should use one of: Iterator.remove(), removeIf(), a stream filter, or iterate over a copy",
+      "Penalize responses that only say 'don't modify during iteration' without explaining the internal mechanism",
+      "Bonus: mentions that removeIf() (Java 8+) is the most concise and idiomatic modern solution"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is a **ConcurrentModificationException** — one of Java's most common collection pitfalls.\n\n**What's happening:** The enhanced for-loop (`for-each`) uses an `Iterator` behind the scenes. The `Iterator` takes a snapshot of the list's **modification count** (`modCount`) when it's created. When you call `orders.remove(order)` (the `List.remove()` method), it increments `modCount` on the list — but the iterator doesn't know. On the next call to `iterator.next()`, it checks: \"Has the list been modified since I was created?\" Yes → `ConcurrentModificationException`.\n\nThis is Java's **fail-fast** mechanism. The term \"concurrent\" doesn't mean multithreading here — it means the list was structurally modified while an iteration was in progress.\n\n**Fix 1 — Use `removeIf()` (Java 8+, recommended):**\n\n```java\npublic static List<String> removeCancelledOrders(List<String> orders) {\n    orders.removeIf(order -> order.startsWith(\"CANCELLED\"));\n    return orders;\n}\n```\n\n`removeIf()` handles the internal iteration and modification safely.\n\n**Fix 2 — Use an explicit `Iterator` with `Iterator.remove()`:**\n\n```java\npublic static List<String> removeCancelledOrders(List<String> orders) {\n    Iterator<String> it = orders.iterator();\n    while (it.hasNext()) {\n        String order = it.next();\n        if (order.startsWith(\"CANCELLED\")) {\n            it.remove(); // Safe — updates the iterator's expected modCount\n        }\n    }\n    return orders;\n}\n```\n\n`Iterator.remove()` is the only safe way to remove elements during iteration because it synchronizes the iterator's internal state with the list.\n\n**Fix 3 — Build a new list (functional approach):**\n\n```java\npublic static List<String> removeCancelledOrders(List<String> orders) {\n    return orders.stream()\n        .filter(order -> !order.startsWith(\"CANCELLED\"))\n        .collect(Collectors.toList());\n}\n```\n\n**Rule:** Never call `Collection.remove()` or `Collection.add()` inside an enhanced for-loop. Use `Iterator.remove()`, `removeIf()`, or create a new collection."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "You can't modify a list while iterating over it. Use a regular for-loop with an index instead:\n\n```java\npublic static List<String> removeCancelledOrders(List<String> orders) {\n    for (int i = 0; i < orders.size(); i++) {\n        if (orders.get(i).startsWith(\"CANCELLED\")) {\n            orders.remove(i);\n        }\n    }\n    return orders;\n}\n```\n\nUsing an index-based loop avoids the ConcurrentModificationException."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The for-each loop creates an iterator, and calling `remove()` on the list directly invalidates it. The safest modern fix is `removeIf()`:\n\n```java\norders.removeIf(order -> order.startsWith(\"CANCELLED\"));\n```\n\nAlternatively, you can use `Iterator.remove()` which keeps the iterator in sync with the list. The key insight is that `List.remove()` and `Iterator.remove()` are different methods — only the latter is safe during iteration."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify the Iterator/modCount fail-fast mechanism?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain why the enhanced for-loop uses an Iterator and how modCount works?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the proposed fix correct and free of its own bugs (e.g., index-skip bug)?", "scale": 5 },
+      { "name": "Modern Java", "description": "Does it suggest removeIf() or stream-based approaches as idiomatic Java 8+ solutions?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand and avoid ConcurrentModificationException?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-3",
+    "type": "comparison",
+    "title": "The Tag Manager — Arrays.asList() Fixed-Size Trap",
+    "prompt": "A content management system initializes a list of tags from default values and then tries to add user-specified tags. It compiles fine but throws an exception at runtime. Identify the bug and provide a corrected version.\n\n```java\nimport java.util.Arrays;\nimport java.util.List;\n\npublic class TagManager {\n\n    public static List<String> initializeTags(String... extraTags) {\n        List<String> tags = Arrays.asList(\"general\", \"public\", \"active\");\n        for (String tag : extraTags) {\n            tags.add(tag);\n        }\n        return tags;\n    }\n\n    public static void main(String[] args) {\n        List<String> tags = initializeTags(\"featured\", \"premium\");\n        System.out.println(\"Tags: \" + tags);\n        // Expected: [general, public, active, featured, premium]\n    }\n}\n```\n\nActual output:\n```\nException in thread \"main\" java.lang.UnsupportedOperationException\n\tat java.base/java.util.AbstractList.add(...)\n\tat TagManager.initializeTags(TagManager.java:9)\n```",
+    "guidelines": [
+      "The response MUST explain that Arrays.asList() returns a fixed-size List backed by the original array — it supports set() but not add() or remove()",
+      "Should clarify that the returned list is NOT a java.util.ArrayList; it is java.util.Arrays$ArrayList, a different class with different behavior",
+      "The fix must wrap Arrays.asList() in a new ArrayList constructor, or use List.of() with an explicit new ArrayList(), or use other mutable list construction",
+      "Penalize responses that confuse unmodifiable (List.of) with fixed-size (Arrays.asList) — they are different constraints",
+      "Bonus: mentions List.of() (Java 9+) which returns a fully immutable list vs Arrays.asList() which allows set() but not structural changes"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the **`Arrays.asList()` fixed-size list** trap — a classic Java gotcha.\n\n**What's happening:** `Arrays.asList(\"general\", \"public\", \"active\")` does NOT return a `java.util.ArrayList`. It returns a `java.util.Arrays$ArrayList` — a **fixed-size** list backed by the original array. This inner class:\n\n- **Allows** `set()` (replacing elements)\n- **Forbids** `add()` and `remove()` (structural modification) → throws `UnsupportedOperationException`\n\nThis is because the list is just a thin wrapper around the array, and arrays in Java have a fixed length.\n\n**Fix — wrap in a real ArrayList:**\n\n```java\npublic static List<String> initializeTags(String... extraTags) {\n    List<String> tags = new ArrayList<>(Arrays.asList(\"general\", \"public\", \"active\"));\n    for (String tag : extraTags) {\n        tags.add(tag);\n    }\n    return tags;\n}\n```\n\n`new ArrayList<>(Arrays.asList(...))` copies the elements into a true `java.util.ArrayList` that supports all operations.\n\n**Java 9+ alternative:**\n\nNote that `List.of(\"general\", \"public\", \"active\")` is even more restrictive — it's **fully immutable** (no `set()`, no `add()`, no `remove()`, no `null` elements). To make it mutable:\n\n```java\nList<String> tags = new ArrayList<>(List.of(\"general\", \"public\", \"active\"));\n```\n\n**Summary of list types:**\n\n| Factory | Type | set() | add()/remove() | null elements |\n|---------|------|-------|----------------|---------------|\n| `Arrays.asList()` | Fixed-size | Yes | No | Yes |\n| `List.of()` (Java 9+) | Immutable | No | No | No |\n| `new ArrayList<>()` | Mutable | Yes | Yes | Yes |"
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "`Arrays.asList()` returns an immutable list. You need to create a mutable copy:\n\n```java\nList<String> tags = new ArrayList<>(Arrays.asList(\"general\", \"public\", \"active\"));\n```\n\nThis creates a regular ArrayList that you can add to and remove from."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The issue is that `Arrays.asList()` creates a read-only list. Instead, create the list manually:\n\n```java\npublic static List<String> initializeTags(String... extraTags) {\n    List<String> tags = new ArrayList<>();\n    tags.add(\"general\");\n    tags.add(\"public\");\n    tags.add(\"active\");\n    for (String tag : extraTags) {\n        tags.add(tag);\n    }\n    return tags;\n}\n```\n\nThis avoids `Arrays.asList()` entirely and gives you full control over the list."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify that Arrays.asList() returns a fixed-size (not immutable) list?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain the difference between Arrays$ArrayList and java.util.ArrayList?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the fix correct and idiomatic?", "scale": 5 },
+      { "name": "Nuance", "description": "Does it distinguish fixed-size (Arrays.asList) from immutable (List.of) from mutable (ArrayList)?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand Java's different List implementations?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-4",
+    "type": "comparison",
+    "title": "The Invoice Calculator — float/double Precision for Money",
+    "prompt": "An invoicing system calculates totals with tax. The amounts look correct for simple cases but produce bizarre fractional cents in production. The accounting department is rejecting reports because totals don't add up. Identify the bug and provide a corrected version.\n\n```java\npublic class InvoiceCalculator {\n\n    public static void main(String[] args) {\n        double subtotal = 0.0;\n\n        double[] prices = {19.99, 9.99, 4.99, 29.99, 14.99};\n\n        for (double price : prices) {\n            subtotal += price;\n        }\n\n        double taxRate = 0.07; // 7% tax\n        double tax = subtotal * taxRate;\n        double total = subtotal + tax;\n\n        System.out.println(\"Subtotal: $\" + subtotal);\n        System.out.println(\"Tax (7%): $\" + tax);\n        System.out.println(\"Total:    $\" + total);\n\n        // Verify: does 0.1 + 0.2 equal 0.3?\n        System.out.println(\"\\n0.1 + 0.2 = \" + (0.1 + 0.2));\n        System.out.println(\"0.1 + 0.2 == 0.3? \" + (0.1 + 0.2 == 0.3));\n    }\n}\n```\n\nActual output:\n```\nSubtotal: $79.95\nTax (7%): $5.596500000000001\nTotal:    $85.5465\n\n0.1 + 0.2 = 0.30000000000000004\n0.1 + 0.2 == 0.3? false\n```\n\nThe tax has a phantom `...000000001` and the total shows more decimal places than cents. The `0.1 + 0.2` test confirms the problem is systemic.",
+    "guidelines": [
+      "The response MUST explain that double/float use IEEE 754 binary floating-point, which cannot exactly represent most decimal fractions (like 0.1, 0.07, etc.)",
+      "Should explain that these tiny representation errors accumulate across operations, producing visible rounding artifacts in financial outputs",
+      "The fix must use BigDecimal with String constructors (not double constructors) for monetary values",
+      "Penalize responses that just round the output (formatting) without fixing the underlying computation",
+      "Bonus: mentions BigDecimal.valueOf() as a safer alternative to the String constructor, and explains the need for explicit RoundingMode"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the **floating-point precision** problem. It's not a bug in your code — it's a fundamental limitation of how `double` (IEEE 754 binary floating-point) represents decimal numbers.\n\n**Why it happens:** `double` stores numbers in base-2. Most decimal fractions (0.1, 0.07, 0.01) have **infinite repeating representations** in binary — like how 1/3 = 0.333... in decimal. Java's `double` truncates these to 64 bits, introducing tiny errors that accumulate through arithmetic operations.\n\nFor an invoice system, these errors produce wrong cents in totals — unacceptable for financial applications.\n\n**Fix — use `BigDecimal` for all monetary calculations:**\n\n```java\nimport java.math.BigDecimal;\nimport java.math.RoundingMode;\n\npublic class InvoiceCalculator {\n\n    public static void main(String[] args) {\n        BigDecimal subtotal = BigDecimal.ZERO;\n\n        BigDecimal[] prices = {\n            new BigDecimal(\"19.99\"),\n            new BigDecimal(\"9.99\"),\n            new BigDecimal(\"4.99\"),\n            new BigDecimal(\"29.99\"),\n            new BigDecimal(\"14.99\")\n        };\n\n        for (BigDecimal price : prices) {\n            subtotal = subtotal.add(price);\n        }\n\n        BigDecimal taxRate = new BigDecimal(\"0.07\");\n        BigDecimal tax = subtotal.multiply(taxRate)\n            .setScale(2, RoundingMode.HALF_UP);\n        BigDecimal total = subtotal.add(tax);\n\n        System.out.println(\"Subtotal: $\" + subtotal);\n        System.out.println(\"Tax (7%): $\" + tax);\n        System.out.println(\"Total:    $\" + total);\n    }\n}\n```\n\n**Critical rules for BigDecimal:**\n1. **Always use the String constructor** — `new BigDecimal(\"0.1\")` gives exactly 0.1. `new BigDecimal(0.1)` gives `0.1000000000000000055511151231257827...` (the double's imprecise value)\n2. **Always specify RoundingMode** for division and scaling — otherwise `ArithmeticException` if the result has infinite decimal expansion\n3. **Use `compareTo()` for equality checks**, not `equals()` — `BigDecimal` `equals()` considers scale, so `new BigDecimal(\"2.0\").equals(new BigDecimal(\"2.00\"))` returns `false`"
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The output just needs formatting. Use `printf` to round to two decimal places:\n\n```java\nSystem.out.printf(\"Subtotal: $%.2f%n\", subtotal);\nSystem.out.printf(\"Tax (7%%): $%.2f%n\", tax);\nSystem.out.printf(\"Total:    $%.2f%n\", total);\n```\n\nThis displays the amounts with two decimal places, which is standard for currency."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "Floating-point types can't represent decimal fractions exactly. You should use `BigDecimal` for money:\n\n```java\nimport java.math.BigDecimal;\n\npublic class InvoiceCalculator {\n    public static void main(String[] args) {\n        BigDecimal subtotal = BigDecimal.ZERO;\n        double[] prices = {19.99, 9.99, 4.99, 29.99, 14.99};\n\n        for (double price : prices) {\n            subtotal = subtotal.add(new BigDecimal(price));\n        }\n\n        BigDecimal tax = subtotal.multiply(new BigDecimal(0.07));\n        BigDecimal total = subtotal.add(tax);\n\n        System.out.println(\"Total: $\" + total);\n    }\n}\n```\n\nBigDecimal handles exact decimal arithmetic, which is required for financial applications."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify IEEE 754 binary representation as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain WHY double can't represent 0.1 exactly and how errors accumulate?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Does the fix use BigDecimal correctly (String constructors, RoundingMode)?", "scale": 5 },
+      { "name": "BigDecimal Pitfalls", "description": "Does it warn about BigDecimal's own pitfalls (double constructor, equals vs compareTo)?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand why float/double is unsuitable for money?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-5",
+    "type": "comparison",
+    "title": "The Employee Registry — equals() Without hashCode()",
+    "prompt": "An HR system stores employees in a `HashSet` to prevent duplicates. Two employees with the same ID are being added as separate entries. The developer overrode `equals()` but the set doesn't detect duplicates. Identify the bug and provide a corrected version.\n\n```java\nimport java.util.HashSet;\nimport java.util.Set;\n\npublic class Employee {\n    private int id;\n    private String name;\n\n    public Employee(int id, String name) {\n        this.id = id;\n        this.name = name;\n    }\n\n    @Override\n    public boolean equals(Object obj) {\n        if (this == obj) return true;\n        if (obj == null || getClass() != obj.getClass()) return false;\n        Employee other = (Employee) obj;\n        return this.id == other.id;\n    }\n\n    @Override\n    public String toString() {\n        return \"Employee{id=\" + id + \", name='\" + name + \"'}\";\n    }\n\n    public static void main(String[] args) {\n        Set<Employee> employees = new HashSet<>();\n        employees.add(new Employee(101, \"Alice\"));\n        employees.add(new Employee(101, \"Alice Johnson\"));\n        employees.add(new Employee(102, \"Bob\"));\n\n        System.out.println(\"Set size: \" + employees.size());\n        System.out.println(\"Expected: 2 (id 101 is duplicate)\");\n        System.out.println(\"Employees: \" + employees);\n    }\n}\n```\n\nActual output:\n```\nSet size: 3\nExpected: 2 (id 101 is duplicate)\nEmployees: [Employee{id=102, name='Bob'}, Employee{id=101, name='Alice'}, Employee{id=101, name='Alice Johnson'}]\n```\n\nBoth employees with id 101 are in the set despite `equals()` returning `true` for them.",
+    "guidelines": [
+      "The response MUST identify the missing hashCode() override as the root cause",
+      "Should explain the equals/hashCode contract: if two objects are equal according to equals(), they MUST have the same hashCode()",
+      "Should explain how HashSet works: it uses hashCode() to find the bucket FIRST, then equals() to check for duplicates within that bucket",
+      "Without matching hashCode(), the two Employee objects land in different buckets and equals() is never called",
+      "The fix must override hashCode() using the same fields used in equals() (id in this case)"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the **equals/hashCode contract violation** — one of Java's most important rules that LLMs frequently get wrong.\n\n**The contract:** If `a.equals(b)` returns `true`, then `a.hashCode()` must equal `b.hashCode()`. You overrode `equals()` but inherited the default `hashCode()` from `Object`, which returns a value based on the object's **memory address**. Since `new Employee(101, \"Alice\")` and `new Employee(101, \"Alice Johnson\")` are different objects, they have different default hash codes.\n\n**How HashSet works internally:**\n1. Compute `hashCode()` of the new element\n2. Use that hash to determine which **bucket** to place it in\n3. Only if another element is in the **same bucket** does it call `equals()` to check for duplicates\n\nYour two Employee(101) objects get different hash codes → different buckets → `equals()` is never called → both are added.\n\n**Fix — override `hashCode()` using the same fields as `equals()`:**\n\n```java\n@Override\npublic int hashCode() {\n    return Integer.hashCode(id);\n}\n```\n\nOr using `Objects.hash()` for multi-field hashing:\n\n```java\nimport java.util.Objects;\n\n@Override\npublic int hashCode() {\n    return Objects.hash(id);\n}\n```\n\nNow both Employee(101, ...) objects produce the same hash code → same bucket → `equals()` detects the duplicate → only one is kept.\n\n**Rule:** Always override `hashCode()` when you override `equals()`. Use the **same fields** in both methods. This contract is critical for HashMap, HashSet, Hashtable, and any hash-based collection.\n\n**IDE support:** IntelliJ and Eclipse can auto-generate both methods together — use this to avoid mistakes."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "HashSet uses `hashCode()` to find elements. You need to add a `hashCode()` method:\n\n```java\n@Override\npublic int hashCode() {\n    return Objects.hash(id);\n}\n```\n\nWithout `hashCode()`, the set treats objects at different memory addresses as different entries."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The issue is that `HashSet` doesn't use `equals()` for comparison. Try using a `TreeSet` instead, which uses `compareTo()`:\n\n```java\nimport java.util.TreeSet;\nimport java.util.Set;\n\npublic class Employee implements Comparable<Employee> {\n    // ... existing fields and constructor ...\n\n    @Override\n    public int compareTo(Employee other) {\n        return Integer.compare(this.id, other.id);\n    }\n\n    public static void main(String[] args) {\n        Set<Employee> employees = new TreeSet<>();\n        employees.add(new Employee(101, \"Alice\"));\n        employees.add(new Employee(101, \"Alice Johnson\"));\n        employees.add(new Employee(102, \"Bob\"));\n        System.out.println(\"Set size: \" + employees.size());\n    }\n}\n```\n\nTreeSet maintains sorted order and properly detects duplicates through comparison."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify the missing hashCode() as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain the bucket-then-equals mechanism of hash-based collections?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the hashCode() implementation correct and consistent with equals()?", "scale": 5 },
+      { "name": "Contract Knowledge", "description": "Does it clearly state the equals/hashCode contract and its consequences?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer always override both methods together?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-6",
+    "type": "comparison",
+    "title": "The Survey Analyzer — Autoboxing Null NullPointerException",
+    "prompt": "A survey analytics module computes the average rating from responses stored in a database. Some responses may be null (unanswered). The code compiles without warnings but crashes at runtime with an unexpected NullPointerException on a line that has no method calls. Identify the bug and provide a corrected version.\n\n```java\nimport java.util.Arrays;\nimport java.util.List;\n\npublic class SurveyAnalyzer {\n\n    public static double computeAverage(List<Integer> ratings) {\n        int sum = 0;\n        int count = 0;\n        for (Integer rating : ratings) {\n            if (rating >= 1 && rating <= 5) {\n                sum += rating;\n                count++;\n            }\n        }\n        return count > 0 ? (double) sum / count : 0.0;\n    }\n\n    public static void main(String[] args) {\n        List<Integer> ratings = Arrays.asList(5, 3, null, 4, null, 2, 5);\n\n        System.out.println(\"Average: \" + computeAverage(ratings));\n    }\n}\n```\n\nActual output:\n```\nException in thread \"main\" java.lang.NullPointerException\n\tat SurveyAnalyzer.computeAverage(SurveyAnalyzer.java:9)\n```\n\nLine 9 is `if (rating >= 1 && rating <= 5)`. There are no method calls on that line — so where does the NullPointerException come from?",
+    "guidelines": [
+      "The response MUST identify that the comparison `rating >= 1` triggers unboxing of the Integer to int, and unboxing a null Integer throws NullPointerException",
+      "Should explain Java's autoboxing/unboxing mechanism: Integer (object) ↔ int (primitive), and that null cannot be unboxed",
+      "Should explain why the NPE appears on a line with no visible method call — the unboxing is implicit",
+      "The fix must add a null check before any operation that would trigger unboxing",
+      "Bonus: mentions Integer caching (-128 to 127) and that == between Integer objects can also surprise developers"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the **autoboxing null NullPointerException** — a subtle Java trap because the NPE occurs on a line with no visible method calls.\n\n**What's happening:** The list contains `Integer` objects (the boxed wrapper type), not `int` primitives. When you write `rating >= 1`, Java automatically **unboxes** the `Integer` to an `int` to perform the comparison. Unboxing calls `rating.intValue()` behind the scenes. When `rating` is `null`, this is equivalent to `null.intValue()` → `NullPointerException`.\n\nThe unboxing is **invisible in the source code**, which makes this NPE particularly confusing. The line looks like it only does a comparison, but the compiler inserted a method call.\n\n**Fix — add a null check before any unboxing can occur:**\n\n```java\npublic static double computeAverage(List<Integer> ratings) {\n    int sum = 0;\n    int count = 0;\n    for (Integer rating : ratings) {\n        if (rating != null && rating >= 1 && rating <= 5) {\n            sum += rating;\n            count++;\n        }\n    }\n    return count > 0 ? (double) sum / count : 0.0;\n}\n```\n\nThe `rating != null` check uses **reference comparison** (no unboxing), so it's safe. Java's short-circuit `&&` guarantees that `rating >= 1` is only evaluated if `rating` is not null.\n\n**Alternative — use Stream API with filter:**\n\n```java\npublic static double computeAverage(List<Integer> ratings) {\n    return ratings.stream()\n        .filter(Objects::nonNull)\n        .filter(r -> r >= 1 && r <= 5)\n        .mapToInt(Integer::intValue)\n        .average()\n        .orElse(0.0);\n}\n```\n\n**General rule:** Whenever a collection contains boxed types (`Integer`, `Long`, `Double`, `Boolean`), always consider that elements may be `null`. Check for null before any operation that triggers unboxing."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The list has `null` values. Add a null check:\n\n```java\nfor (Integer rating : ratings) {\n    if (rating != null && rating >= 1 && rating <= 5) {\n        sum += rating;\n        count++;\n    }\n}\n```\n\nThis skips null entries before comparing them."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The NullPointerException happens because you're iterating over null values. You should filter them out first:\n\n```java\npublic static double computeAverage(List<Integer> ratings) {\n    int sum = 0;\n    int count = 0;\n    for (Integer rating : ratings) {\n        if (rating == null) continue;\n        int value = rating.intValue();\n        if (value >= 1 && value <= 5) {\n            sum += value;\n            count++;\n        }\n    }\n    return count > 0 ? (double) sum / count : 0.0;\n}\n```\n\nExplicitly calling `intValue()` makes the unboxing visible, and the null check ensures it's safe."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify implicit unboxing of null Integer as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain autoboxing/unboxing, why NPE appears on a comparison line, and the invisible intValue() call?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the fix correct and does it prevent unboxing of null values?", "scale": 5 },
+      { "name": "Short-Circuit Awareness", "description": "Does it explain how short-circuit && ensures the null check protects against unboxing?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer recognize autoboxing NPE risks with Integer, Long, Boolean, etc.?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-7",
+    "type": "comparison",
+    "title": "The File Processor — Swallowed Exception in Empty Catch Block",
+    "prompt": "A file processing service reads configuration files. In testing it works, but in production it silently produces empty results with no error messages. The developer added try-catch for robustness but the application now fails silently. Identify the bug and provide a corrected version.\n\n```java\nimport java.io.BufferedReader;\nimport java.io.FileReader;\nimport java.util.ArrayList;\nimport java.util.List;\n\npublic class FileProcessor {\n\n    public static List<String> readConfig(String filePath) {\n        List<String> lines = new ArrayList<>();\n        try {\n            BufferedReader reader = new BufferedReader(new FileReader(filePath));\n            String line;\n            while ((line = reader.readLine()) != null) {\n                lines.add(line.trim());\n            }\n            reader.close();\n        } catch (Exception e) {\n            // Handle error\n        }\n        return lines;\n    }\n\n    public static void main(String[] args) {\n        List<String> config = readConfig(\"application.properties\");\n        System.out.println(\"Loaded \" + config.size() + \" config entries\");\n        // File doesn't exist → returns empty list with no indication of failure\n    }\n}\n```\n\nActual output (when file doesn't exist):\n```\nLoaded 0 config entries\n```\n\nNo error, no warning, no indication that the file wasn't found. The system continues with empty configuration, causing subtle downstream failures.",
+    "guidelines": [
+      "The response MUST identify the empty catch block as the primary bug — it swallows the exception and hides the failure",
+      "Should also identify the missing try-with-resources — the BufferedReader is not properly closed if an exception occurs during reading",
+      "Should explain that catching broad Exception is an anti-pattern; catching specific exceptions (FileNotFoundException, IOException) is preferred",
+      "The fix should use try-with-resources for the reader AND either log/rethrow or handle the exception meaningfully",
+      "Bonus: discusses fail-fast philosophy — silent failures cause cascading bugs that are much harder to diagnose than immediate crashes"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This code has **two bugs**: a swallowed exception and a resource leak.\n\n**Bug 1: Empty catch block (the silent killer)**\n\nThe `catch (Exception e) { // Handle error }` block does nothing — it catches the exception and discards it. When the file doesn't exist, a `FileNotFoundException` is thrown, caught, silently ignored, and the method returns an empty list as if nothing went wrong.\n\nThis violates the **fail-fast principle**: errors should be detected and reported as early as possible. A silent failure here means the application runs with missing configuration, causing mysterious bugs downstream that are far harder to diagnose.\n\n**Bug 2: Resource leak**\n\nThe `BufferedReader` is created outside a try-with-resources block. If an exception occurs during `readLine()`, `reader.close()` is never called, leaking the file handle. Even the manual `reader.close()` call can itself throw an `IOException` that masks the original error.\n\n**Fix — try-with-resources and meaningful error handling:**\n\n```java\nimport java.io.BufferedReader;\nimport java.io.FileReader;\nimport java.io.IOException;\nimport java.nio.file.NoSuchFileException;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.logging.Level;\nimport java.util.logging.Logger;\n\npublic class FileProcessor {\n    private static final Logger LOGGER = Logger.getLogger(FileProcessor.class.getName());\n\n    public static List<String> readConfig(String filePath) throws IOException {\n        List<String> lines = new ArrayList<>();\n        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {\n            String line;\n            while ((line = reader.readLine()) != null) {\n                lines.add(line.trim());\n            }\n        }\n        return lines;\n    }\n\n    public static void main(String[] args) {\n        try {\n            List<String> config = readConfig(\"application.properties\");\n            System.out.println(\"Loaded \" + config.size() + \" config entries\");\n        } catch (IOException e) {\n            LOGGER.log(Level.SEVERE, \"Failed to load configuration\", e);\n            System.exit(1);\n        }\n    }\n}\n```\n\n**Key improvements:**\n1. **try-with-resources** ensures the reader is closed regardless of success or failure\n2. **IOException propagation** — the method declares it can fail, forcing callers to handle it\n3. **Specific exception handling** in `main()` with logging and a clear failure message\n4. **No empty catch blocks** — never swallow exceptions silently\n\n**Rule:** An empty catch block is almost always a bug. At minimum, log the exception. Prefer letting the exception propagate if you can't meaningfully handle it."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The catch block is empty. Add a print statement:\n\n```java\ncatch (Exception e) {\n    e.printStackTrace();\n}\n```\n\nThis will print the stack trace when an error occurs so you can see what went wrong."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The issue is that the exception is being caught but not handled. You should remove the try-catch and let the exception propagate:\n\n```java\npublic static List<String> readConfig(String filePath) throws Exception {\n    List<String> lines = new ArrayList<>();\n    BufferedReader reader = new BufferedReader(new FileReader(filePath));\n    String line;\n    while ((line = reader.readLine()) != null) {\n        lines.add(line.trim());\n    }\n    reader.close();\n    return lines;\n}\n```\n\nNow the caller is forced to handle the exception. Declaring `throws Exception` makes the error visible."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it identify both the empty catch block and the resource leak?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain why silent failures are dangerous and the fail-fast principle?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Does the fix use try-with-resources and handle exceptions meaningfully?", "scale": 5 },
+      { "name": "Exception Specificity", "description": "Does it recommend catching specific exceptions instead of broad Exception?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer write robust error handling and never swallow exceptions?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-8",
+    "type": "comparison",
+    "title": "The Report Builder — Stream Reuse IllegalStateException",
+    "prompt": "A reporting module processes a stream of transaction records. It first counts the transactions, then calculates the total amount. The code compiles fine but crashes on the second stream operation. Identify the bug and provide a corrected version.\n\n```java\nimport java.util.Arrays;\nimport java.util.List;\nimport java.util.stream.Stream;\n\npublic class ReportBuilder {\n\n    public static void generateReport(List<String> transactions) {\n        Stream<String> transactionStream = transactions.stream()\n            .filter(t -> t.startsWith(\"SALE\"));\n\n        // Count sales transactions\n        long salesCount = transactionStream.count();\n        System.out.println(\"Sales count: \" + salesCount);\n\n        // Calculate total from sales transactions\n        double total = transactionStream\n            .map(t -> t.split(\":\")[1].trim())\n            .mapToDouble(Double::parseDouble)\n            .sum();\n        System.out.println(\"Sales total: $\" + total);\n    }\n\n    public static void main(String[] args) {\n        List<String> transactions = Arrays.asList(\n            \"SALE: 49.99\",\n            \"REFUND: 12.50\",\n            \"SALE: 129.99\",\n            \"SALE: 79.50\",\n            \"REFUND: 29.99\"\n        );\n\n        generateReport(transactions);\n    }\n}\n```\n\nActual output:\n```\nSales count: 3\nException in thread \"main\" java.lang.IllegalStateException: stream has already been operated upon or closed\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(...)\n```",
+    "guidelines": [
+      "The response MUST explain that Java streams can only be consumed ONCE — after a terminal operation (like count()), the stream is closed and cannot be reused",
+      "Should explain the stream lifecycle: source → intermediate operations (lazy) → terminal operation (consumes) → stream closed",
+      "The fix should either create two separate streams from the source, compute both results in a single pass, or collect to a list first and create streams from that",
+      "Penalize responses that suggest 'resetting' the stream or don't explain why streams are single-use",
+      "Bonus: compares Java streams (single-use) to Python generators (also single-use) for cross-language understanding"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is the **stream reuse** error. Java streams can only be **consumed once**.\n\n**Stream lifecycle:**\n1. **Source** — `transactions.stream()` creates a stream from the list\n2. **Intermediate operations** — `.filter()`, `.map()` are **lazy** (they don't execute yet)\n3. **Terminal operation** — `.count()`, `.sum()`, `.collect()` **consume** the stream and close it\n4. **Closed** — any further operation on the same stream throws `IllegalStateException`\n\nWhen you call `transactionStream.count()`, it processes all elements and closes the stream. The subsequent `transactionStream.map(...)` tries to reuse the closed stream → `IllegalStateException`.\n\n**Fix 1 — Create two separate streams:**\n\n```java\npublic static void generateReport(List<String> transactions) {\n    long salesCount = transactions.stream()\n        .filter(t -> t.startsWith(\"SALE\"))\n        .count();\n    System.out.println(\"Sales count: \" + salesCount);\n\n    double total = transactions.stream()\n        .filter(t -> t.startsWith(\"SALE\"))\n        .map(t -> t.split(\":\")[1].trim())\n        .mapToDouble(Double::parseDouble)\n        .sum();\n    System.out.println(\"Sales total: $\" + total);\n}\n```\n\nCreating a new stream from the same source list is cheap — lists are reusable, streams are not.\n\n**Fix 2 — Compute both in a single pass (more efficient):**\n\n```java\npublic static void generateReport(List<String> transactions) {\n    List<String> sales = transactions.stream()\n        .filter(t -> t.startsWith(\"SALE\"))\n        .collect(Collectors.toList());\n\n    System.out.println(\"Sales count: \" + sales.size());\n\n    double total = sales.stream()\n        .map(t -> t.split(\":\")[1].trim())\n        .mapToDouble(Double::parseDouble)\n        .sum();\n    System.out.println(\"Sales total: $\" + total);\n}\n```\n\nCollecting to a list first means the filter runs only once, then you can query the list multiple times.\n\n**Cross-language note:** This is similar to Python's generator exhaustion. Both Java streams and Python generators are single-use. In Python, calling `sum(generator)` exhausts it just like `.count()` exhausts a Java stream."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "Streams can only be used once. Just create a new stream for each operation:\n\n```java\nlong salesCount = transactions.stream()\n    .filter(t -> t.startsWith(\"SALE\")).count();\n\ndouble total = transactions.stream()\n    .filter(t -> t.startsWith(\"SALE\"))\n    .map(t -> t.split(\":\")[1].trim())\n    .mapToDouble(Double::parseDouble).sum();\n```\n\nEach call to `.stream()` creates a fresh stream from the list."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The stream is closed after `count()`. You need to use `Supplier<Stream>` to recreate it:\n\n```java\nimport java.util.function.Supplier;\n\npublic static void generateReport(List<String> transactions) {\n    Supplier<Stream<String>> salesStream = () -> transactions.stream()\n        .filter(t -> t.startsWith(\"SALE\"));\n\n    long salesCount = salesStream.get().count();\n    System.out.println(\"Sales count: \" + salesCount);\n\n    double total = salesStream.get()\n        .map(t -> t.split(\":\")[1].trim())\n        .mapToDouble(Double::parseDouble)\n        .sum();\n    System.out.println(\"Sales total: $\" + total);\n}\n```\n\n`Supplier<Stream>` is a factory that creates a new stream each time you call `.get()`. This avoids code duplication."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify single-use stream consumption as the root cause?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain the stream lifecycle (lazy intermediate → consuming terminal → closed)?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Is the proposed fix correct and does it avoid the reuse problem?", "scale": 5 },
+      { "name": "Efficiency Awareness", "description": "Does it discuss trade-offs between separate streams and single-pass approaches?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer understand stream lifecycle and avoid reuse errors?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "debug-9",
+    "type": "comparison",
+    "title": "The Database Connection — Resource Leak Without try-with-resources",
+    "prompt": "A database utility opens connections and executes queries. Under load testing, the application runs out of database connections after a few hundred requests. The server logs show \"Too many open connections.\" Identify the bug and provide a corrected version.\n\n```java\nimport java.sql.Connection;\nimport java.sql.DriverManager;\nimport java.sql.PreparedStatement;\nimport java.sql.ResultSet;\nimport java.sql.SQLException;\nimport java.util.ArrayList;\nimport java.util.List;\n\npublic class UserRepository {\n\n    private static final String DB_URL = \"jdbc:mysql://localhost:3306/mydb\";\n    private static final String DB_USER = \"app_user\";\n    private static final String DB_PASS = \"password\";\n\n    public List<String> findActiveUsers() throws SQLException {\n        List<String> users = new ArrayList<>();\n\n        Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);\n        PreparedStatement stmt = conn.prepareStatement(\n            \"SELECT username FROM users WHERE active = ?\"\n        );\n        stmt.setBoolean(1, true);\n        ResultSet rs = stmt.executeQuery();\n\n        while (rs.next()) {\n            users.add(rs.getString(\"username\"));\n        }\n\n        rs.close();\n        stmt.close();\n        conn.close();\n\n        return users;\n    }\n\n    public static void main(String[] args) throws SQLException {\n        UserRepository repo = new UserRepository();\n        // Works fine for a few calls...\n        for (int i = 0; i < 500; i++) {\n            List<String> users = repo.findActiveUsers();\n        }\n        // Eventually: \"Too many open connections\"\n    }\n}\n```\n\nThe code does call `close()` on all three resources. Why are connections leaking?",
+    "guidelines": [
+      "The response MUST explain that if an exception occurs during executeQuery() or while processing the ResultSet, the close() calls at the bottom are never reached, leaking the Connection, PreparedStatement, and ResultSet",
+      "Should explain that try-with-resources (Java 7+) guarantees closure in the finally block, even when exceptions occur",
+      "The fix must convert to try-with-resources with nested resource declarations",
+      "Should note that resources in try-with-resources are closed in reverse declaration order, and suppressed exceptions are handled properly",
+      "Bonus: mentions connection pooling (HikariCP, etc.) as the production-grade solution for managing database connections"
+    ],
+    "responses": [
+      {
+        "label": "Response A",
+        "model": "Model Alpha",
+        "text": "This is a **resource leak** caused by the happy-path-only cleanup pattern.\n\n**Why connections leak:** The `close()` calls at the bottom of the method only execute if **every preceding line succeeds**. If `executeQuery()` throws a `SQLException`, or if `rs.getString()` throws an exception, or even if `rs.close()` throws — the remaining `close()` calls are skipped.\n\nIn a loop of 500 calls, any intermittent database error (timeout, deadlock, malformed data) causes that iteration's connection to leak. After enough leaked connections, the database refuses new ones.\n\n**Manually writing this correctly with try/finally is extremely hard:**\n```java\n// You'd need nested try/finally blocks with null checks —\n// error-prone and hard to read\n```\n\n**Fix — use try-with-resources (Java 7+):**\n\n```java\npublic List<String> findActiveUsers() throws SQLException {\n    List<String> users = new ArrayList<>();\n\n    try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);\n         PreparedStatement stmt = conn.prepareStatement(\n             \"SELECT username FROM users WHERE active = ?\")) {\n\n        stmt.setBoolean(1, true);\n\n        try (ResultSet rs = stmt.executeQuery()) {\n            while (rs.next()) {\n                users.add(rs.getString(\"username\"));\n            }\n        }\n    }\n    return users;\n}\n```\n\n**How try-with-resources works:**\n1. Resources declared in the `try(...)` block are **guaranteed to be closed** when the block exits — whether normally or via exception\n2. Resources are closed in **reverse declaration order** (ResultSet → PreparedStatement → Connection)\n3. If both the try block and the `close()` method throw exceptions, the try block's exception is thrown and the close exception is **suppressed** (accessible via `getSuppressed()`)\n\n**Production note:** In real applications, replace `DriverManager.getConnection()` with a **connection pool** (HikariCP, Apache DBCP). Connection pools reuse connections instead of creating new ones, and automatically handle timeouts and leak detection."
+      },
+      {
+        "label": "Response B",
+        "model": "Model Beta",
+        "text": "The `close()` calls won't execute if an exception is thrown. Wrap them in a `finally` block:\n\n```java\npublic List<String> findActiveUsers() throws SQLException {\n    Connection conn = null;\n    PreparedStatement stmt = null;\n    ResultSet rs = null;\n    List<String> users = new ArrayList<>();\n    try {\n        conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);\n        stmt = conn.prepareStatement(\"SELECT username FROM users WHERE active = ?\");\n        stmt.setBoolean(1, true);\n        rs = stmt.executeQuery();\n        while (rs.next()) {\n            users.add(rs.getString(\"username\"));\n        }\n    } finally {\n        if (rs != null) rs.close();\n        if (stmt != null) stmt.close();\n        if (conn != null) conn.close();\n    }\n    return users;\n}\n```\n\nThe `finally` block ensures resources are always closed."
+      },
+      {
+        "label": "Response C",
+        "model": "Model Gamma",
+        "text": "The connections are leaking because 500 calls is too many. You should reuse the connection:\n\n```java\npublic class UserRepository {\n    private Connection conn;\n\n    public UserRepository() throws SQLException {\n        conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);\n    }\n\n    public List<String> findActiveUsers() throws SQLException {\n        List<String> users = new ArrayList<>();\n        PreparedStatement stmt = conn.prepareStatement(\n            \"SELECT username FROM users WHERE active = ?\");\n        stmt.setBoolean(1, true);\n        ResultSet rs = stmt.executeQuery();\n        while (rs.next()) {\n            users.add(rs.getString(\"username\"));\n        }\n        rs.close();\n        stmt.close();\n        return users;\n    }\n}\n```\n\nBy reusing the connection across calls, you only open one connection instead of 500."
+      }
+    ],
+    "dimensions": [
+      { "name": "Root Cause Identification", "description": "Does it correctly identify that close() is skipped when exceptions occur?", "scale": 5 },
+      { "name": "Explanation Depth", "description": "Does it explain the exception-path resource leak and why manual close() is fragile?", "scale": 5 },
+      { "name": "Fix Correctness", "description": "Does the fix use try-with-resources correctly with proper nesting?", "scale": 5 },
+      { "name": "Resource Management Knowledge", "description": "Does it explain suppressed exceptions and reverse-order closing?", "scale": 5 },
+      { "name": "Educational Value", "description": "Would this help a developer always use try-with-resources for AutoCloseable resources?", "scale": 5 }
+    ]
+  }
+]
