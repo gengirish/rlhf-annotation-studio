@@ -651,8 +651,9 @@ test.describe("Team management page", () => {
       teamStats: MOCK_TEAM_STATS,
       reviewData: []
     });
-    await page.goto("/team");
-    await expect(page.getByRole("link", { name: /dashboard/i })).toBeVisible({ timeout: 15000 });
+    await page.getByRole("link", { name: "Team Management" }).click();
+    await expect(page.getByRole("heading", { name: "Team management" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("link", { name: /dashboard/i })).toBeVisible();
   });
 });
 
@@ -663,13 +664,13 @@ test.describe("Team management page", () => {
 test.describe("Settings & Author pages", () => {
   test("settings page loads", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await page.goto("/settings");
+    await page.getByRole("link", { name: "Settings" }).click();
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible({ timeout: 30000 });
   });
 
   test("author page loads with heading", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await page.goto("/author");
+    await page.getByRole("link", { name: "Author Tasks" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
   });
 });

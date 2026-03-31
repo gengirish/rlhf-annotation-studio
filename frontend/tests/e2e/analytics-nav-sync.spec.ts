@@ -154,7 +154,7 @@ async function loginAndGoToDashboard(page: Page, opts: Parameters<typeof mockAll
 test.describe("Analytics — metrics detail", () => {
   test("shows completion rate percentage", async ({ page }) => {
     await loginAndGoToDashboard(page, { useRichMetrics: true });
-    await page.goto("/analytics");
+    await page.getByRole("link", { name: "View Analytics" }).click();
     await expect(page.getByText("70%")).toBeVisible({ timeout: 15000 });
   });
 
@@ -168,14 +168,14 @@ test.describe("Analytics — metrics detail", () => {
 
   test("shows total time card", async ({ page }) => {
     await loginAndGoToDashboard(page, { useRichMetrics: true });
-    await page.goto("/analytics");
+    await page.getByRole("link", { name: "View Analytics" }).click();
     await expect(page.getByRole("heading", { name: "Total time" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("Across 10 tasks")).toBeVisible();
   });
 
   test("shows avg and median time cards", async ({ page }) => {
     await loginAndGoToDashboard(page, { useRichMetrics: true });
-    await page.goto("/analytics");
+    await page.getByRole("link", { name: "View Analytics" }).click();
     await expect(page.getByRole("heading", { name: "Avg time / task" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole("heading", { name: "Median time / task" })).toBeVisible();
   });
