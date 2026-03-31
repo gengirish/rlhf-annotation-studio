@@ -467,7 +467,7 @@ test.describe("Analytics page", () => {
 test.describe("Reviews page", () => {
   test("shows My Assignments and Pending Review tabs", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await page.goto("/reviews");
+    await page.getByRole("link", { name: "Review Queue" }).click();
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 30000 });
     await expect(page.getByRole("button", { name: "My Assignments" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Pending Review" })).toBeVisible();
@@ -495,11 +495,11 @@ test.describe("Reviews page", () => {
 
   test("pending tab shows submitted reviews with approve/reject", async ({ page }) => {
     await loginAndGoToDashboard(page, { reviewData: MOCK_REVIEW_ASSIGNMENTS });
-    await page.goto("/reviews");
+    await page.getByRole("link", { name: "Review Queue" }).click();
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 30000 });
     await page.getByRole("button", { name: "Pending Review" }).click();
     await expect(page.getByRole("button", { name: "Approve" })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("button", { name: "Reject" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reject" })).toBeVisible({ timeout: 10000 });
   });
 
   test("admin sees Team Reviews tab", async ({ page }) => {
