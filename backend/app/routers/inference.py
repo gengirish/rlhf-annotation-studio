@@ -17,7 +17,7 @@ from app.schemas.inference import (
     InferenceStatusResponse,
 )
 from app.services.hf_inference import (
-    AVAILABLE_MODELS,
+    get_models_for_provider,
     hf_chat_completion,
     hf_chat_completion_stream,
     validate_model_id,
@@ -38,19 +38,22 @@ class StreamRequest(BaseModel):
 
 @router.get("/status", response_model=InferenceStatusResponse)
 async def inference_status(settings: Settings = Depends(get_settings)) -> InferenceStatusResponse:
-    configured = bool(settings.hf_api_token and settings.hf_api_token.strip())
+    token = settings.active_api_token
+    configured = bool(token and token.strip())
     return InferenceStatusResponse(
         enabled=settings.inference_enabled,
         configured=configured,
         require_auth=settings.inference_require_auth,
+        provider=settings.inference_provider,
     )
 
 
 @router.get("/models")
 async def list_models(settings: Settings = Depends(get_settings)) -> dict:
     return {
-        "default": settings.hf_default_model,
-        "models": AVAILABLE_MODELS,
+        "provider": settings.inference_provider,
+        "default": settings.active_default_model,
+        "models": get_models_for_provider(settings.inference_provider),
     }
 
 
@@ -62,10 +65,10 @@ async def inference_stream(
 ) -> StreamingResponse:
     if not settings.inference_enabled:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="Inference is disabled")
-    if not settings.hf_api_token or not settings.hf_api_token.strip():
+    if not settings.active_api_token or not settings.active_api_token.strip():
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Hugging Face token not configured on server",
+            detail=f"API token not configured for provider '{settings.inference_provider}'",
         )
     if len(body.prompt) > settings.inference_max_prompt_chars:
         raise HTTPException(
@@ -73,7 +76,7 @@ async def inference_stream(
             detail=f"Prompt exceeds max length ({settings.inference_max_prompt_chars} characters)",
         )
 
-    model = (body.model or "").strip() or settings.hf_default_model
+    model = (body.model or "").strip() or settings.active_default_model
     try:
         validate_model_id(model)
     except ValueError as e:
@@ -102,7 +105,8 @@ async def inference_stream(
             yield f"data: {json.dumps({'error': err_msg})}\n\n"
         except (httpx.TimeoutException, httpx.RequestError) as e:
             logger.warning("HF stream transport error: %s", e)
-            yield f"data: {json.dumps({'error': 'Request to inference provider failed or timed out'})}\n\n"
+            err = "Request to inference provider failed or timed out"
+            yield f"data: {json.dumps({'error': err})}\n\n"
         except Exception as e:
             logger.exception("HF stream unexpected error")
             yield f"data: {json.dumps({'error': str(e)[:300]})}\n\n"
@@ -128,7 +132,7 @@ async def _complete_one_slot(
     slot_index: int,
 ) -> InferenceSlotOut:
     label = slot.label or f"Response {slot_index + 1}"
-    model = (slot.hf_model or "").strip() or settings.hf_default_model
+    model = (slot.hf_model or "").strip() or settings.active_default_model
     try:
         validate_model_id(model)
     except ValueError as e:
@@ -187,10 +191,10 @@ async def inference_complete(
 ) -> InferenceCompleteResponse:
     if not settings.inference_enabled:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="Inference is disabled")
-    if not settings.hf_api_token or not settings.hf_api_token.strip():
+    if not settings.active_api_token or not settings.active_api_token.strip():
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Hugging Face token not configured on server (HF_API_TOKEN or HF_TOKEN)",
+            detail=f"API token not configured for provider '{settings.inference_provider}'",
         )
     if len(body.prompt) > settings.inference_max_prompt_chars:
         raise HTTPException(

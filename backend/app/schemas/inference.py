@@ -29,3 +29,4 @@ class InferenceStatusResponse(BaseModel):
     enabled: bool
     configured: bool
     require_auth: bool
+    provider: str = "huggingface"

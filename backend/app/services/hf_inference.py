@@ -9,13 +9,68 @@ from app.config import Settings
 
 MODEL_ID_RE = re.compile(r"^[\w\-.]+/[\w\-.]+(?::[\w\-]+)?$")
 
-AVAILABLE_MODELS = [
+HUGGINGFACE_MODELS = [
     {"id": "Qwen/Qwen2.5-Coder-32B-Instruct", "name": "Qwen 2.5 Coder 32B", "tag": "code"},
     {"id": "Qwen/Qwen2.5-72B-Instruct", "name": "Qwen 2.5 72B", "tag": "general"},
     {"id": "meta-llama/Meta-Llama-3.1-8B-Instruct", "name": "Llama 3.1 8B", "tag": "general"},
-    {"id": "mistralai/Mistral-Small-24B-Instruct-2501", "name": "Mistral Small 24B", "tag": "general"},
+    {
+        "id": "mistralai/Mistral-Small-24B-Instruct-2501",
+        "name": "Mistral Small 24B",
+        "tag": "general",
+    },
     {"id": "Qwen/Qwen2.5-7B-Instruct", "name": "Qwen 2.5 7B", "tag": "fast"},
 ]
+
+NVIDIA_MODELS = [
+    {
+        "id": "nvidia/llama-3.3-nemotron-super-49b-v1",
+        "name": "Llama 3.3 Nemotron Super 49B",
+        "tag": "reasoning",
+    },
+    {
+        "id": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+        "name": "Llama 3.1 Nemotron Ultra 253B",
+        "tag": "general",
+    },
+    {
+        "id": "nvidia/llama-3.1-nemotron-nano-8b-v1",
+        "name": "Llama 3.1 Nemotron Nano 8B",
+        "tag": "fast",
+    },
+    {
+        "id": "nvidia/nemotron-3-super-120b-a12b",
+        "name": "Nemotron 3 Super 120B",
+        "tag": "reasoning",
+    },
+    {
+        "id": "meta/llama-3.3-70b-instruct",
+        "name": "Llama 3.3 70B Instruct",
+        "tag": "general",
+    },
+    {
+        "id": "mistralai/mistral-small-24b-instruct-2501",
+        "name": "Mistral Small 24B",
+        "tag": "general",
+    },
+    {
+        "id": "qwen/qwen2.5-coder-32b-instruct",
+        "name": "Qwen 2.5 Coder 32B",
+        "tag": "code",
+    },
+]
+
+MODELS_BY_PROVIDER: dict[str, list[dict[str, str]]] = {
+    "huggingface": HUGGINGFACE_MODELS,
+    "nvidia": NVIDIA_MODELS,
+    "custom": [],
+}
+
+# Kept for backward compatibility with existing imports
+AVAILABLE_MODELS = HUGGINGFACE_MODELS
+
+
+def get_models_for_provider(provider: str) -> list[dict[str, str]]:
+    return MODELS_BY_PROVIDER.get(provider, [])
 
 
 def validate_model_id(model: str) -> None:
@@ -53,11 +108,12 @@ async def hf_chat_completion(
     seed: int | None,
 ) -> tuple[str, str | None]:
     validate_model_id(model)
-    token = settings.hf_api_token
+    token = settings.active_api_token
     if not token:
-        raise RuntimeError("HF API token is not configured")
+        provider = settings.inference_provider
+        raise RuntimeError(f"API token is not configured for provider '{provider}'")
 
-    url = settings.hf_router_base_url.rstrip("/") + "/chat/completions"
+    url = settings.active_base_url.rstrip("/") + "/chat/completions"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -106,11 +162,12 @@ async def hf_chat_completion_stream(
     seed: int | None,
 ) -> AsyncIterator[str]:
     validate_model_id(model)
-    token = settings.hf_api_token
+    token = settings.active_api_token
     if not token:
-        raise RuntimeError("HF API token is not configured")
+        provider = settings.inference_provider
+        raise RuntimeError(f"API token is not configured for provider '{provider}'")
 
-    url = settings.hf_router_base_url.rstrip("/") + "/chat/completions"
+    url = settings.active_base_url.rstrip("/") + "/chat/completions"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
