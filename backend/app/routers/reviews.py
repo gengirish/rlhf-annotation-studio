@@ -33,6 +33,18 @@ async def assign_review(
     if assignee is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Annotator not found")
 
+    existing = await db.execute(
+        select(ReviewAssignment)
+        .where(ReviewAssignment.task_pack_id == body.task_pack_id)
+        .where(ReviewAssignment.task_id == body.task_id)
+        .where(ReviewAssignment.annotator_id == body.annotator_id)
+    )
+    if existing.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This task is already assigned to this annotator",
+        )
+
     row = ReviewAssignment(
         task_pack_id=body.task_pack_id,
         task_id=body.task_id,
@@ -116,6 +128,13 @@ async def bulk_assign_reviews(
     if assignee is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Annotator not found")
 
+    existing_result = await db.execute(
+        select(ReviewAssignment.task_id)
+        .where(ReviewAssignment.task_pack_id == body.task_pack_id)
+        .where(ReviewAssignment.annotator_id == body.annotator_id)
+    )
+    existing_task_ids = set(existing_result.scalars().all())
+
     created: list[ReviewAssignment] = []
     for task in pack.tasks_json or []:
         tid = task.get("id") if isinstance(task, dict) else None
@@ -124,6 +143,8 @@ async def bulk_assign_reviews(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Task pack contains a task without id",
             )
+        if str(tid) in existing_task_ids:
+            continue
         row = ReviewAssignment(
             task_pack_id=body.task_pack_id,
             task_id=str(tid),
@@ -132,6 +153,7 @@ async def bulk_assign_reviews(
         )
         db.add(row)
         created.append(row)
+        existing_task_ids.add(str(tid))
 
     await db.commit()
     for row in created:

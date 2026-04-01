@@ -1,6 +1,6 @@
 # Deploy: Vercel CLI + Fly CLI
 
-The UI is a static build in `out/` (Vercel). The API is FastAPI on Fly.io + Neon. Vercel rewrites `/api/*` to your Fly hostname.
+The UI is a Next.js standalone build deployed on Vercel. The API is FastAPI on Fly.io + Neon. Vercel rewrites `/api/*` to your Fly hostname.
 
 ---
 

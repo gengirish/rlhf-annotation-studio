@@ -39,7 +39,7 @@ $ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $email = "bench-$ts@test.com"
 
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
-$b = '{"name":"Bench","email":"' + $email + '","password":"bench123","phone":"+1"}'
+$b = '{"name":"Bench","email":"' + $email + '","password":"Bench123","phone":"+1"}'
 try {
     $r = Invoke-WebRequest -Uri "$API/auth/register" -Method POST -Body $b -ContentType "application/json" -UseBasicParsing -TimeoutSec 30
     $sw.Stop()
@@ -52,7 +52,7 @@ try {
 }
 
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
-$b = '{"email":"' + $email + '","password":"bench123"}'
+$b = '{"email":"' + $email + '","password":"Bench123"}'
 try {
     $r = Invoke-WebRequest -Uri "$API/auth/login" -Method POST -Body $b -ContentType "application/json" -UseBasicParsing -TimeoutSec 30
     $sw.Stop()

@@ -66,7 +66,7 @@ $tokenB = ""; $sidB = ""
 
 # 6. Register user A
 try {
-    $b = '{"name":"E2E Tester A","email":"' + $emailA + '","password":"test123456","phone":"+1 555"}'
+    $b = '{"name":"E2E Tester A","email":"' + $emailA + '","password":"Test123456","phone":"+1 555"}'
     $r = (Invoke-WebRequest -Uri "$API/auth/register" -Method POST -Body $b -ContentType "application/json" -UseBasicParsing -TimeoutSec 30).Content | ConvertFrom-Json
     $tokenA = $r.token; $sidA = $r.session_id
     if ($tokenA -and $sidA) { Ok "Register A" "session=$sidA" } else { Fail "Register A" "missing token/session" }
@@ -74,7 +74,7 @@ try {
 
 # 7. Login user A
 try {
-    $b = '{"email":"' + $emailA + '","password":"test123456"}'
+    $b = '{"email":"' + $emailA + '","password":"Test123456"}'
     $r = (Invoke-WebRequest -Uri "$API/auth/login" -Method POST -Body $b -ContentType "application/json" -UseBasicParsing -TimeoutSec 30).Content | ConvertFrom-Json
     if ($r.token -and $r.annotator.email -eq $emailA) { Ok "Login A" "email=$($r.annotator.email)" }
     else { Fail "Login A" "mismatch" }
@@ -93,7 +93,7 @@ try {
 
 # 9. Duplicate email
 try {
-    $b = '{"name":"Dup","email":"' + $emailA + '","password":"test123456","phone":"+1"}'
+    $b = '{"name":"Dup","email":"' + $emailA + '","password":"Test123456","phone":"+1"}'
     Invoke-WebRequest -Uri "$API/auth/register" -Method POST -Body $b -ContentType "application/json" -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop | Out-Null
     Fail "Duplicate email" "should have returned 409"
 } catch {
@@ -104,7 +104,7 @@ try {
 
 # 10. Register user B
 try {
-    $b = '{"name":"E2E Tester B","email":"' + $emailB + '","password":"test123456","phone":"+1 777"}'
+    $b = '{"name":"E2E Tester B","email":"' + $emailB + '","password":"Test123456","phone":"+1 777"}'
     $r = (Invoke-WebRequest -Uri "$API/auth/register" -Method POST -Body $b -ContentType "application/json" -UseBasicParsing -TimeoutSec 30).Content | ConvertFrom-Json
     $tokenB = $r.token; $sidB = $r.session_id
     if ($tokenB -and $sidB) { Ok "Register B" "session=$sidB" } else { Fail "Register B" "missing token/session" }

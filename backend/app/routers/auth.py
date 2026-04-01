@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,9 +17,20 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 class RegisterRequest(BaseModel):
     name: str
     email: EmailStr
-    password: str = Field(min_length=6)
+    password: str = Field(min_length=8)
     phone: str | None = None
-    role: str = Field(default="annotator", pattern="^(reviewer|annotator)$")
+    role: str = Field(default="annotator", pattern="^(annotator)$")
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not any(c.isupper() for c in v) or not any(c.islower() for c in v) or not any(
+            c.isdigit() for c in v
+        ):
+            raise ValueError(
+                "Password must contain at least one uppercase letter, one lowercase letter, and one digit",
+            )
+        return v
 
 
 class LoginRequest(BaseModel):

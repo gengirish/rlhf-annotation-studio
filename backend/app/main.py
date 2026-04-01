@@ -21,7 +21,7 @@ def create_app() -> FastAPI:
         title="RLHF Annotation API",
         version="0.1.0",
         root_path=settings.root_path or "",
-        docs_url="/api/docs" if settings.debug else "/api/docs",
+        docs_url="/api/docs" if settings.debug else None,
         lifespan=lifespan,
     )
 

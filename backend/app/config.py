@@ -26,10 +26,6 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
 
-    # Comma-separated annotator UUIDs allowed to assign reviews and approve/reject.
-    # If empty, any authenticated user may act as a reviewer (suitable for trusted deployments).
-    reviewer_annotator_ids: str = ""
-
     # Hugging Face Inference Providers (OpenAI-compatible router)
     hf_api_token: str | None = None
     hf_router_base_url: str = "https://router.huggingface.co/v1"
@@ -45,6 +41,16 @@ class Settings(BaseSettings):
         if not self.hf_api_token:
             self.hf_api_token = os.environ.get("HF_TOKEN") or os.environ.get(
                 "HUGGINGFACE_HUB_TOKEN",
+            )
+        return self
+
+    @model_validator(mode="after")
+    def warn_default_jwt_secret(self) -> "Settings":
+        if self.jwt_secret == "change-me-in-production":
+            import logging
+
+            logging.getLogger("app.config").warning(
+                "JWT_SECRET is set to the default value. Set a strong secret in production!",
             )
         return self
 

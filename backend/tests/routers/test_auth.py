@@ -105,7 +105,7 @@ def test_register_success(auth_app: FastAPI) -> None:
             json={
                 "name": "Alice",
                 "email": "alice@example.com",
-                "password": "secret123",
+                "password": "Secret123",
             },
         )
     assert resp.status_code == 201
@@ -135,7 +135,7 @@ def test_register_duplicate_email_returns_409(auth_app: FastAPI, auth_db: FakeAu
             json={
                 "name": "Bob2",
                 "email": "bob@example.com",
-                "password": "secret123",
+                "password": "Secret123",
             },
         )
     assert resp.status_code == 409

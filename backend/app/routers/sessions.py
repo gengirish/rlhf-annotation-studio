@@ -20,8 +20,17 @@ from app.services.workspace_service import WorkspaceService
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
-@router.post("/bootstrap", response_model=BootstrapResponse, status_code=status.HTTP_201_CREATED)
-async def bootstrap(body: BootstrapRequest, db: AsyncSession = Depends(get_db)) -> BootstrapResponse:
+@router.post(
+    "/bootstrap",
+    response_model=BootstrapResponse,
+    status_code=status.HTTP_201_CREATED,
+    deprecated=True,
+)
+async def bootstrap(
+    body: BootstrapRequest,
+    db: AsyncSession = Depends(get_db),
+    _user: Annotator = Depends(get_current_user),
+) -> BootstrapResponse:
     """Create annotator row + empty work session; browser stores `session_id` for sync."""
     annotator = Annotator(
         name=body.annotator.name,
