@@ -95,7 +95,6 @@ export default function AuthPage() {
                   style={{ width: "100%", padding: "8px 12px", cursor: "pointer" }}
                 >
                   <option value="annotator">Annotator</option>
-                  <option value="reviewer">Reviewer</option>
                 </select>
               </div>
             </>

@@ -41,7 +41,16 @@ export const useAppStore = create<AppState>()(
 
       setAuth: ({ user, token, sessionId }) => {
         localStorage.setItem("rlhf_authToken", token);
-        set({ user, token, sessionId });
+        const prev = get();
+        const sessionChanged = prev.sessionId !== sessionId;
+        set({
+          user,
+          token,
+          sessionId,
+          ...(sessionChanged
+            ? { tasks: [], annotations: {}, taskTimes: {}, activePackFile: null, currentTaskIndex: 0 }
+            : {}),
+        });
       },
 
       logout: () => {
@@ -59,15 +68,23 @@ export const useAppStore = create<AppState>()(
       },
 
       loadTasks: (tasks, activePackFile) => {
-        const existing = get().annotations;
+        const prev = get();
+        const packChanged = prev.activePackFile !== activePackFile;
+        const baseAnnotations = packChanged ? {} : prev.annotations;
         const merged: Record<string, AnnotationState> = {};
         tasks.forEach((task, index) => {
-          merged[task.id] = existing[task.id] || {
+          merged[task.id] = baseAnnotations[task.id] || {
             ...defaultAnnotation(),
             status: index === 0 ? "active" : "pending"
           };
         });
-        set({ tasks, annotations: merged, activePackFile, currentTaskIndex: 0 });
+        set({
+          tasks,
+          annotations: merged,
+          taskTimes: packChanged ? {} : prev.taskTimes,
+          activePackFile,
+          currentTaskIndex: 0,
+        });
       },
 
       setCurrentTaskIndex: (idx) => set({ currentTaskIndex: idx }),

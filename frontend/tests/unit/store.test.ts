@@ -71,6 +71,32 @@ describe("useAppStore", () => {
 
       expect(localStorage.getItem("rlhf_authToken")).toBe("secret-token");
     });
+
+    it("clears workspace state when session changes", () => {
+      useAppStore.getState().setAuth({ user: mockUser, token: "t1", sessionId: "sess-1" });
+      useAppStore.getState().loadTasks(mockTasks, "pack.json");
+      useAppStore.getState().setTaskTime("task-1", 99);
+
+      useAppStore.getState().setAuth({ user: mockUser, token: "t2", sessionId: "sess-2" });
+
+      const s = useAppStore.getState();
+      expect(s.sessionId).toBe("sess-2");
+      expect(s.tasks).toEqual([]);
+      expect(s.annotations).toEqual({});
+      expect(s.taskTimes).toEqual({});
+      expect(s.activePackFile).toBeNull();
+    });
+
+    it("keeps workspace state when re-authenticating same session", () => {
+      useAppStore.getState().setAuth({ user: mockUser, token: "t1", sessionId: "sess-1" });
+      useAppStore.getState().loadTasks(mockTasks, "pack.json");
+
+      useAppStore.getState().setAuth({ user: mockUser, token: "t2", sessionId: "sess-1" });
+
+      const s = useAppStore.getState();
+      expect(s.tasks).toEqual(mockTasks);
+      expect(s.activePackFile).toBe("pack.json");
+    });
   });
 
   describe("logout", () => {
@@ -146,7 +172,7 @@ describe("useAppStore", () => {
       expect(useAppStore.getState().currentTaskIndex).toBe(0);
     });
 
-    it("preserves existing annotations for matching task IDs", () => {
+    it("preserves existing annotations when reloading the same pack", () => {
       const preserved: AnnotationState = {
         status: "done",
         dimensions: { Accuracy: 4 },
@@ -155,6 +181,7 @@ describe("useAppStore", () => {
       };
       useAppStore.setState({
         annotations: { "task-1": preserved },
+        activePackFile: "pack.json",
       });
 
       useAppStore.getState().loadTasks(mockTasks, "pack.json");
@@ -163,6 +190,24 @@ describe("useAppStore", () => {
       expect(annotations["task-1"]).toEqual(preserved);
       expect(annotations["task-2"]).toMatchObject({
         status: "pending",
+        dimensions: {},
+        justification: "",
+      });
+    });
+
+    it("clears annotations and taskTimes when switching to a different pack", () => {
+      useAppStore.setState({
+        annotations: { "task-1": { status: "done", dimensions: { Accuracy: 4 }, justification: "old" } },
+        taskTimes: { "task-1": 120 },
+        activePackFile: "old-pack.json",
+      });
+
+      useAppStore.getState().loadTasks(mockTasks, "new-pack.json");
+
+      const s = useAppStore.getState();
+      expect(s.taskTimes).toEqual({});
+      expect(s.annotations["task-1"]).toMatchObject({
+        status: "active",
         dimensions: {},
         justification: "",
       });

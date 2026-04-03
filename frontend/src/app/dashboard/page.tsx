@@ -73,9 +73,12 @@ export default function DashboardPage() {
     void loadCatalog();
   }, []);
 
+  const bootstrapRan = useRef(false);
   useEffect(() => {
     async function bootstrapWorkspace() {
-      if (!sessionId || tasks.length > 0) return;
+      if (!sessionId) return;
+      if (tasks.length > 0 && bootstrapRan.current) return;
+      bootstrapRan.current = true;
       try {
         const server = await api.getWorkspace(sessionId);
         if ((server.tasks || []).length > 0) {
