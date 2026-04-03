@@ -6,10 +6,33 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { api } from "@/lib/api";
-import type { TaskPackSummary } from "@/lib/api";
+import type { TaskPackDetail, TaskPackSummary } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 import { fetchTaskPack } from "@/lib/task-packs";
 import type { TaskItem, WorkspaceSnapshot } from "@/types";
+
+function categoryFromPack(pack: TaskPackSummary): string {
+  const language = (pack.language || "general").toLowerCase();
+  if (language === "python") return "Python";
+  if (language === "java") return "Java";
+  if (language === "javascript") return "JavaScript / TypeScript";
+  if (language === "csharp-cpp") return "C# / C++";
+  if (language === "multi") return "Multi-Language";
+  if (language === "general") return "General / Safety";
+  return language;
+}
+
+function decoratePackTasks(pack: TaskPackSummary, detail: TaskPackDetail): TaskItem[] {
+  const category = categoryFromPack(pack);
+  return detail.tasks_json.map((task, idx) => ({
+    ...task,
+    id: `${pack.slug}::${task.id}::${idx}`,
+    source_task_id: task.id,
+    source_pack_slug: pack.slug,
+    source_pack_name: pack.name,
+    source_category: category
+  }));
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -22,11 +45,14 @@ export default function DashboardPage() {
     activePackFile,
     loadTasks,
     hydrateWorkspace,
+    getFirstUnfinishedTaskIndex,
     logout
   } = useAppStore();
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "synced" | "error">("idle");
   const [packCatalog, setPackCatalog] = useState<TaskPackSummary[]>([]);
   const [packsLoading, setPacksLoading] = useState(true);
+  const [workflowLoading, setWorkflowLoading] = useState(false);
+  const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
   const [qualityScore, setQualityScore] = useState<{
     overall_accuracy: number;
     scored_tasks: number;
@@ -36,10 +62,48 @@ export default function DashboardPage() {
     () => Object.values(annotations).filter((ann) => ann.status === "done").length,
     [annotations]
   );
+  const groupedCatalog = useMemo(() => {
+    const groups = new Map<string, TaskPackSummary[]>();
+    packCatalog.forEach((pack) => {
+      const category = categoryFromPack(pack);
+      groups.set(category, [...(groups.get(category) || []), pack]);
+    });
+    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [packCatalog]);
+
+  const packCategoryBySlug = useMemo(() => {
+    const map = new Map<string, string>();
+    packCatalog.forEach((pack) => map.set(pack.slug, categoryFromPack(pack)));
+    return map;
+  }, [packCatalog]);
+
+  const categoryProgress = useMemo(() => {
+    const progress = new Map<string, { done: number; total: number }>();
+    tasks.forEach((task) => {
+      const category = task.source_category || (activePackFile ? packCategoryBySlug.get(activePackFile) : null) || "Uncategorized";
+      const entry = progress.get(category) || { done: 0, total: 0 };
+      entry.total += 1;
+      if (annotations[task.id]?.status === "done") entry.done += 1;
+      progress.set(category, entry);
+    });
+    return Array.from(progress.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [tasks, annotations, activePackFile, packCategoryBySlug]);
+
+  useEffect(() => {
+    if (!tasks.length) {
+      setSelectedTaskIndex(0);
+      return;
+    }
+    const preferred = useAppStore.getState().getFirstUnfinishedTaskIndex();
+    setSelectedTaskIndex((prev) => (prev >= 0 && prev < tasks.length ? prev : preferred));
+  }, [tasks]);
 
   useEffect(() => {
     async function fetchQualityScore() {
-      if (!sessionId || completed <= 0) return;
+      if (!sessionId || completed <= 0) {
+        setQualityScore(null);
+        return;
+      }
       try {
         const score = await api.scoreSession(sessionId);
         setQualityScore({
@@ -77,7 +141,10 @@ export default function DashboardPage() {
   useEffect(() => {
     async function bootstrapWorkspace() {
       if (!sessionId) return;
-      if (tasks.length > 0 && bootstrapRan.current) return;
+      // Keep local workflow state authoritative if tasks are already loaded
+      // (e.g., after starting category/end-to-end workflows and navigating back).
+      if (tasks.length > 0) return;
+      if (bootstrapRan.current) return;
       bootstrapRan.current = true;
       try {
         const server = await api.getWorkspace(sessionId);
@@ -148,9 +215,50 @@ export default function DashboardPage() {
       }
       loadTasks(data, slug);
       toast.success(`Loaded ${data.length} tasks`);
-      router.push("/task/0");
+      router.push(`/task/${useAppStore.getState().getFirstUnfinishedTaskIndex()}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Task loading failed");
+    }
+  }
+
+  async function loadCategoryWorkflow(category: string, packs: TaskPackSummary[]) {
+    if (packs.length === 0) return;
+    setWorkflowLoading(true);
+    try {
+      const details = await Promise.all(packs.map((pack) => api.getTaskPack(pack.slug)));
+      const combined: TaskItem[] = [];
+      details.forEach((detail, idx) => {
+        combined.push(...decoratePackTasks(packs[idx], detail));
+      });
+      loadTasks(combined, `workflow:${category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`);
+      toast.success(`Loaded ${combined.length} tasks across ${packs.length} pack(s) in ${category}`);
+      router.push(`/task/${useAppStore.getState().getFirstUnfinishedTaskIndex()}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load category workflow");
+    } finally {
+      setWorkflowLoading(false);
+    }
+  }
+
+  async function loadEndToEndWorkflow() {
+    if (packCatalog.length === 0) return;
+    setWorkflowLoading(true);
+    try {
+      const sortedPacks = [...packCatalog].sort((a, b) =>
+        `${categoryFromPack(a)}::${a.name}`.localeCompare(`${categoryFromPack(b)}::${b.name}`)
+      );
+      const details = await Promise.all(sortedPacks.map((pack) => api.getTaskPack(pack.slug)));
+      const combined: TaskItem[] = [];
+      details.forEach((detail, idx) => {
+        combined.push(...decoratePackTasks(sortedPacks[idx], detail));
+      });
+      loadTasks(combined, "workflow:end-to-end");
+      toast.success(`Loaded end-to-end workflow: ${combined.length} tasks from ${sortedPacks.length} packs`);
+      router.push(`/task/${useAppStore.getState().getFirstUnfinishedTaskIndex()}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load end-to-end workflow");
+    } finally {
+      setWorkflowLoading(false);
     }
   }
 
@@ -204,7 +312,7 @@ export default function DashboardPage() {
 
         loadTasks(tasks, packName);
         toast.success(`Loaded ${tasks.length} tasks from ${file.name}`);
-        router.push("/task/0");
+        router.push(`/task/${useAppStore.getState().getFirstUnfinishedTaskIndex()}`);
       } catch (err) {
         toast.error(
           err instanceof SyntaxError
@@ -298,23 +406,43 @@ export default function DashboardPage() {
 
       <section className="card" style={{ marginTop: 18, padding: 16 }}>
         <h2 style={{ marginTop: 0 }}>Task Library</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <p style={{ margin: 0, color: "var(--muted)" }}>
+            Load single packs, category workflows, or a full end-to-end workflow.
+          </p>
+          <button className="btn btn-primary" disabled={workflowLoading || packsLoading} onClick={loadEndToEndWorkflow}>
+            {workflowLoading ? "Preparing..." : "Start End-to-End Workflow"}
+          </button>
+        </div>
         {packsLoading ? (
           <p style={{ color: "var(--muted)" }}>Loading task packs...</p>
         ) : packCatalog.length === 0 ? (
           <p style={{ color: "var(--muted)" }}>No task packs available.</p>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-            {packCatalog.map((pack) => (
-              <article key={pack.slug} className="card" style={{ padding: 14 }}>
-                <h3 style={{ margin: "0 0 6px" }}>{pack.name}</h3>
-                <p style={{ margin: "0 0 4px", color: "var(--muted)" }}>{pack.description}</p>
-                <p style={{ margin: "0 0 10px", fontSize: 13, color: "var(--muted)" }}>
-                  {pack.task_count} tasks &middot; {pack.language}
-                </p>
-                <button className="btn btn-primary" onClick={() => loadPack(pack.slug)}>
-                  Load and Start
-                </button>
-              </article>
+          <div style={{ display: "grid", gap: 14 }}>
+            {groupedCatalog.map(([category, packs]) => (
+              <section key={category} className="card" style={{ padding: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <h3 style={{ margin: 0 }}>{category}</h3>
+                  <button className="btn" disabled={workflowLoading} onClick={() => loadCategoryWorkflow(category, packs)}>
+                    Load {category} Workflow
+                  </button>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+                  {packs.map((pack) => (
+                    <article key={pack.slug} className="card" style={{ padding: 14 }}>
+                      <h4 style={{ margin: "0 0 6px" }}>{pack.name}</h4>
+                      <p style={{ margin: "0 0 4px", color: "var(--muted)" }}>{pack.description}</p>
+                      <p style={{ margin: "0 0 10px", fontSize: 13, color: "var(--muted)" }}>
+                        {pack.task_count} tasks &middot; {pack.language}
+                      </p>
+                      <button className="btn btn-primary" onClick={() => loadPack(pack.slug)}>
+                        Load and Start
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}
@@ -339,6 +467,41 @@ export default function DashboardPage() {
           Choose JSON File
         </button>
       </section>
+
+      {tasks.length > 0 ? (
+        <section className="card" style={{ marginTop: 18, padding: 16 }}>
+          <h2 style={{ marginTop: 0 }}>Workflow Progress by Category</h2>
+          <p style={{ margin: "0 0 12px", color: "var(--muted)" }}>
+            End-to-end progress is tracked across all loaded categories and task packs.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+            {categoryProgress.map(([category, stat]) => {
+              const pct = stat.total > 0 ? Math.round((stat.done / stat.total) * 100) : 0;
+              return (
+                <article key={category} className="card" style={{ padding: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <b>{category}</b>
+                    <span style={{ color: "var(--muted)", fontSize: 13 }}>
+                      {stat.done}/{stat.total}
+                    </span>
+                  </div>
+                  <div style={{ height: 8, marginTop: 8, background: "#e2e8f0", borderRadius: 999 }}>
+                    <div
+                      style={{
+                        width: `${pct}%`,
+                        height: "100%",
+                        borderRadius: 999,
+                        background: "var(--primary, #4f46e5)"
+                      }}
+                    />
+                  </div>
+                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--muted)" }}>{pct}% complete</p>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       <section className="card" style={{ marginTop: 18, padding: 16 }}>
         <h2 style={{ marginTop: 0 }}>Insights and quality</h2>
@@ -369,10 +532,37 @@ export default function DashboardPage() {
       {tasks.length > 0 ? (
         <section className="card" style={{ marginTop: 18, padding: 16 }}>
           <h2 style={{ marginTop: 0 }}>Resume Annotation</h2>
-          <p style={{ color: "var(--muted)" }}>Continue from your current queue at any time.</p>
-          <button className="btn btn-primary" onClick={() => router.push(`/task/${0}`)}>
-            Open Task Workspace
-          </button>
+          <p style={{ color: "var(--muted)" }}>
+            Continue from next unfinished task or jump directly to any loaded task.
+          </p>
+          <div style={{ display: "grid", gap: 10, maxWidth: 760 }}>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: 13, color: "var(--muted)" }}>Jump to task</span>
+              <select
+                className="input"
+                value={String(selectedTaskIndex)}
+                onChange={(e) => setSelectedTaskIndex(Number(e.target.value))}
+              >
+                {tasks.map((task, idx) => {
+                  const status = annotations[task.id]?.status || "pending";
+                  const pack = task.source_pack_name || activePackFile || "loaded";
+                  return (
+                    <option key={task.id} value={idx}>
+                      {idx + 1}. [{status}] {task.title} - {pack}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button className="btn btn-primary" onClick={() => router.push(`/task/${selectedTaskIndex}`)}>
+                Open Selected Task
+              </button>
+              <button className="btn" onClick={() => router.push(`/task/${getFirstUnfinishedTaskIndex()}`)}>
+                Continue Next Unfinished
+              </button>
+            </div>
+          </div>
         </section>
       ) : null}
     </main>

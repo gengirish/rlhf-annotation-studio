@@ -28,6 +28,10 @@ export interface TaskItem {
   inference?: TaskInference;
   responses: TaskResponse[];
   dimensions: TaskDimension[];
+  source_pack_slug?: string;
+  source_pack_name?: string;
+  source_category?: string;
+  source_task_id?: string;
 }
 
 export interface AnnotationState {

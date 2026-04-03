@@ -16,6 +16,8 @@ interface AppState {
   logout: () => void;
   loadTasks: (tasks: TaskItem[], activePackFile: string | null) => void;
   setCurrentTaskIndex: (idx: number) => void;
+  getFirstUnfinishedTaskIndex: () => number;
+  getNextUnfinishedTaskIndex: (fromIdx: number) => number | null;
   updateAnnotation: (taskId: string, patch: Partial<AnnotationState>) => void;
   setTaskTime: (taskId: string, value: number) => void;
   hydrateWorkspace: (workspace: WorkspaceSnapshot) => void;
@@ -26,6 +28,23 @@ const defaultAnnotation = (): AnnotationState => ({
   dimensions: {},
   justification: ""
 });
+
+function firstUnfinishedIndex(tasks: TaskItem[], annotations: Record<string, AnnotationState>): number {
+  if (!tasks.length) return 0;
+  const idx = tasks.findIndex((task) => annotations[task.id]?.status !== "done");
+  return idx >= 0 ? idx : 0;
+}
+
+function nextUnfinishedIndex(
+  tasks: TaskItem[],
+  annotations: Record<string, AnnotationState>,
+  fromIdx: number
+): number | null {
+  for (let i = fromIdx + 1; i < tasks.length; i += 1) {
+    if (annotations[tasks[i].id]?.status !== "done") return i;
+  }
+  return null;
+}
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -78,16 +97,27 @@ export const useAppStore = create<AppState>()(
             status: index === 0 ? "active" : "pending"
           };
         });
+        const startIndex = firstUnfinishedIndex(tasks, merged);
         set({
           tasks,
           annotations: merged,
           taskTimes: packChanged ? {} : prev.taskTimes,
           activePackFile,
-          currentTaskIndex: 0,
+          currentTaskIndex: startIndex,
         });
       },
 
       setCurrentTaskIndex: (idx) => set({ currentTaskIndex: idx }),
+
+      getFirstUnfinishedTaskIndex: () => {
+        const state = get();
+        return firstUnfinishedIndex(state.tasks, state.annotations);
+      },
+
+      getNextUnfinishedTaskIndex: (fromIdx) => {
+        const state = get();
+        return nextUnfinishedIndex(state.tasks, state.annotations, fromIdx);
+      },
 
       updateAnnotation: (taskId, patch) => {
         const curr = get().annotations[taskId] || defaultAnnotation();
@@ -107,12 +137,14 @@ export const useAppStore = create<AppState>()(
       },
 
       hydrateWorkspace: (workspace) => {
+        const tasks = workspace.tasks || [];
+        const annotations = workspace.annotations || {};
         set({
-          tasks: workspace.tasks || [],
-          annotations: workspace.annotations || {},
+          tasks,
+          annotations,
           taskTimes: workspace.task_times || {},
           activePackFile: workspace.active_pack_file || null,
-          currentTaskIndex: 0
+          currentTaskIndex: firstUnfinishedIndex(tasks, annotations)
         });
       }
     }),

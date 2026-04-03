@@ -84,6 +84,7 @@ export default function TaskPage() {
     annotations,
     currentTaskIndex,
     setCurrentTaskIndex,
+    getNextUnfinishedTaskIndex,
     updateAnnotation,
     setTaskTime,
     taskTimes
@@ -111,11 +112,33 @@ export default function TaskPage() {
       return;
     }
     const idx = Number(params.taskId);
-    if (Number.isFinite(idx) && idx >= 0 && idx < tasks.length && idx !== currentTaskIndex) {
-      setCurrentTaskIndex(idx);
+    if (!Number.isFinite(idx) || idx < 0 || idx >= tasks.length) {
+      router.replace(`/task/${currentTaskIndex}`);
+      return;
     }
+    const taskAtRoute = tasks[idx];
+    const doneAtRoute = annotations[taskAtRoute.id]?.status === "done";
+    if (doneAtRoute) {
+      const nextIdx = getNextUnfinishedTaskIndex(idx);
+      if (nextIdx !== null) {
+        setCurrentTaskIndex(nextIdx);
+        router.replace(`/task/${nextIdx}`);
+      } else {
+        router.push("/dashboard");
+      }
+      return;
+    }
+    if (idx !== currentTaskIndex) setCurrentTaskIndex(idx);
     startedAtRef.current = Date.now();
-  }, [tasks.length, router, currentTaskIndex, params.taskId, setCurrentTaskIndex]);
+  }, [
+    tasks,
+    annotations,
+    router,
+    currentTaskIndex,
+    params.taskId,
+    setCurrentTaskIndex,
+    getNextUnfinishedTaskIndex
+  ]);
 
   useEffect(() => {
     if (task) {
@@ -149,8 +172,8 @@ export default function TaskPage() {
 
   const goNext = useCallback(() => {
     trackTime();
-    if (currentTaskIndex < tasks.length - 1) {
-      const nextIdx = currentTaskIndex + 1;
+    const nextIdx = getNextUnfinishedTaskIndex(currentTaskIndex);
+    if (nextIdx !== null) {
       setCurrentTaskIndex(nextIdx);
       setPhase(1);
       setStreamingText({});
@@ -161,7 +184,7 @@ export default function TaskPage() {
     } else {
       router.push("/dashboard");
     }
-  }, [trackTime, currentTaskIndex, tasks.length, setCurrentTaskIndex, router]);
+  }, [trackTime, getNextUnfinishedTaskIndex, currentTaskIndex, setCurrentTaskIndex, router]);
 
   const goPrev = useCallback(() => {
     trackTime();

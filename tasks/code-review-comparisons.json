@@ -60,31 +60,6 @@
     ]
   },
   {
-    "id": "cr-3",
-    "type": "rating",
-    "title": "API Design Feedback",
-    "prompt": "Rate this response to: \"Design a REST API for a simple todo application with users.\"",
-    "guidelines": [
-      "Evaluate RESTful design principles (proper HTTP methods, status codes, resource naming)",
-      "Check for authentication/authorization considerations",
-      "Assess whether the response covers pagination, filtering, error responses",
-      "Consider real-world production readiness"
-    ],
-    "responses": [
-      {
-        "label": "API Design Response",
-        "model": "Model Gamma",
-        "text": "## Todo API Design\n\n### Authentication\n- POST /auth/register — Create account\n- POST /auth/login — Get JWT token\n- POST /auth/refresh — Refresh token\n\n### Users\n- GET /users/me — Get current user profile\n- PATCH /users/me — Update profile\n\n### Todos\n- GET /todos?status=pending&page=1&limit=20 — List user's todos (paginated)\n- POST /todos — Create todo\n- GET /todos/:id — Get single todo\n- PATCH /todos/:id — Update todo\n- DELETE /todos/:id — Delete todo\n\n### Response Format\n```json\n{\n  \"data\": { ... },\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 45\n  }\n}\n```\n\n### Error Format\n```json\n{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Title is required\",\n    \"details\": [...]\n  }\n}\n```\n\n### Status Codes\n- 200: Success\n- 201: Created\n- 204: Deleted (no content)\n- 400: Validation error\n- 401: Unauthorized\n- 403: Forbidden\n- 404: Not found\n- 429: Rate limited"
-      }
-    ],
-    "dimensions": [
-      { "name": "RESTful Design", "description": "Follows REST conventions correctly?", "scale": 5 },
-      { "name": "Completeness", "description": "Covers all necessary endpoints and concerns?", "scale": 5 },
-      { "name": "Security", "description": "Addresses authentication and authorization?", "scale": 5 },
-      { "name": "Production Readiness", "description": "Would this work in a real application?", "scale": 5 }
-    ]
-  },
-  {
     "id": "cr-4",
     "type": "ranking",
     "title": "Git Commit Message Quality",
@@ -116,6 +91,31 @@
       { "name": "Descriptiveness", "description": "Does it explain what changed and why?", "scale": 5 },
       { "name": "Conciseness", "description": "Is it appropriately brief without losing meaning?", "scale": 5 },
       { "name": "Actionability", "description": "Would this help a future developer understand the context?", "scale": 5 }
+    ]
+  },
+  {
+    "id": "cr-3",
+    "type": "rating",
+    "title": "API Design Feedback",
+    "prompt": "Rate this response to: \"Design a REST API for a simple todo application with users.\"",
+    "guidelines": [
+      "Evaluate RESTful design principles (proper HTTP methods, status codes, resource naming)",
+      "Check for authentication/authorization considerations",
+      "Assess whether the response covers pagination, filtering, error responses",
+      "Consider real-world production readiness"
+    ],
+    "responses": [
+      {
+        "label": "API Design Response",
+        "model": "Model Gamma",
+        "text": "## Todo API Design\n\n### Authentication\n- POST /auth/register — Create account\n- POST /auth/login — Get JWT token\n- POST /auth/refresh — Refresh token\n\n### Users\n- GET /users/me — Get current user profile\n- PATCH /users/me — Update profile\n\n### Todos\n- GET /todos?status=pending&page=1&limit=20 — List user's todos (paginated)\n- POST /todos — Create todo\n- GET /todos/:id — Get single todo\n- PATCH /todos/:id — Update todo\n- DELETE /todos/:id — Delete todo\n\n### Response Format\n```json\n{\n  \"data\": { ... },\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 45\n  }\n}\n```\n\n### Error Format\n```json\n{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Title is required\",\n    \"details\": [...]\n  }\n}\n```\n\n### Status Codes\n- 200: Success\n- 201: Created\n- 204: Deleted (no content)\n- 400: Validation error\n- 401: Unauthorized\n- 403: Forbidden\n- 404: Not found\n- 429: Rate limited"
+      }
+    ],
+    "dimensions": [
+      { "name": "RESTful Design", "description": "Follows REST conventions correctly?", "scale": 5 },
+      { "name": "Completeness", "description": "Covers all necessary endpoints and concerns?", "scale": 5 },
+      { "name": "Security", "description": "Addresses authentication and authorization?", "scale": 5 },
+      { "name": "Production Readiness", "description": "Would this work in a real application?", "scale": 5 }
     ]
   }
 ]
