@@ -6,7 +6,24 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.db import warm_pool
-from app.routers import auth, health, inference, metrics, orgs, reviews, sessions, tasks
+from app.routers import (
+    api_keys,
+    audit,
+    auth,
+    consensus,
+    datasets,
+    health,
+    iaa,
+    inference,
+    judge,
+    metrics,
+    orgs,
+    quality,
+    reviews,
+    sessions,
+    tasks,
+    webhooks,
+)
 
 
 @asynccontextmanager
@@ -50,6 +67,14 @@ def create_app() -> FastAPI:
     app.include_router(tasks.router, prefix="/api/v1")
     app.include_router(metrics.router, prefix="/api/v1")
     app.include_router(reviews.router, prefix="/api/v1")
+    app.include_router(api_keys.router, prefix="/api/v1")
+    app.include_router(audit.router, prefix="/api/v1")
+    app.include_router(consensus.router, prefix="/api/v1")
+    app.include_router(datasets.router, prefix="/api/v1")
+    app.include_router(iaa.router, prefix="/api/v1")
+    app.include_router(judge.router, prefix="/api/v1")
+    app.include_router(quality.router, prefix="/api/v1")
+    app.include_router(webhooks.router, prefix="/api/v1")
     return app
 
 

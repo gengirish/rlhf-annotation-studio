@@ -41,3 +41,25 @@ class TaskPackDetail(TaskPackSummary):
 
 class TaskPackListResponse(BaseModel):
     packs: list[TaskPackSummary]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool
+
+
+class TaskSearchHit(BaseModel):
+    pack_slug: str
+    pack_name: str
+    language: str
+    task_id: str
+    task_title: str
+    task_type: str
+    task_index: int
+
+
+class TaskSearchResponse(BaseModel):
+    packs: list[TaskPackSummary]
+    tasks: list[TaskSearchHit]
+    query: str
+    total_packs: int
+    total_tasks: int

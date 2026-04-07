@@ -129,6 +129,32 @@ export interface ReviewAssignment {
   updated_at: string;
 }
 
+export interface TaskPackListResponse {
+  packs: TaskPackSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+export interface TaskSearchHit {
+  pack_slug: string;
+  pack_name: string;
+  language: string;
+  task_id: string;
+  task_title: string;
+  task_type: string;
+  task_index: number;
+}
+
+export interface TaskSearchResponse {
+  packs: TaskPackSummary[];
+  tasks: TaskSearchHit[];
+  query: string;
+  total_packs: number;
+  total_tasks: number;
+}
+
 export const api = {
   register: (body: { name: string; email: string; password: string; phone?: string; role?: string }) =>
     request<AuthResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify(body) }),
@@ -178,8 +204,34 @@ export const api = {
       "/api/v1/tasks/validate",
       { method: "POST", body: JSON.stringify({ tasks, strict_mode: false }) }
     ),
-  getTaskPacks: () =>
-    request<{ packs: TaskPackSummary[] }>("/api/v1/tasks/packs"),
+  searchTasks: (params: { q: string; language?: string; task_type?: string; limit?: number }) => {
+    const qs = new URLSearchParams();
+    qs.set("q", params.q);
+    if (params.language) qs.set("language", params.language);
+    if (params.task_type) qs.set("task_type", params.task_type);
+    if (params.limit !== undefined) qs.set("limit", String(params.limit));
+    return request<TaskSearchResponse>(`/api/v1/tasks/search?${qs.toString()}`);
+  },
+  getTaskPacks: (params?: { limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.limit !== undefined) qs.set("limit", String(params.limit));
+    if (params?.offset !== undefined) qs.set("offset", String(params.offset));
+    const q = qs.toString();
+    return request<TaskPackListResponse>(`/api/v1/tasks/packs${q ? `?${q}` : ""}`);
+  },
+  getAllTaskPacks: async (pageSize = 50): Promise<TaskPackSummary[]> => {
+    let offset = 0;
+    let all: TaskPackSummary[] = [];
+    while (true) {
+      const res = await request<TaskPackListResponse>(
+        `/api/v1/tasks/packs?limit=${pageSize}&offset=${offset}`
+      );
+      all = all.concat(res.packs);
+      if (!res.has_more) break;
+      offset += res.limit;
+    }
+    return all;
+  },
   getTaskPack: (slug: string) =>
     request<TaskPackDetail>(`/api/v1/tasks/packs/${encodeURIComponent(slug)}`),
   scoreSession: (sessionId: string) =>

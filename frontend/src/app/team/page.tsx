@@ -113,14 +113,14 @@ export default function TeamPage() {
       const [mem, stats, catalog, reviews] = await Promise.all([
         api.getOrgMembers(orgId),
         api.getTeamStats(orgId),
-        api.getTaskPacks(),
+        api.getAllTaskPacks(),
         api.getTeamReviews(
           reviewStatusFilter === "all" ? undefined : { status: reviewStatusFilter }
         )
       ]);
       setMembers(mem);
       setTeamStatRows(stats);
-      setPacks(catalog.packs ?? []);
+      setPacks(catalog ?? []);
       setTeamReviews(Array.isArray(reviews) ? reviews : []);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to load team data");

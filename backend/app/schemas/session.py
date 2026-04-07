@@ -4,8 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.schemas.annotator import AnnotatorCreate, AnnotatorRead
 from app.schemas.annotation_validation import AnnotationIssue
+from app.schemas.annotator import AnnotatorCreate, AnnotatorRead
 
 
 class BootstrapRequest(BaseModel):

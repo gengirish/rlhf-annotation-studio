@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { api } from "@/lib/api";
-import type { TaskPackDetail, TaskPackSummary } from "@/lib/api";
+import type { TaskPackDetail, TaskPackSummary, TaskSearchHit, TaskSearchResponse } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 import { fetchTaskPack } from "@/lib/task-packs";
 import type { TaskItem, WorkspaceSnapshot } from "@/types";
@@ -58,6 +58,13 @@ export default function DashboardPage() {
     scored_tasks: number;
   } | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchLanguage, setSearchLanguage] = useState("");
+  const [searchType, setSearchType] = useState("");
+  const [searchResults, setSearchResults] = useState<TaskSearchResponse | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const completed = useMemo(
     () => Object.values(annotations).filter((ann) => ann.status === "done").length,
     [annotations]
@@ -99,6 +106,35 @@ export default function DashboardPage() {
   }, [tasks]);
 
   useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchResults(null);
+      setSearchLoading(false);
+      return;
+    }
+    setSearchLoading(true);
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await api.searchTasks({
+          q,
+          language: searchLanguage || undefined,
+          task_type: searchType || undefined,
+          limit: 20,
+        });
+        setSearchResults(res);
+      } catch {
+        setSearchResults(null);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchQuery, searchLanguage, searchType]);
+
+  useEffect(() => {
     async function fetchQualityScore() {
       if (!sessionId || completed <= 0) {
         setQualityScore(null);
@@ -126,8 +162,7 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadCatalog() {
       try {
-        const { packs } = await api.getTaskPacks();
-        setPackCatalog(packs);
+        setPackCatalog(await api.getAllTaskPacks());
       } catch {
         toast.error("Failed to load task catalog");
       } finally {
@@ -262,6 +297,18 @@ export default function DashboardPage() {
     }
   }
 
+  async function loadPackAndJumpToTask(hit: TaskSearchHit) {
+    try {
+      const data = await fetchTaskPack(hit.pack_slug);
+      loadTasks(data, hit.pack_slug);
+      const targetIdx = Math.min(hit.task_index, data.length - 1);
+      toast.success(`Loaded ${data.length} tasks – jumping to "${hit.task_title}"`);
+      router.push(`/task/${targetIdx}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load pack");
+    }
+  }
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleJsonUpload = useCallback(
@@ -373,6 +420,155 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      <section className="card" style={{ marginTop: 18, padding: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Load from JSON</h2>
+        <p style={{ margin: "0 0 12px", color: "var(--muted)" }}>
+          Upload a local JSON file containing an array of annotation tasks.
+        </p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleJsonUpload}
+          style={{ display: "none" }}
+        />
+        <button
+          className="btn btn-primary"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Choose JSON File
+        </button>
+      </section>
+
+      <section className="card" style={{ marginTop: 18, padding: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Search Tasks</h2>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <label style={{ display: "grid", gap: 4, flex: "1 1 280px" }}>
+            <span style={{ fontSize: 13, color: "var(--muted)" }}>Search packs and tasks</span>
+            <input
+              className="input"
+              type="text"
+              placeholder="e.g. API, debugging, python, ranking..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: "100%" }}
+            />
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ fontSize: 13, color: "var(--muted)" }}>Language</span>
+            <select className="input" value={searchLanguage} onChange={(e) => setSearchLanguage(e.target.value)}>
+              <option value="">All Languages</option>
+              <option value="python">Python</option>
+              <option value="java">Java</option>
+              <option value="javascript">JavaScript</option>
+              <option value="csharp-cpp">C# / C++</option>
+              <option value="multi">Multi-Language</option>
+              <option value="general">General</option>
+            </select>
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ fontSize: 13, color: "var(--muted)" }}>Task Type</span>
+            <select className="input" value={searchType} onChange={(e) => setSearchType(e.target.value)}>
+              <option value="">All Types</option>
+              <option value="comparison">Comparison</option>
+              <option value="rating">Rating</option>
+              <option value="ranking">Ranking</option>
+            </select>
+          </label>
+        </div>
+
+        {searchLoading && (
+          <p style={{ marginTop: 12, color: "var(--muted)" }}>Searching...</p>
+        )}
+
+        {searchResults && !searchLoading && (
+          <div style={{ marginTop: 14 }}>
+            {searchResults.total_packs === 0 && searchResults.total_tasks === 0 ? (
+              <p style={{ color: "var(--muted)" }}>
+                No results for &ldquo;{searchResults.query}&rdquo;
+              </p>
+            ) : (
+              <>
+                {searchResults.packs.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ margin: "0 0 8px", fontSize: 15 }}>
+                      Matching Packs ({searchResults.total_packs})
+                    </h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
+                      {searchResults.packs.map((pack) => (
+                        <article
+                          key={pack.slug}
+                          className="card"
+                          style={{ padding: 12, display: "flex", flexDirection: "column", justifyContent: "space-between" }}
+                        >
+                          <div>
+                            <h4 style={{ margin: "0 0 4px" }}>{pack.name}</h4>
+                            <p style={{ margin: "0 0 4px", fontSize: 13, color: "var(--muted)" }}>
+                              {pack.description}
+                            </p>
+                            <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--muted)" }}>
+                              {pack.task_count} tasks &middot; {pack.language}
+                            </p>
+                          </div>
+                          <button className="btn btn-primary" style={{ fontSize: 13 }} onClick={() => loadPack(pack.slug)}>
+                            Load Pack
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {searchResults.tasks.length > 0 && (
+                  <div>
+                    <h3 style={{ margin: "0 0 8px", fontSize: 15 }}>
+                      Matching Tasks ({searchResults.total_tasks})
+                    </h3>
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {searchResults.tasks.map((hit, idx) => (
+                        <article
+                          key={`${hit.pack_slug}-${hit.task_id}-${idx}`}
+                          className="card"
+                          style={{ padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}
+                        >
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>{hit.task_title}</p>
+                            <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted)" }}>
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "1px 6px",
+                                  borderRadius: 8,
+                                  fontSize: 11,
+                                  marginRight: 6,
+                                  background:
+                                    hit.task_type === "comparison" ? "#dbeafe"
+                                    : hit.task_type === "rating" ? "#fef3c7"
+                                    : "#d1fae5",
+                                  color:
+                                    hit.task_type === "comparison" ? "#1e40af"
+                                    : hit.task_type === "rating" ? "#92400e"
+                                    : "#065f46",
+                                }}
+                              >
+                                {hit.task_type}
+                              </span>
+                              {hit.pack_name} &middot; {hit.language} &middot; #{hit.task_index + 1}
+                            </p>
+                          </div>
+                          <button className="btn" style={{ fontSize: 12, whiteSpace: "nowrap" }} onClick={() => loadPackAndJumpToTask(hit)}>
+                            Open Task
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </section>
+
       <section
         style={{
           marginTop: 18,
@@ -446,26 +642,6 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
-      </section>
-
-      <section className="card" style={{ marginTop: 18, padding: 16 }}>
-        <h2 style={{ marginTop: 0 }}>Load from JSON</h2>
-        <p style={{ margin: "0 0 12px", color: "var(--muted)" }}>
-          Upload a local JSON file containing an array of annotation tasks.
-        </p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json"
-          onChange={handleJsonUpload}
-          style={{ display: "none" }}
-        />
-        <button
-          className="btn btn-primary"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          Choose JSON File
-        </button>
       </section>
 
       {tasks.length > 0 ? (

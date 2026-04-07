@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import VALID_ROLES, create_access_token, hash_password, verify_password
+from app.auth import create_access_token, hash_password, verify_password
 from app.db import get_db
 from app.models.annotator import Annotator
 from app.models.work_session import WorkSession

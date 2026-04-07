@@ -1,8 +1,8 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
@@ -15,6 +15,8 @@ from app.schemas.task_pack import (
     TaskPackListResponse,
     TaskPackSummary,
     TaskPackUpdate,
+    TaskSearchHit,
+    TaskSearchResponse,
 )
 from app.schemas.task_validation import TaskValidationRequest, TaskValidationResponse
 from app.services.gold_scoring_service import GoldScoringService
@@ -50,10 +52,94 @@ async def validate_tasks(body: TaskValidationRequest) -> TaskValidationResponse:
 
 
 @router.get("/packs", response_model=TaskPackListResponse)
-async def list_task_packs(db: AsyncSession = Depends(get_db)) -> TaskPackListResponse:
-    result = await db.execute(select(TaskPack).order_by(TaskPack.name))
+async def list_task_packs(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> TaskPackListResponse:
+    total_result = await db.execute(select(func.count(TaskPack.id)))
+    total = int(total_result.scalar_one() or 0)
+
+    result = await db.execute(
+        select(TaskPack).order_by(TaskPack.name, TaskPack.slug).limit(limit).offset(offset)
+    )
     packs = result.scalars().all()
-    return TaskPackListResponse(packs=[TaskPackSummary.model_validate(p) for p in packs])
+    return TaskPackListResponse(
+        packs=[TaskPackSummary.model_validate(p) for p in packs],
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=(offset + len(packs)) < total,
+    )
+
+
+@router.get("/search", response_model=TaskSearchResponse)
+async def search_tasks(
+    q: str = Query(default="", max_length=200),
+    language: str | None = Query(default=None),
+    task_type: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> TaskSearchResponse:
+    query = q.strip()
+    if not query:
+        return TaskSearchResponse(packs=[], tasks=[], query=q, total_packs=0, total_tasks=0)
+
+    pattern = f"%{query.lower()}%"
+
+    pack_stmt = select(TaskPack).where(
+        or_(
+            func.lower(TaskPack.name).like(pattern),
+            func.lower(TaskPack.slug).like(pattern),
+            func.lower(TaskPack.description).like(pattern),
+        )
+    )
+    if language:
+        pack_stmt = pack_stmt.where(func.lower(TaskPack.language) == language.strip().lower())
+    pack_result = await db.execute(pack_stmt.order_by(TaskPack.name, TaskPack.slug).limit(limit))
+    pack_rows = pack_result.scalars().all()
+
+    task_stmt = select(TaskPack).where(
+        func.lower(cast(TaskPack.tasks_json, String)).like(pattern)
+    )
+    if language:
+        task_stmt = task_stmt.where(func.lower(TaskPack.language) == language.strip().lower())
+    task_pack_result = await db.execute(task_stmt.order_by(TaskPack.name, TaskPack.slug))
+    task_pack_rows = task_pack_result.scalars().all()
+
+    q_lower = query.lower()
+    task_type_lower = task_type.strip().lower() if task_type else None
+    task_hits: list[TaskSearchHit] = []
+    for pack in task_pack_rows:
+        for idx, task in enumerate(pack.tasks_json or []):
+            title = (task.get("title") or "").lower()
+            task_id = (task.get("id") or "").lower()
+            prompt = (task.get("prompt") or "").lower()
+            t_type = (task.get("type") or "").lower()
+            if q_lower not in title and q_lower not in task_id and q_lower not in prompt:
+                continue
+            if task_type_lower and t_type != task_type_lower:
+                continue
+            task_hits.append(TaskSearchHit(
+                pack_slug=pack.slug,
+                pack_name=pack.name,
+                language=pack.language,
+                task_id=task.get("id", ""),
+                task_title=task.get("title", ""),
+                task_type=task.get("type", ""),
+                task_index=idx,
+            ))
+
+    total_tasks = len(task_hits)
+    task_hits = task_hits[:limit]
+
+    return TaskSearchResponse(
+        packs=[TaskPackSummary.model_validate(p) for p in pack_rows],
+        tasks=task_hits,
+        query=q,
+        total_packs=len(pack_rows),
+        total_tasks=total_tasks,
+    )
 
 
 @router.get("/packs/{slug}", response_model=TaskPackDetail)
