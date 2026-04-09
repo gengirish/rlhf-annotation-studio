@@ -120,7 +120,7 @@ export function AppShell({ children }: PropsWithChildren) {
                   onClick={() => setMobileOpen(false)}
                   title={collapsed ? item.label : undefined}
                 >
-                  <span className="shell-nav-icon">{item.icon}</span>
+                  <span className="shell-nav-icon" aria-hidden="true">{item.icon}</span>
                   {!collapsed && <span>{item.label}</span>}
                 </Link>
               ))}
@@ -140,7 +140,7 @@ export function AppShell({ children }: PropsWithChildren) {
           </div>
         )}
         <button className="shell-nav-item" onClick={logout} title="Logout">
-          <span className="shell-nav-icon">⏻</span>
+          <span className="shell-nav-icon" aria-hidden="true">⏻</span>
           {!collapsed && <span>Logout</span>}
         </button>
       </div>

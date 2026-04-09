@@ -140,7 +140,7 @@ async function loginAndGoToDashboard(page: Page, opts: Parameters<typeof mockAll
   await mockAllRoutes(page, opts);
   await page.goto("/auth");
   await page.getByPlaceholder("Email").fill(MOCK_AUTH.annotator.email);
-  await page.getByPlaceholder("Password").fill("password123");
+  await page.getByPlaceholder(/Password/).fill("password123");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
 }
@@ -152,13 +152,13 @@ async function loginAndGoToDashboard(page: Page, opts: Parameters<typeof mockAll
 test.describe("Analytics — metrics detail", () => {
   test("shows completion rate percentage", async ({ page }) => {
     await loginAndGoToDashboard(page, { useRichMetrics: true });
-    await page.getByRole("link", { name: "View Analytics" }).click();
+    await page.getByRole("link", { name: "Analytics" }).click();
     await expect(page.getByText("70%")).toBeVisible({ timeout: 15000 });
   });
 
   test("shows completed, pending, and skipped counts", async ({ page }) => {
     await loginAndGoToDashboard(page, { useRichMetrics: true });
-    await page.getByRole("link", { name: "View Analytics" }).click();
+    await page.getByRole("link", { name: "Analytics" }).click();
     await expect(page.getByText("7 done")).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("1 pending")).toBeVisible();
     await expect(page.getByText("2 skipped")).toBeVisible();
@@ -166,14 +166,14 @@ test.describe("Analytics — metrics detail", () => {
 
   test("shows total time card", async ({ page }) => {
     await loginAndGoToDashboard(page, { useRichMetrics: true });
-    await page.getByRole("link", { name: "View Analytics" }).click();
+    await page.getByRole("link", { name: "Analytics" }).click();
     await expect(page.getByRole("heading", { name: "Total time" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("Across 10 tasks")).toBeVisible();
   });
 
   test("shows avg and median time cards", async ({ page }) => {
     await loginAndGoToDashboard(page, { useRichMetrics: true });
-    await page.getByRole("link", { name: "View Analytics" }).click();
+    await page.getByRole("link", { name: "Analytics" }).click();
     await expect(page.getByRole("heading", { name: "Avg time / task" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole("heading", { name: "Median time / task" })).toBeVisible();
   });
@@ -182,7 +182,7 @@ test.describe("Analytics — metrics detail", () => {
 test.describe("Analytics — dimension averages", () => {
   test("shows all dimension names with values", async ({ page }) => {
     await loginAndGoToDashboard(page, { useRichMetrics: true });
-    await page.getByRole("link", { name: "View Analytics" }).click();
+    await page.getByRole("link", { name: "Analytics" }).click();
     await expect(page.getByRole("heading", { name: "Dimension averages" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("clarity")).toBeVisible();
     await expect(page.getByText("4.20")).toBeVisible();
@@ -207,7 +207,7 @@ test.describe("Analytics — tasks by type", () => {
 test.describe("Analytics — timeline", () => {
   test("shows timeline table with revision rows", async ({ page }) => {
     await loginAndGoToDashboard(page, { useRichMetrics: true });
-    await page.getByRole("link", { name: "View Analytics" }).click();
+    await page.getByRole("link", { name: "Analytics" }).click();
     await expect(page.getByRole("heading", { name: "Completion timeline" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole("columnheader", { name: "Revision" })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "Timestamp" })).toBeVisible();
@@ -218,7 +218,7 @@ test.describe("Analytics — timeline", () => {
 
   test("empty timeline shows message", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await page.getByRole("link", { name: "View Analytics" }).click();
+    await page.getByRole("link", { name: "Analytics" }).click();
     await expect(page.getByText("No revision history yet")).toBeVisible({ timeout: 15000 });
   });
 });
@@ -228,9 +228,9 @@ test.describe("Analytics — timeline", () => {
    ═════════════════════════════════════════════ */
 
 test.describe("Navigation guards", () => {
-  test("root path redirects to /auth", async ({ page }) => {
+  test("root path shows landing page with login link", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/\/auth/, { timeout: 15000 });
+    await expect(page.getByRole("link", { name: "Get Started" })).toBeVisible({ timeout: 15000 });
   });
 
   test("unauthenticated /dashboard redirects to /auth", async ({ page }) => {
@@ -293,16 +293,16 @@ test.describe("Workspace sync", () => {
     await page.getByRole("button", { name: "Back" }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
     await expect(page.getByRole("heading", { name: "Resume Annotation" })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: "Open Task Workspace" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open Selected Task" })).toBeVisible();
   });
 
-  test("Open Task Workspace button navigates to task page", async ({ page }) => {
+  test("Open Selected Task button navigates to task page", async ({ page }) => {
     await loginAndGoToDashboard(page);
     await page.getByRole("button", { name: "Load and Start" }).first().click();
     await expect(page).toHaveURL(/\/task\/0/, { timeout: 15000 });
     await page.getByRole("button", { name: "Back" }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
-    await page.getByRole("button", { name: "Open Task Workspace" }).click();
+    await page.getByRole("button", { name: "Open Selected Task" }).click();
     await expect(page).toHaveURL(/\/task\/0/, { timeout: 15000 });
   });
 });

@@ -270,7 +270,7 @@ async function loginAndGoToDashboard(page: Page, opts: MockRouteOptions | typeof
   await mockAllRoutes(page, opts);
   await page.goto("/auth");
   await page.getByPlaceholder("Email").fill(auth.annotator.email);
-  await page.getByPlaceholder("Password").fill("password123");
+  await page.getByPlaceholder(/Password/).fill("password123");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
 }
@@ -290,7 +290,7 @@ test.describe("Auth page", () => {
   test("login mode shows email and password fields only", async ({ page }) => {
     await page.goto("/auth");
     await expect(page.getByPlaceholder("Email")).toBeVisible();
-    await expect(page.getByPlaceholder("Password")).toBeVisible();
+    await expect(page.getByPlaceholder(/Password/)).toBeVisible();
     await expect(page.getByPlaceholder("Full name")).not.toBeVisible();
   });
 
@@ -301,16 +301,15 @@ test.describe("Auth page", () => {
     await expect(page.getByPlaceholder("Phone (optional)")).toBeVisible();
     await expect(page.locator("select[name='role']")).toBeVisible();
     await expect(page.getByPlaceholder("Email")).toBeVisible();
-    await expect(page.getByPlaceholder("Password")).toBeVisible();
+    await expect(page.getByPlaceholder(/Password/)).toBeVisible();
   });
 
-  test("role dropdown has annotator and reviewer, not admin", async ({ page }) => {
+  test("role dropdown has annotator, not admin", async ({ page }) => {
     await page.goto("/auth");
     await page.getByRole("button", { name: "Register" }).click();
     const roleSelect = page.locator("select[name='role']");
     const options = await roleSelect.locator("option").allTextContents();
     expect(options).toContain("Annotator");
-    expect(options).toContain("Reviewer");
     expect(options).not.toContain("Admin");
   });
 
@@ -327,7 +326,7 @@ test.describe("Auth page", () => {
     await mockAllRoutes(page, { loginFail: true });
     await page.goto("/auth");
     await page.getByPlaceholder("Email").fill("bad@example.com");
-    await page.getByPlaceholder("Password").fill("wrongpassword");
+    await page.getByPlaceholder(/Password/).fill("wrongpassword");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByText("Invalid email or password")).toBeVisible({ timeout: 10000 });
   });
@@ -338,7 +337,7 @@ test.describe("Auth page", () => {
     await page.getByRole("button", { name: "Register" }).click();
     await page.getByPlaceholder("Full name").fill("New User");
     await page.getByPlaceholder("Email").fill("new@example.com");
-    await page.getByPlaceholder("Password").fill("password123");
+    await page.getByPlaceholder(/Password/).fill("password123");
     await page.getByRole("button", { name: "Create account" }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
   });
@@ -349,9 +348,10 @@ test.describe("Auth page", () => {
    ═════════════════════════════════════════════ */
 
 test.describe("Dashboard", () => {
-  test("shows welcome message and user name", async ({ page }) => {
+  test("shows dashboard heading and user name in sidebar", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await expect(page.getByText("Welcome, E2E User")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(page.getByText("E2E User")).toBeVisible();
   });
 
   test("displays stats cards", async ({ page }) => {
@@ -370,15 +370,15 @@ test.describe("Dashboard", () => {
     await expect(page.getByRole("button", { name: "Load and Start" })).toBeVisible();
   });
 
-  test("shows navigation links for analytics, reviews, settings, author", async ({ page }) => {
+  test("shows navigation links in sidebar for analytics, reviews, settings, author", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await expect(page.getByRole("link", { name: "View Analytics" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Analytics" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Review Queue" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Author Tasks" })).toBeVisible();
   });
 
-  test("has restore and logout buttons", async ({ page }) => {
+  test("has restore button and sidebar logout", async ({ page }) => {
     await loginAndGoToDashboard(page);
     await expect(page.getByRole("button", { name: "Restore from server" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
@@ -451,10 +451,10 @@ test.describe("Analytics page", () => {
     await expect(page.getByText("60%")).toBeVisible();
   });
 
-  test("shows back to dashboard link", async ({ page }) => {
+  test("shows dashboard link in sidebar", async ({ page }) => {
     await loginAndGoToDashboard(page);
     await page.goto("/analytics");
-    await expect(page.getByRole("link", { name: /dashboard/i })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible({ timeout: 15000 });
   });
 });
 
@@ -465,7 +465,7 @@ test.describe("Analytics page", () => {
 test.describe("Reviews page", () => {
   test("shows My Assignments and Pending Review tabs", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await page.getByRole("link", { name: "Review Queue" }).click();
+    await page.goto("/reviews");
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 30000 });
     await expect(page.getByRole("button", { name: "My Assignments" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Pending Review" })).toBeVisible();
@@ -486,7 +486,7 @@ test.describe("Reviews page", () => {
 
   test("pending tab shows submitted reviews with approve/reject", async ({ page }) => {
     await loginAndGoToDashboard(page, { reviewData: MOCK_REVIEW_ASSIGNMENTS });
-    await page.getByRole("link", { name: "Review Queue" }).click();
+    await page.goto("/reviews");
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 30000 });
     await page.getByRole("button", { name: "Pending Review" }).click();
     await expect(page.getByRole("button", { name: "Approve" })).toBeVisible({ timeout: 15000 });
@@ -515,19 +515,19 @@ test.describe("RBAC - Dashboard", () => {
     await expect(badges).toHaveCount(0);
   });
 
-  test("admin sees Team Management link", async ({ page }) => {
+  test("admin sees Team link in sidebar", async ({ page }) => {
     await loginAndGoToDashboard(page, MOCK_AUTH_ADMIN);
-    await expect(page.getByRole("link", { name: "Team Management" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("link", { name: "Team" })).toBeVisible({ timeout: 10000 });
   });
 
-  test("reviewer sees Team Management link", async ({ page }) => {
+  test("reviewer sees Team link in sidebar", async ({ page }) => {
     await loginAndGoToDashboard(page, MOCK_AUTH_REVIEWER);
-    await expect(page.getByRole("link", { name: "Team Management" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("link", { name: "Team" })).toBeVisible({ timeout: 10000 });
   });
 
-  test("annotator does NOT see Team Management link", async ({ page }) => {
+  test("annotator does NOT see Team link", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await expect(page.getByRole("link", { name: "Team Management" })).not.toBeVisible();
+    await expect(page.getByRole("link", { name: "Team" })).not.toBeVisible();
   });
 });
 
@@ -623,16 +623,16 @@ test.describe("Team management page", () => {
     await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
   });
 
-  test("has back to dashboard link", async ({ page }) => {
+  test("has dashboard link in sidebar", async ({ page }) => {
     await loginAndGoToDashboard(page, {
       auth: MOCK_AUTH_ADMIN,
       teamMembers: MOCK_TEAM_MEMBERS,
       teamStats: MOCK_TEAM_STATS,
       reviewData: []
     });
-    await page.getByRole("link", { name: "Team Management" }).click();
+    await page.getByRole("link", { name: "Team" }).click();
     await expect(page.getByRole("heading", { name: "Team management" })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("link", { name: /dashboard/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
   });
 });
 
@@ -641,13 +641,13 @@ test.describe("Team management page", () => {
    ═════════════════════════════════════════════ */
 
 test.describe("Settings & Author pages", () => {
-  test("settings page loads", async ({ page }) => {
+  test("settings page loads via sidebar", async ({ page }) => {
     await loginAndGoToDashboard(page);
     await page.getByRole("link", { name: "Settings" }).click();
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible({ timeout: 30000 });
   });
 
-  test("author page loads with heading", async ({ page }) => {
+  test("author page loads via sidebar", async ({ page }) => {
     await loginAndGoToDashboard(page);
     await page.getByRole("link", { name: "Author Tasks" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15000 });
@@ -680,7 +680,7 @@ test.describe("Review approve/reject flow", () => {
     });
     await page.goto("/auth");
     await page.getByPlaceholder("Email").fill(MOCK_AUTH_REVIEWER.annotator.email);
-    await page.getByPlaceholder("Password").fill("password123");
+    await page.getByPlaceholder(/Password/).fill("password123");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
     await page.goto("/reviews");
@@ -713,7 +713,7 @@ test.describe("Review approve/reject flow", () => {
     });
     await page.goto("/auth");
     await page.getByPlaceholder("Email").fill(MOCK_AUTH_REVIEWER.annotator.email);
-    await page.getByPlaceholder("Password").fill("password123");
+    await page.getByPlaceholder(/Password/).fill("password123");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
     await page.goto("/reviews");

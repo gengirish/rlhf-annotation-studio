@@ -54,7 +54,7 @@ async function loginAsAdmin(page: Page) {
   await mockBaseRoutes(page);
   await page.goto("/auth");
   await page.getByPlaceholder("Email").fill("admin@example.com");
-  await page.getByPlaceholder("Password").fill("password123");
+  await page.getByPlaceholder(/Password/).fill("password123");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
 }

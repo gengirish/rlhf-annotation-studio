@@ -155,7 +155,7 @@ async function loginAndGoToDashboard(page: Page, opts: Parameters<typeof mockAll
     await page.evaluate((orgId) => localStorage.setItem("rlhf_active_org_id", orgId), auth.annotator.org_id);
   }
   await page.getByPlaceholder("Email").fill(auth.annotator.email);
-  await page.getByPlaceholder("Password").fill("password123");
+  await page.getByPlaceholder(/Password/).fill("password123");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
 }
@@ -400,7 +400,7 @@ test.describe("Settings invite flow", () => {
     await page.goto("/auth");
     await page.evaluate(() => localStorage.setItem("rlhf_active_org_id", "org-001"));
     await page.getByPlaceholder("Email").fill(MOCK_AUTH.annotator.email);
-    await page.getByPlaceholder("Password").fill("password123");
+    await page.getByPlaceholder(/Password/).fill("password123");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
     await page.goto("/settings");

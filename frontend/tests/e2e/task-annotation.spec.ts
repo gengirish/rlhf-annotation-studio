@@ -127,7 +127,7 @@ async function loginLoadPackAndOpenTask(page: Page, tasks = [COMPARISON_TASK]) {
   await mockAllRoutes(page, tasks);
   await page.goto("/auth");
   await page.getByPlaceholder("Email").fill(MOCK_AUTH.annotator.email);
-  await page.getByPlaceholder("Password").fill("password123");
+  await page.getByPlaceholder(/Password/).fill("password123");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
   await page.getByRole("button", { name: "Load and Start" }).first().click();
@@ -138,7 +138,7 @@ async function advanceToPhase3(page: Page) {
   await page.getByRole("button", { name: /continue to streaming/i }).click();
   await expect(page.getByRole("button", { name: /review and annotate/i })).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: /review and annotate/i }).click();
-  await expect(page.getByText("Review")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("heading", { name: "Review" })).toBeVisible({ timeout: 10000 });
 }
 
 /* ═════════════════════════════════════════════
