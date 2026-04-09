@@ -37,10 +37,13 @@ export const qualityApi = {
   getLeaderboard: () => apiFetch<unknown>(`${Q}/leaderboard`),
   getDashboard: () => apiFetch<unknown>(`${Q}/dashboard`),
   getDrift: (annotatorId: string) => apiFetch<unknown>(`${Q}/drift/${encodeURIComponent(annotatorId)}`),
-  listDriftAlerts: () => apiFetch<unknown>(`${Q}/drift-alerts`),
-  getCalibrationTests: () => apiFetch<unknown>(`${Q}/calibration/tests`),
+  listDriftAlerts: (annotatorId?: string) => {
+    if (!annotatorId) return Promise.resolve([]);
+    return apiFetch<unknown>(`${Q}/drift/${encodeURIComponent(annotatorId)}`);
+  },
+  getCalibrationTests: () => apiFetch<unknown>(`${Q}/calibration`),
   createCalibrationTest: (data: Record<string, unknown>) =>
-    apiFetch<unknown>(`${Q}/calibration/tests`, { method: "POST", body: JSON.stringify(data) })
+    apiFetch<unknown>(`${Q}/calibration`, { method: "POST", body: JSON.stringify(data) })
 };
 
 const D = "/api/v1/datasets";

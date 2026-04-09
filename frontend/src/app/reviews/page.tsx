@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { api, type ReviewAssignment } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 
@@ -171,7 +171,7 @@ export default function ReviewsPage() {
     }) as const;
 
   return (
-    <main className="container">
+    <AppShell>
       <header
         className="card"
         style={{
@@ -187,9 +187,6 @@ export default function ReviewsPage() {
           <h1 style={{ margin: 0 }}>Review queue</h1>
           <p style={{ margin: "6px 0 0", color: "var(--muted)" }}>Assignments and pending reviews</p>
         </div>
-        <Link href="/dashboard" className="btn">
-          ← Back to dashboard
-        </Link>
       </header>
 
       <div style={{ marginTop: 18, display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -479,6 +476,6 @@ export default function ReviewsPage() {
           )}
         </section>
       )}
-    </main>
+    </AppShell>
   );
 }

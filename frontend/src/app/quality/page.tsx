@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { QualityTimeline } from "@/components/charts/QualityTimeline";
 import { Badge, Button, Card, EmptyState, Modal, StatCard, Table, type Column } from "@/components/ui";
 import { qualityApi } from "@/lib/api-extensions";
@@ -154,10 +154,11 @@ export default function QualityPage() {
     setLoading(true);
     setError(null);
     try {
+      const uid = useAppStore.getState().user?.id;
       const [dashRaw, boardRaw, driftRaw, calRaw] = await Promise.all([
         qualityApi.getDashboard().catch(() => null),
         qualityApi.getLeaderboard().catch(() => null),
-        qualityApi.listDriftAlerts().catch(() => null),
+        qualityApi.listDriftAlerts(uid).catch(() => null),
         qualityApi.getCalibrationTests().catch(() => null)
       ]);
       setDashboard(parseDashboard(dashRaw));
@@ -255,7 +256,7 @@ export default function QualityPage() {
   const timelineData = dashboard?.timeline ?? [];
 
   return (
-    <main className="container">
+    <AppShell>
       <header
         className="card"
         style={{
@@ -273,9 +274,6 @@ export default function QualityPage() {
             Trust scores, calibration health, and drift monitoring
           </p>
         </div>
-        <Link href="/dashboard" className="btn">
-          ← Dashboard
-        </Link>
       </header>
 
       {error && !loading ? (
@@ -419,6 +417,6 @@ export default function QualityPage() {
           />
         </label>
       </Modal>
-    </main>
+    </AppShell>
   );
 }

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import get_current_user
+from app.auth import get_current_user_or_api_key
 from app.db import get_db
 from app.models.annotator import Annotator
 from app.models.webhook import WebhookDelivery, WebhookEndpoint
@@ -35,7 +35,7 @@ async def _get_owned_endpoint(
 async def create_webhook(
     body: WebhookCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> WebhookRead:
     row = await register_endpoint(db, current_user, body)
     return WebhookRead.model_validate(row)
@@ -44,7 +44,7 @@ async def create_webhook(
 @router.get("", response_model=list[WebhookRead])
 async def list_webhooks(
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> list[WebhookRead]:
     result = await db.execute(
         select(WebhookEndpoint)
@@ -59,7 +59,7 @@ async def list_webhooks(
 async def get_webhook(
     webhook_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> WebhookRead:
     row = await _get_owned_endpoint(db, current_user, webhook_id)
     return WebhookRead.model_validate(row)
@@ -69,7 +69,7 @@ async def get_webhook(
 async def list_webhook_deliveries(
     webhook_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
 ) -> list[WebhookDeliveryRead]:
@@ -90,7 +90,7 @@ async def test_webhook(
     webhook_id: UUID,
     body: WebhookTest | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> WebhookDeliveryRead:
     await _get_owned_endpoint(db, current_user, webhook_id)
     payload = body if body is not None else WebhookTest()
@@ -105,7 +105,7 @@ async def update_webhook(
     webhook_id: UUID,
     body: WebhookUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> WebhookRead:
     row = await _get_owned_endpoint(db, current_user, webhook_id)
     if body.url is not None:
@@ -123,7 +123,7 @@ async def update_webhook(
 async def delete_webhook(
     webhook_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> None:
     row = await _get_owned_endpoint(db, current_user, webhook_id)
     await db.delete(row)

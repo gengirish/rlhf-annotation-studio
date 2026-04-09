@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { Badge, Button, Card, EmptyState, Modal } from "@/components/ui";
 import { api, type TaskPackSummary } from "@/lib/api";
 import { datasetApi } from "@/lib/api-extensions";
@@ -201,7 +201,7 @@ export default function DatasetsPage() {
   if (!user || !sessionId) return null;
 
   return (
-    <main className="container">
+    <AppShell>
       <header
         className="card"
         style={{
@@ -221,9 +221,6 @@ export default function DatasetsPage() {
           <Button variant="primary" onClick={() => setCreateOpen(true)}>
             Create dataset
           </Button>
-          <Link href="/dashboard" className="btn">
-            ← Dashboard
-          </Link>
         </div>
       </header>
 
@@ -461,6 +458,6 @@ export default function DatasetsPage() {
           </div>
         </div>
       </Modal>
-    </main>
+    </AppShell>
   );
 }

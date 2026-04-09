@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { api, type OrgMember, type ReviewAssignment, type TaskPackSummary } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 
@@ -201,7 +202,7 @@ export default function TeamPage() {
 
   if (!orgId) {
     return (
-      <main className="container">
+      <AppShell>
         <header className="card" style={{ padding: 16, marginBottom: 18 }}>
           <h1 style={{ margin: 0 }}>Team management</h1>
           <p style={{ margin: "8px 0 0", color: "var(--muted)" }}>
@@ -210,13 +211,8 @@ export default function TeamPage() {
           <Link href="/settings" className="btn btn-primary" style={{ marginTop: 12, display: "inline-block" }}>
             Settings
           </Link>
-          <div style={{ marginTop: 12 }}>
-            <Link href="/dashboard" className="btn">
-              ← Back to dashboard
-            </Link>
-          </div>
         </header>
-      </main>
+      </AppShell>
     );
   }
 
@@ -232,7 +228,7 @@ export default function TeamPage() {
   };
 
   return (
-    <main className="container">
+    <AppShell>
       <header
         className="card"
         style={{
@@ -249,9 +245,6 @@ export default function TeamPage() {
           <h1 style={{ margin: 0 }}>Team management</h1>
           <p style={{ margin: "6px 0 0", color: "var(--muted)" }}>Members, assignments, and team reviews</p>
         </div>
-        <Link href="/dashboard" className="btn">
-          ← Back to dashboard
-        </Link>
       </header>
 
       {loading ? (
@@ -469,6 +462,6 @@ export default function TeamPage() {
           </section>
         </>
       )}
-    </main>
+    </AppShell>
   );
 }

@@ -2,10 +2,10 @@
 
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { ApiError, api, type Organization, type OrgMember } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 
@@ -186,14 +186,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="container">
+    <AppShell>
       <header className="card" style={{ padding: 16, marginBottom: 18 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
-          <Link href="/dashboard" className="btn">
-            ← Dashboard
-          </Link>
-          <h1 style={{ margin: 0, flex: 1 }}>Settings</h1>
-        </div>
+        <h1 style={{ margin: 0 }}>Settings</h1>
       </header>
 
       {loading ? (
@@ -334,6 +329,6 @@ export default function SettingsPage() {
           </section>
         </>
       )}
-    </main>
+    </AppShell>
   );
 }

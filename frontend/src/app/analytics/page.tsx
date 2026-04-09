@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { api, type SessionMetrics, type SessionTimeline } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 
@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <main className="container">
+    <AppShell>
       <header
         className="card"
         style={{
@@ -98,9 +98,6 @@ export default function AnalyticsPage() {
           <h1 style={{ margin: 0 }}>Session analytics</h1>
           <p style={{ margin: "6px 0 0", color: "var(--muted)" }}>Metrics for your current session</p>
         </div>
-        <Link href="/dashboard" className="btn">
-          ← Back to dashboard
-        </Link>
       </header>
 
       {loading ? (
@@ -256,6 +253,6 @@ export default function AnalyticsPage() {
           </section>
         </>
       )}
-    </main>
+    </AppShell>
   );
 }

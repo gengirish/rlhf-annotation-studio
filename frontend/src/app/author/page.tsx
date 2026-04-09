@@ -2,10 +2,10 @@
 
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { api, type TaskPackUpsertBody } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
 import type { TaskDimension, TaskItem, TaskResponse, TaskType } from "@/types";
@@ -209,7 +209,7 @@ export default function AuthorPage() {
       slug: packSlug.trim(),
       description: description.trim(),
       language,
-      tasks: taskPayload
+      tasks_json: taskPayload
     };
 
     setSaving(true);
@@ -303,14 +303,9 @@ export default function AuthorPage() {
   }
 
   return (
-    <main className="container">
+    <AppShell>
       <header className="card" style={{ padding: 16, marginBottom: 18 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
-          <Link href="/dashboard" className="btn">
-            ← Dashboard
-          </Link>
-          <h1 style={{ margin: 0, flex: 1 }}>Author task pack</h1>
-        </div>
+        <h1 style={{ margin: 0 }}>Author task pack</h1>
       </header>
 
       <section className="card" style={{ padding: 20, marginBottom: 18 }}>
@@ -644,6 +639,6 @@ export default function AuthorPage() {
           </button>
         </div>
       </section>
-    </main>
+    </AppShell>
   );
 }

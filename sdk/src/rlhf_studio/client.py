@@ -281,7 +281,7 @@ class RLHFClient:
         }
         if model:
             body["config"] = {"model": model}
-        r = self._request("POST", "/api/v1/judge/run", json_body=body)
+        r = self._request("POST", "/api/v1/judge/evaluate", json_body=body)
         return r.json()
 
     # --- Quality ---

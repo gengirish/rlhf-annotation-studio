@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { Badge, Button, Card, EmptyState, Pagination, StatCard, Table, type Column } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { auditApi } from "@/lib/api-extensions";
@@ -192,22 +192,19 @@ export default function AuditPage() {
 
   if (forbidden) {
     return (
-      <main className="container">
+      <AppShell>
         <header className="card" style={{ padding: 16 }}>
           <h1 style={{ margin: 0 }}>Audit log</h1>
           <p style={{ margin: "8px 0 0", color: "var(--muted)" }}>
             Admin access is required to view organization audit history.
           </p>
-          <Link href="/dashboard" className="btn" style={{ marginTop: 14, display: "inline-block" }}>
-            ← Dashboard
-          </Link>
         </header>
-      </main>
+      </AppShell>
     );
   }
 
   return (
-    <main className="container">
+    <AppShell>
       <header
         className="card"
         style={{
@@ -223,9 +220,6 @@ export default function AuditPage() {
           <h1 style={{ margin: 0 }}>Audit log</h1>
           <p style={{ margin: "6px 0 0", color: "var(--muted)" }}>Immutable record of sensitive actions</p>
         </div>
-        <Link href="/dashboard" className="btn">
-          ← Dashboard
-        </Link>
       </header>
 
       <section
@@ -395,6 +389,6 @@ export default function AuditPage() {
           </Card>
         </div>
       ) : null}
-    </main>
+    </AppShell>
   );
 }

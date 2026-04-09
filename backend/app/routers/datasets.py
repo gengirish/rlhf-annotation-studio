@@ -9,7 +9,7 @@ from sqlalchemy import and_, func, not_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.auth import get_current_user, require_admin
+from app.auth import get_current_user_or_api_key, require_admin
 from app.db import get_db
 from app.models.annotator import Annotator
 from app.models.dataset import Dataset, DatasetVersion
@@ -61,7 +61,7 @@ async def _get_dataset_or_404(db: AsyncSession, dataset_id: uuid.UUID) -> Datase
 async def create_dataset(
     body: DatasetCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> DatasetRead:
     ds = await DatasetService.create_dataset(db, current_user, body)
     return await _dataset_read_with_version_count(db, ds)
@@ -70,7 +70,7 @@ async def create_dataset(
 @router.get("", response_model=DatasetListResponse)
 async def list_datasets(
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
 ) -> DatasetListResponse:
@@ -100,7 +100,7 @@ async def list_datasets(
 async def bulk_import_dataset(
     body: BulkImportRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> DatasetRead:
     ds = await DatasetService.create_dataset_from_bulk_import(db, current_user, body)
     return await _dataset_read_with_version_count(db, ds)
@@ -110,7 +110,7 @@ async def bulk_import_dataset(
 async def get_dataset(
     dataset_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> DatasetDetailRead:
     result = await db.execute(
         select(Dataset).options(selectinload(Dataset.versions)).where(Dataset.id == dataset_id),
@@ -135,7 +135,7 @@ async def create_dataset_version(
     dataset_id: uuid.UUID,
     body: DatasetVersionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> DatasetVersionRead:
     ds = await _get_dataset_or_404(db, dataset_id)
     _require_org_dataset(current_user, ds)
@@ -154,7 +154,7 @@ async def get_dataset_version(
     dataset_id: uuid.UUID,
     version: int,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> DatasetVersionRead:
     ds = await _get_dataset_or_404(db, dataset_id)
     _require_org_dataset(current_user, ds)
@@ -175,7 +175,7 @@ async def export_dataset_version(
     dataset_id: uuid.UUID,
     version: int,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
     format: str = Query("jsonl", alias="format"),
     train_ratio: float | None = Query(None, ge=0.0, le=1.0),
     val_ratio: float | None = Query(None, ge=0.0, le=1.0),
@@ -242,7 +242,7 @@ async def export_dataset_version(
 async def diff_dataset_versions(
     dataset_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
     v1: int = Query(..., description="Earlier version number"),
     v2: int = Query(..., description="Later version number"),
 ) -> dict[str, Any]:

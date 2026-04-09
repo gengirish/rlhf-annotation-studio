@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import get_current_user, require_reviewer_or_admin
+from app.auth import get_current_user_or_api_key, require_reviewer_or_admin
 from app.config import get_settings
 from app.db import get_db
 from app.models.annotator import Annotator
@@ -62,7 +62,7 @@ async def judge_evaluate(
 async def list_evaluations_for_pack(
     task_pack_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _user: Annotator = Depends(get_current_user),
+    _user: Annotator = Depends(get_current_user_or_api_key),
 ) -> list[EvaluationRead]:
     pack = await db.get(TaskPack, task_pack_id)
     if pack is None:
@@ -81,7 +81,7 @@ async def get_evaluation_for_task(
     task_pack_id: UUID,
     task_id: str,
     db: AsyncSession = Depends(get_db),
-    _user: Annotator = Depends(get_current_user),
+    _user: Annotator = Depends(get_current_user_or_api_key),
 ) -> EvaluationRead:
     pack = await db.get(TaskPack, task_pack_id)
     if pack is None:
@@ -104,7 +104,7 @@ async def override_evaluation(
     evaluation_id: UUID,
     body: HumanOverrideRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> EvaluationRead:
     if body.preference is None and body.dimensions is None and body.reasoning is None:
         raise HTTPException(
@@ -121,7 +121,7 @@ async def override_evaluation(
 async def accept_evaluation(
     evaluation_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _user: Annotator = Depends(get_current_user),
+    _user: Annotator = Depends(get_current_user_or_api_key),
 ) -> EvaluationRead:
     row = await db.get(LLMEvaluation, evaluation_id)
     if row is None:
@@ -136,7 +136,7 @@ async def accept_evaluation(
 async def reject_evaluation(
     evaluation_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _user: Annotator = Depends(get_current_user),
+    _user: Annotator = Depends(get_current_user_or_api_key),
 ) -> EvaluationRead:
     row = await db.get(LLMEvaluation, evaluation_id)
     if row is None:

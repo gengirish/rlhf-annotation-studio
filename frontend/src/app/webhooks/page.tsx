@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { Badge, Button, Card, EmptyState, Modal } from "@/components/ui";
 import { webhookApi } from "@/lib/api-extensions";
 import { useAppStore } from "@/lib/state/store";
@@ -186,7 +186,7 @@ export default function WebhooksPage() {
   if (!user || !sessionId) return null;
 
   return (
-    <main className="container">
+    <AppShell>
       <header
         className="card"
         style={{
@@ -206,9 +206,6 @@ export default function WebhooksPage() {
           <Button variant="primary" onClick={openCreate}>
             Add webhook
           </Button>
-          <Link href="/dashboard" className="btn">
-            ← Dashboard
-          </Link>
         </div>
       </header>
 
@@ -398,6 +395,6 @@ export default function WebhooksPage() {
           ))}
         </div>
       </Modal>
-    </main>
+    </AppShell>
   );
 }

@@ -113,7 +113,7 @@ export interface TaskPackUpsertBody {
   slug: string;
   description: string;
   language: string;
-  tasks: TaskItem[];
+  tasks_json: TaskItem[];
 }
 
 export interface ReviewAssignment {

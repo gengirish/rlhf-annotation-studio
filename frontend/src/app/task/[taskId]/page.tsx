@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { api } from "@/lib/api";
 import type { InferenceModelOption } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
@@ -333,7 +334,7 @@ export default function TaskPage() {
   const activePrompt = isLiveInference ? editablePrompt : task.prompt;
 
   return (
-    <main className="container">
+    <AppShell>
       <header className="card" style={{ padding: 14, display: "flex", justifyContent: "space-between" }}>
         <div>
           <h2 style={{ margin: 0 }}>
@@ -703,6 +704,6 @@ export default function TaskPage() {
           </>
         ) : null}
       </section>
-    </main>
+    </AppShell>
   );
 }

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import (
     ROLE_ADMIN,
     ROLE_REVIEWER,
-    get_current_user,
+    get_current_user_or_api_key,
     require_admin,
     require_reviewer_or_admin,
 )
@@ -44,7 +44,7 @@ def _require_org(user: Annotator) -> uuid.UUID:
 async def get_quality_score(
     annotator_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
     task_pack_id: uuid.UUID | None = Query(None),
 ) -> QualityScoreRead:
     if current_user.role not in (ROLE_ADMIN, ROLE_REVIEWER):
@@ -107,7 +107,7 @@ async def create_calibration(
 @router.get("/calibration", response_model=list[CalibrationTestRead])
 async def list_calibration_tests(
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> list[CalibrationTestRead]:
     org_id = current_user.org_id
     rows = await QualityService(db).list_calibration_tests_for_org(org_id)
@@ -119,7 +119,7 @@ async def submit_calibration_attempt(
     test_id: uuid.UUID,
     body: CalibrationAttemptSubmit,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user),
+    current_user: Annotator = Depends(get_current_user_or_api_key),
 ) -> CalibrationAttemptResult:
     svc = QualityService(db)
     try:

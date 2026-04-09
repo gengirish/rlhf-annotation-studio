@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AppShell } from "@/components/AppShell";
 import { api } from "@/lib/api";
 import type { TaskPackDetail, TaskPackSummary, TaskSearchHit, TaskSearchResponse } from "@/lib/api";
 import { useAppStore } from "@/lib/state/store";
@@ -376,7 +377,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <main className="container">
+    <AppShell>
       <header
         className="card"
         style={{
@@ -388,36 +389,14 @@ export default function DashboardPage() {
         }}
       >
         <div>
-          <h1 style={{ margin: 0 }}>
-            Welcome, {user?.name || "Annotator"}
-            {user?.role && user.role !== "annotator" ? (
-              <span
-                style={{
-                  fontSize: 12,
-                  marginLeft: 8,
-                  padding: "2px 8px",
-                  borderRadius: 12,
-                  background: user.role === "admin" ? "#6366f1" : "#10b981",
-                  color: "#fff",
-                  verticalAlign: "middle"
-                }}
-              >
-                {user.role}
-              </span>
-            ) : null}
-          </h1>
+          <h1 style={{ margin: 0 }}>Dashboard</h1>
           <p style={{ margin: "6px 0 0", color: "var(--muted)" }}>
             Session sync: <b>{syncState}</b>
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <button className="btn" onClick={restoreWorkspace}>
-            Restore from server
-          </button>
-          <button className="btn btn-danger" onClick={logout}>
-            Logout
-          </button>
-        </div>
+        <button className="btn" onClick={restoreWorkspace}>
+          Restore from server
+        </button>
       </header>
 
       <section className="card" style={{ marginTop: 18, padding: 16 }}>
@@ -679,32 +658,6 @@ export default function DashboardPage() {
         </section>
       ) : null}
 
-      <section className="card" style={{ marginTop: 18, padding: 16 }}>
-        <h2 style={{ marginTop: 0 }}>Insights and quality</h2>
-        <p style={{ margin: "0 0 14px", color: "var(--muted)" }}>
-          Session metrics and review workflow.
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          <Link href="/analytics" className="btn btn-primary">
-            View Analytics
-          </Link>
-          <Link href="/reviews" className="btn btn-primary">
-            Review Queue
-          </Link>
-          {user?.role && (user.role === "admin" || user.role === "reviewer") ? (
-            <Link href="/team" className="btn btn-primary">
-              Team Management
-            </Link>
-          ) : null}
-          <Link href="/settings" className="btn btn-primary">
-            Settings
-          </Link>
-          <Link href="/author" className="btn btn-primary">
-            Author Tasks
-          </Link>
-        </div>
-      </section>
-
       {tasks.length > 0 ? (
         <section className="card" style={{ marginTop: 18, padding: 16 }}>
           <h2 style={{ marginTop: 0 }}>Resume Annotation</h2>
@@ -741,6 +694,6 @@ export default function DashboardPage() {
           </div>
         </section>
       ) : null}
-    </main>
+    </AppShell>
   );
 }
