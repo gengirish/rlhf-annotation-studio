@@ -78,7 +78,6 @@ export default function AnalyticsPage() {
 
   const completionPct = metrics ? completionPercent(metrics.completion_rate) : 0;
 
-  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

@@ -184,7 +184,6 @@ export default function WebhooksPage() {
     }
   }
 
-  if (!hydrated) return null;
   if (!user || !sessionId) return null;
 
   return (

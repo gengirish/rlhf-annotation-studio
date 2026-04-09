@@ -377,7 +377,6 @@ export default function DashboardPage() {
     [loadTasks, router]
   );
 
-  if (!hydrated) return null;
   if (!user || !sessionId) return null;
 
   return (

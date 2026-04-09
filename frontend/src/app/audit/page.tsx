@@ -189,7 +189,6 @@ export default function AuditPage() {
 
   const expanded = expandedId ? sortedItems.find((x) => x.id === expandedId) : null;
 
-  if (!hydrated) return null;
   if (!user || !sessionId) return null;
 
   if (forbidden) {

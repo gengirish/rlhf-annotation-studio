@@ -156,7 +156,6 @@ export default function ReviewsPage() {
     }
   }
 
-  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

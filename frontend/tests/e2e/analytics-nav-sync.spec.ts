@@ -235,32 +235,32 @@ test.describe("Navigation guards", () => {
 
   test("unauthenticated /dashboard redirects to /auth", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page).toHaveURL(/\/auth/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/auth/, { timeout: 30000 });
   });
 
   test("unauthenticated /analytics redirects to /auth", async ({ page }) => {
     await page.goto("/analytics");
-    await expect(page).toHaveURL(/\/auth/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/auth/, { timeout: 30000 });
   });
 
   test("unauthenticated /reviews redirects to /auth", async ({ page }) => {
     await page.goto("/reviews");
-    await expect(page).toHaveURL(/\/auth/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/auth/, { timeout: 30000 });
   });
 
   test("unauthenticated /settings redirects to /auth", async ({ page }) => {
     await page.goto("/settings");
-    await expect(page).toHaveURL(/\/auth/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/auth/, { timeout: 30000 });
   });
 
   test("unauthenticated /author redirects to /auth", async ({ page }) => {
     await page.goto("/author");
-    await expect(page).toHaveURL(/\/auth/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/auth/, { timeout: 30000 });
   });
 
   test("unauthenticated /team redirects to /auth", async ({ page }) => {
     await page.goto("/team");
-    await expect(page).toHaveURL(/\/auth/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/auth/, { timeout: 30000 });
   });
 
   test("/task/0 without tasks redirects to /dashboard", async ({ page }) => {

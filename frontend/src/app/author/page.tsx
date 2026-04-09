@@ -299,7 +299,6 @@ export default function AuthorPage() {
     setTasks((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)));
   }
 
-  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

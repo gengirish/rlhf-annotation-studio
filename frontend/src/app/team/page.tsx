@@ -193,7 +193,6 @@ export default function TeamPage() {
     }
   }
 
-  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

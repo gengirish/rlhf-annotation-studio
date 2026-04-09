@@ -182,7 +182,6 @@ export default function SettingsPage() {
 
   const usedPacks = org?.used_packs ?? 0;
 
-  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

@@ -199,7 +199,6 @@ export default function DatasetsPage() {
     });
   }
 
-  if (!hydrated) return null;
   if (!user || !sessionId) return null;
 
   return (

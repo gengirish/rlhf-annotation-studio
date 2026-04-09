@@ -251,7 +251,6 @@ export default function QualityPage() {
     }
   }
 
-  if (!hydrated) return null;
   if (!user || !sessionId) return null;
 
   const trust = dashboard?.overall_trust_score ?? 0;
