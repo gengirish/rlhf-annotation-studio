@@ -8,7 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { Badge, Button, Card, EmptyState, Modal } from "@/components/ui";
 import { api, type TaskPackSummary } from "@/lib/api";
 import { datasetApi } from "@/lib/api-extensions";
-import { useAppStore } from "@/lib/state/store";
+import { useAppStore, useHasHydrated } from "@/lib/state/store";
 import type { Dataset, DatasetDetail, DatasetVersion, ExportPayload } from "@/types/extensions";
 
 function parseList(raw: unknown): { items: Dataset[]; total: number } {
@@ -48,6 +48,7 @@ export default function DatasetsPage() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const sessionId = useAppStore((s) => s.sessionId);
+  const hydrated = useHasHydrated();
 
   const [narrow, setNarrow] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -77,8 +78,8 @@ export default function DatasetsPage() {
   }, []);
 
   useEffect(() => {
-    if (!user || !sessionId) router.push("/auth");
-  }, [user, sessionId, router]);
+    if (hydrated && (!user || !sessionId)) router.push("/auth");
+  }, [hydrated, user, sessionId, router]);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -198,6 +199,7 @@ export default function DatasetsPage() {
     });
   }
 
+  if (!hydrated) return null;
   if (!user || !sessionId) return null;
 
   return (

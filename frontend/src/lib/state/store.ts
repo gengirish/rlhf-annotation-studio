@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -148,6 +149,21 @@ export const useAppStore = create<AppState>()(
         });
       }
     }),
-    { name: "rlhf-next-store" }
+    {
+      name: "rlhf-next-store",
+      onRehydrateStorage: () => () => {
+        useAppStore.setState({ _hydrated: true } as Partial<AppState>);
+      }
+    }
   )
 );
+
+export function useHasHydrated() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    const unsub = useAppStore.persist.onFinishHydration(() => setHydrated(true));
+    if (useAppStore.persist.hasHydrated()) setHydrated(true);
+    return unsub;
+  }, []);
+  return hydrated;
+}

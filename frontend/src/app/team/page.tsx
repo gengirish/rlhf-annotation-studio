@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { api, type OrgMember, type ReviewAssignment, type TaskPackSummary } from "@/lib/api";
-import { useAppStore } from "@/lib/state/store";
+import { useAppStore, useHasHydrated } from "@/lib/state/store";
 
 const ROLES = ["admin", "reviewer", "annotator"] as const;
 
@@ -60,6 +60,7 @@ export default function TeamPage() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const sessionId = useAppStore((s) => s.sessionId);
+  const hydrated = useHasHydrated();
 
   const orgId = user?.org_id ?? undefined;
   const isAdmin = user?.role === "admin";
@@ -95,17 +96,17 @@ export default function TeamPage() {
   }, [members]);
 
   useEffect(() => {
-    if (!user || !sessionId) {
+    if (hydrated && (!user || !sessionId)) {
       router.push("/auth");
     }
-  }, [user, sessionId, router]);
+  }, [hydrated, user, sessionId, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!hydrated || !user) return;
     if (!isReviewerOrAdmin) {
       router.replace("/dashboard");
     }
-  }, [user, isReviewerOrAdmin, router]);
+  }, [hydrated, user, isReviewerOrAdmin, router]);
 
   const loadOrgData = useCallback(async () => {
     if (!orgId) return;
@@ -192,6 +193,7 @@ export default function TeamPage() {
     }
   }
 
+  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

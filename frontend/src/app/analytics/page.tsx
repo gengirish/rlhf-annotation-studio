@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { api, type SessionMetrics, type SessionTimeline } from "@/lib/api";
-import { useAppStore } from "@/lib/state/store";
+import { useAppStore, useHasHydrated } from "@/lib/state/store";
 
 function formatDurationSeconds(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds || 0));
@@ -27,16 +27,17 @@ export default function AnalyticsPage() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const sessionId = useAppStore((s) => s.sessionId);
+  const hydrated = useHasHydrated();
 
   const [metrics, setMetrics] = useState<SessionMetrics | null>(null);
   const [timeline, setTimeline] = useState<SessionTimeline | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !sessionId) {
+    if (hydrated && (!user || !sessionId)) {
       router.push("/auth");
     }
-  }, [user, sessionId, router]);
+  }, [hydrated, user, sessionId, router]);
 
   useEffect(() => {
     async function load() {
@@ -77,6 +78,7 @@ export default function AnalyticsPage() {
 
   const completionPct = metrics ? completionPercent(metrics.completion_rate) : 0;
 
+  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

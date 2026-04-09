@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { api } from "@/lib/api";
 import type { TaskPackDetail, TaskPackSummary, TaskSearchHit, TaskSearchResponse } from "@/lib/api";
-import { useAppStore } from "@/lib/state/store";
+import { useAppStore, useHasHydrated } from "@/lib/state/store";
 import { fetchTaskPack } from "@/lib/task-packs";
 import type { TaskItem, WorkspaceSnapshot } from "@/types";
 
@@ -49,6 +49,7 @@ export default function DashboardPage() {
     getFirstUnfinishedTaskIndex,
     logout
   } = useAppStore();
+  const hydrated = useHasHydrated();
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "synced" | "error">("idle");
   const [packCatalog, setPackCatalog] = useState<TaskPackSummary[]>([]);
   const [packsLoading, setPacksLoading] = useState(true);
@@ -155,10 +156,10 @@ export default function DashboardPage() {
   }, [sessionId, completed]);
 
   useEffect(() => {
-    if (!user || !sessionId) {
+    if (hydrated && (!user || !sessionId)) {
       router.push("/auth");
     }
-  }, [user, sessionId, router]);
+  }, [hydrated, user, sessionId, router]);
 
   useEffect(() => {
     async function loadCatalog() {
@@ -375,6 +376,9 @@ export default function DashboardPage() {
     },
     [loadTasks, router]
   );
+
+  if (!hydrated) return null;
+  if (!user || !sessionId) return null;
 
   return (
     <AppShell>

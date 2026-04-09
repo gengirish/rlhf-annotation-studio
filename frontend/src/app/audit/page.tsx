@@ -8,7 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { Badge, Button, Card, EmptyState, Pagination, StatCard, Table, type Column } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { auditApi } from "@/lib/api-extensions";
-import { useAppStore } from "@/lib/state/store";
+import { useAppStore, useHasHydrated } from "@/lib/state/store";
 import type { AuditLogEntry, AuditLogPage, AuditLogStats } from "@/types/extensions";
 
 const PAGE_SIZE = 25;
@@ -47,6 +47,7 @@ export default function AuditPage() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const sessionId = useAppStore((s) => s.sessionId);
+  const hydrated = useHasHydrated();
 
   const [narrow, setNarrow] = useState(false);
   const [forbidden, setForbidden] = useState(false);
@@ -76,8 +77,8 @@ export default function AuditPage() {
   }, []);
 
   useEffect(() => {
-    if (!user || !sessionId) router.push("/auth");
-  }, [user, sessionId, router]);
+    if (hydrated && (!user || !sessionId)) router.push("/auth");
+  }, [hydrated, user, sessionId, router]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -188,6 +189,7 @@ export default function AuditPage() {
 
   const expanded = expandedId ? sortedItems.find((x) => x.id === expandedId) : null;
 
+  if (!hydrated) return null;
   if (!user || !sessionId) return null;
 
   if (forbidden) {

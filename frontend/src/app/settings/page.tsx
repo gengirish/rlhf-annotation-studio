@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { ApiError, api, type Organization, type OrgMember } from "@/lib/api";
-import { useAppStore } from "@/lib/state/store";
+import { useAppStore, useHasHydrated } from "@/lib/state/store";
 
 const ORG_ID_STORAGE_KEY = "rlhf_active_org_id";
 
@@ -56,6 +56,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const sessionId = useAppStore((s) => s.sessionId);
+  const hydrated = useHasHydrated();
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [org, setOrg] = useState<Organization | null>(null);
@@ -69,10 +70,10 @@ export default function SettingsPage() {
   const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
-    if (!user || !sessionId) {
+    if (hydrated && (!user || !sessionId)) {
       router.push("/auth");
     }
-  }, [user, sessionId, router]);
+  }, [hydrated, user, sessionId, router]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -181,6 +182,7 @@ export default function SettingsPage() {
 
   const usedPacks = org?.used_packs ?? 0;
 
+  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { api, type TaskPackUpsertBody } from "@/lib/api";
-import { useAppStore } from "@/lib/state/store";
+import { useAppStore, useHasHydrated } from "@/lib/state/store";
 import type { TaskDimension, TaskItem, TaskResponse, TaskType } from "@/types";
 
 const LANGUAGES = ["python", "java", "javascript", "general"] as const;
@@ -94,6 +94,7 @@ export default function AuthorPage() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const sessionId = useAppStore((s) => s.sessionId);
+  const hydrated = useHasHydrated();
 
   const [packName, setPackName] = useState("");
   const [packSlug, setPackSlug] = useState("");
@@ -111,10 +112,10 @@ export default function AuthorPage() {
   const [loadingPack, setLoadingPack] = useState(false);
 
   useEffect(() => {
-    if (!user || !sessionId) {
+    if (hydrated && (!user || !sessionId)) {
       router.push("/auth");
     }
-  }, [user, sessionId, router]);
+  }, [hydrated, user, sessionId, router]);
 
   useEffect(() => {
     if (slugTouched) return;
@@ -298,6 +299,7 @@ export default function AuthorPage() {
     setTasks((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)));
   }
 
+  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { api, type ReviewAssignment } from "@/lib/api";
-import { useAppStore } from "@/lib/state/store";
+import { useAppStore, useHasHydrated } from "@/lib/state/store";
 
 type Tab = "assignments" | "pending" | "team";
 
@@ -73,6 +73,7 @@ export default function ReviewsPage() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const sessionId = useAppStore((s) => s.sessionId);
+  const hydrated = useHasHydrated();
 
   const [tab, setTab] = useState<Tab>("assignments");
   const [queue, setQueue] = useState<ReviewAssignment[]>([]);
@@ -86,10 +87,10 @@ export default function ReviewsPage() {
   const canTeamReviews = user?.role === "admin" || user?.role === "reviewer";
 
   useEffect(() => {
-    if (!user || !sessionId) {
+    if (hydrated && (!user || !sessionId)) {
       router.push("/auth");
     }
-  }, [user, sessionId, router]);
+  }, [hydrated, user, sessionId, router]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -155,6 +156,7 @@ export default function ReviewsPage() {
     }
   }
 
+  if (!hydrated) return null;
   if (!user || !sessionId) {
     return null;
   }

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Badge, Button, Card, EmptyState, Modal } from "@/components/ui";
 import { webhookApi } from "@/lib/api-extensions";
-import { useAppStore } from "@/lib/state/store";
+import { useAppStore, useHasHydrated } from "@/lib/state/store";
 import type { WebhookDelivery, WebhookEndpoint } from "@/types/extensions";
 
 const WEBHOOK_EVENTS = [
@@ -35,6 +35,7 @@ export default function WebhooksPage() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
   const sessionId = useAppStore((s) => s.sessionId);
+  const hydrated = useHasHydrated();
 
   const [narrow, setNarrow] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -60,8 +61,8 @@ export default function WebhooksPage() {
   }, []);
 
   useEffect(() => {
-    if (!user || !sessionId) router.push("/auth");
-  }, [user, sessionId, router]);
+    if (hydrated && (!user || !sessionId)) router.push("/auth");
+  }, [hydrated, user, sessionId, router]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -183,6 +184,7 @@ export default function WebhooksPage() {
     }
   }
 
+  if (!hydrated) return null;
   if (!user || !sessionId) return null;
 
   return (
