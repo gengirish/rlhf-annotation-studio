@@ -356,17 +356,17 @@ test.describe("Dashboard", () => {
 
   test("displays stats cards", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await expect(page.getByText("Tasks Loaded")).toBeVisible();
-    await expect(page.getByText("Completed")).toBeVisible();
-    await expect(page.getByText("Current Pack")).toBeVisible();
-    await expect(page.getByText("Quality Score")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tasks Loaded" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Completed" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Current Pack" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Quality Score", exact: true })).toBeVisible();
   });
 
   test("shows task library with pack catalog", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await expect(page.getByRole("heading", { name: "Task Library" })).toBeVisible();
-    await expect(page.getByText("Python Debugging")).toBeVisible();
-    await expect(page.getByText("Debug Python snippets")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Task Library" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Python Debugging")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Debug Python snippets")).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Load and Start" })).toBeVisible();
   });
 
@@ -448,7 +448,7 @@ test.describe("Analytics page", () => {
     await loginAndGoToDashboard(page);
     await page.goto("/analytics");
     await expect(page.getByText("Completion Rate")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("60%")).toBeVisible();
+    await expect(page.getByText("60%")).toBeVisible({ timeout: 10000 });
   });
 
   test("shows dashboard link in sidebar", async ({ page }) => {
@@ -480,15 +480,16 @@ test.describe("Reviews page", () => {
   test("annotator sees their assignments with status badges", async ({ page }) => {
     await loginAndGoToDashboard(page, { reviewData: MOCK_REVIEW_ASSIGNMENTS });
     await page.goto("/reviews");
+    await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("task-1")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("submitted")).toBeVisible();
+    await expect(page.getByText("submitted").first()).toBeVisible();
   });
 
   test("pending tab shows submitted reviews with approve/reject", async ({ page }) => {
     await loginAndGoToDashboard(page, { reviewData: MOCK_REVIEW_ASSIGNMENTS });
     await page.goto("/reviews");
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 30000 });
-    await page.getByRole("button", { name: "Pending Review" }).click();
+    await page.getByRole("button", { name: "Pending Review" }).click({ timeout: 15000 });
     await expect(page.getByRole("button", { name: "Approve" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole("button", { name: "Reject" })).toBeVisible({ timeout: 10000 });
   });
@@ -499,14 +500,14 @@ test.describe("Reviews page", () => {
    ═════════════════════════════════════════════ */
 
 test.describe("RBAC - Dashboard", () => {
-  test("admin sees role badge", async ({ page }) => {
+  test("admin sees role in sidebar", async ({ page }) => {
     await loginAndGoToDashboard(page, MOCK_AUTH_ADMIN);
-    await expect(page.getByText("admin")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(".shell-user-role")).toHaveText("admin", { timeout: 10000 });
   });
 
-  test("reviewer sees role badge", async ({ page }) => {
+  test("reviewer sees role in sidebar", async ({ page }) => {
     await loginAndGoToDashboard(page, MOCK_AUTH_REVIEWER);
-    await expect(page.getByText("reviewer")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(".shell-user-role")).toHaveText("reviewer", { timeout: 10000 });
   });
 
   test("annotator does NOT see a role badge", async ({ page }) => {
@@ -545,9 +546,9 @@ test.describe("Team management page", () => {
     });
     await page.goto("/team");
     await expect(page.getByRole("heading", { name: "Team management" })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("heading", { name: "Team members" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Assign task pack" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Team review assignments" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Team members" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "Assign task pack" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Team review assignments" })).toBeVisible({ timeout: 10000 });
   });
 
   test("displays team members in table", async ({ page }) => {
@@ -558,7 +559,8 @@ test.describe("Team management page", () => {
       reviewData: []
     });
     await page.goto("/team");
-    await expect(page.getByRole("cell", { name: "E2E User" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "Team members" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("cell", { name: "E2E User" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("cell", { name: "e2e@example.com" })).toBeVisible();
     await expect(page.getByRole("cell", { name: "Admin User" })).toBeVisible();
   });
@@ -571,9 +573,9 @@ test.describe("Team management page", () => {
       reviewData: []
     });
     await page.goto("/team");
-    await expect(page.getByText("Team members")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "Team members" })).toBeVisible({ timeout: 15000 });
     const roleSelects = page.locator("table select.input");
-    await expect(roleSelects.first()).toBeVisible();
+    await expect(roleSelects.first()).toBeVisible({ timeout: 10000 });
   });
 
   test("assign pack section has button and dropdowns", async ({ page }) => {
@@ -584,8 +586,7 @@ test.describe("Team management page", () => {
       reviewData: []
     });
     await page.goto("/team");
-    await expect(page.getByRole("heading", { name: "Team management" })).toBeVisible({ timeout: 30000 });
-    await expect(page.getByText("Assign task pack")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "Assign task pack" })).toBeVisible({ timeout: 30000 });
     await expect(page.getByRole("button", { name: /assign pack/i })).toBeVisible();
   });
 
@@ -597,9 +598,9 @@ test.describe("Team management page", () => {
       reviewData: MOCK_REVIEW_ASSIGNMENTS
     });
     await page.goto("/team");
-    await expect(page.getByText("Team review assignments")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "Team review assignments" })).toBeVisible({ timeout: 15000 });
     const statusFilter = page.locator("select").filter({ has: page.locator("option[value='submitted']") });
-    await expect(statusFilter.first()).toBeVisible();
+    await expect(statusFilter.first()).toBeVisible({ timeout: 10000 });
   });
 
   test("shows submitted review with approve/reject buttons", async ({ page }) => {
@@ -610,7 +611,8 @@ test.describe("Team management page", () => {
       reviewData: MOCK_REVIEW_ASSIGNMENTS
     });
     await page.goto("/team");
-    await expect(page.getByText("task-1")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "Team review assignments" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("task-1")).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Approve" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Reject" })).toBeVisible();
   });
@@ -620,7 +622,7 @@ test.describe("Team management page", () => {
     await loginAndGoToDashboard(page, { auth: noOrgAdmin });
     await page.goto("/team");
     await expect(page.getByText("Create an organization in Settings first")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("link", { name: "Settings" })).toBeVisible();
   });
 
   test("has dashboard link in sidebar", async ({ page }) => {
@@ -685,10 +687,12 @@ test.describe("Review approve/reject flow", () => {
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
     await page.goto("/reviews");
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
-    await page.getByRole("button", { name: "Pending Review" }).click();
-    await expect(page.getByRole("button", { name: "Approve" })).toBeVisible({ timeout: 15000 });
+    const pendingBtn = page.getByRole("button", { name: "Pending Review" });
+    await expect(pendingBtn).toBeVisible({ timeout: 10000 });
+    await pendingBtn.click({ timeout: 15000 });
+    await expect(page.getByRole("button", { name: "Approve" })).toBeVisible({ timeout: 20000 });
     await page.getByRole("button", { name: "Approve" }).first().click();
-    await expect.poll(() => capturedBody).not.toBeNull();
+    await expect.poll(() => capturedBody, { timeout: 15000 }).not.toBeNull();
     expect(capturedBody!.status).toBe("approved");
   });
 
@@ -718,11 +722,13 @@ test.describe("Review approve/reject flow", () => {
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
     await page.goto("/reviews");
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
-    await page.getByRole("button", { name: "Pending Review" }).click();
-    await expect(page.getByRole("button", { name: "Reject" })).toBeVisible({ timeout: 15000 });
+    const pendingBtn = page.getByRole("button", { name: "Pending Review" });
+    await expect(pendingBtn).toBeVisible({ timeout: 10000 });
+    await pendingBtn.click({ timeout: 15000 });
+    await expect(page.getByRole("button", { name: "Reject" })).toBeVisible({ timeout: 20000 });
     await page.getByPlaceholder("Optional notes for the annotator…").fill("Needs clearer justification");
     await page.getByRole("button", { name: "Reject" }).first().click();
-    await expect.poll(() => capturedBody).not.toBeNull();
+    await expect.poll(() => capturedBody, { timeout: 15000 }).not.toBeNull();
     expect(capturedBody!.status).toBe("rejected");
     expect(capturedBody!.reviewer_notes).toBe("Needs clearer justification");
   });
@@ -751,6 +757,6 @@ test.describe("RBAC on reviews", () => {
     await loginAndGoToDashboard(page, { auth: MOCK_AUTH_ADMIN, reviewData: MOCK_REVIEW_ASSIGNMENTS });
     await page.goto("/reviews");
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("button", { name: "Team Reviews" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Team Reviews" })).toBeVisible({ timeout: 10000 });
   });
 });

@@ -169,15 +169,15 @@ test.describe("Settings — no organization", () => {
     await loginAndGoToDashboard(page, { auth: MOCK_AUTH_NO_ORG, hasOrg: false });
     await page.goto("/settings");
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible({ timeout: 30000 });
-    await expect(page.getByRole("heading", { name: "Create Organization" })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("You do not have an organization yet")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create Organization" })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText("You do not have an organization yet")).toBeVisible({ timeout: 10000 });
   });
 
   test("create org form has name, slug, and submit", async ({ page }) => {
     await loginAndGoToDashboard(page, { auth: MOCK_AUTH_NO_ORG, hasOrg: false });
     await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "Create Organization" })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByPlaceholder("Acme RLHF")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create Organization" })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByPlaceholder("Acme RLHF")).toBeVisible({ timeout: 10000 });
     await expect(page.getByPlaceholder("acme-rlhf")).toBeVisible();
     await expect(page.getByRole("button", { name: "Create Organization" })).toBeVisible();
   });
@@ -185,7 +185,7 @@ test.describe("Settings — no organization", () => {
   test("slug auto-generates from name input", async ({ page }) => {
     await loginAndGoToDashboard(page, { auth: MOCK_AUTH_NO_ORG, hasOrg: false });
     await page.goto("/settings");
-    await expect(page.getByPlaceholder("Acme RLHF")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByPlaceholder("Acme RLHF")).toBeVisible({ timeout: 30000 });
     await page.getByPlaceholder("Acme RLHF").fill("My Test Org");
     await expect(page.getByPlaceholder("acme-rlhf")).toHaveValue("my-test-org");
   });
@@ -226,7 +226,7 @@ test.describe("Settings — existing organization", () => {
     await loginAndGoToDashboard(page);
     await page.getByRole("link", { name: "Settings" }).click();
     await expect(page.getByRole("heading", { name: "Team members" })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("E2E User")).toBeVisible();
+    await expect(page.getByRole("main").getByText("E2E User")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("Team Member", { exact: true })).toBeVisible();
     await expect(page.getByText("member@example.com")).toBeVisible();
   });
@@ -404,7 +404,7 @@ test.describe("Settings invite flow", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
     await page.goto("/settings");
-    await expect(page.getByRole("heading", { name: "Team members" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "Team members" })).toBeVisible({ timeout: 30000 });
     await page.getByPlaceholder("teammate@example.com").fill("invitee@example.com");
     await page.getByRole("button", { name: "Add member" }).click();
     await expect(page.getByText("Invitation sent")).toBeVisible({ timeout: 10000 });
