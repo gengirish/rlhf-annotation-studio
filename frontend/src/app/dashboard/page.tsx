@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -8,6 +9,8 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { api } from "@/lib/api";
 import type { TaskPackDetail, TaskPackSummary, TaskSearchHit, TaskSearchResponse } from "@/lib/api";
+import { courseApi } from "@/lib/course-api";
+import type { CourseProgressResponse } from "@/types/course";
 import { useAppStore, useHasHydrated } from "@/lib/state/store";
 import { fetchTaskPack } from "@/lib/task-packs";
 import type { TaskItem, WorkspaceSnapshot } from "@/types";
@@ -59,6 +62,9 @@ export default function DashboardPage() {
     overall_accuracy: number;
     scored_tasks: number;
   } | null>(null);
+
+  const [courseProgress, setCourseProgress] = useState<CourseProgressResponse | null>(null);
+  const [courseProgressLoading, setCourseProgressLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLanguage, setSearchLanguage] = useState("");
@@ -172,6 +178,20 @@ export default function DashboardPage() {
       }
     }
     void loadCatalog();
+  }, []);
+
+  useEffect(() => {
+    async function loadCourseProgress() {
+      try {
+        const p = await courseApi.getProgress();
+        setCourseProgress(p);
+      } catch {
+        setCourseProgress(null);
+      } finally {
+        setCourseProgressLoading(false);
+      }
+    }
+    void loadCourseProgress();
   }, []);
 
   const bootstrapRan = useRef(false);
@@ -401,6 +421,64 @@ export default function DashboardPage() {
           Restore from server
         </button>
       </header>
+
+      {!courseProgressLoading && courseProgress && (
+        <section className="card" style={{ marginTop: 18, padding: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <h2 style={{ marginTop: 0, marginBottom: 4 }}>Course Progress</h2>
+              <p style={{ margin: 0, color: "var(--muted)", fontSize: 14 }}>
+                {courseProgress.completed_sessions} of {courseProgress.total_sessions} sessions completed
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {courseProgress.current_session != null && (
+                <Link
+                  href={`/course/${courseProgress.current_session}` as Route}
+                  className="btn btn-primary"
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                >
+                  Continue Session {courseProgress.current_session}
+                </Link>
+              )}
+              <Link
+                href="/course"
+                className="btn"
+                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+              >
+                View Full Course
+              </Link>
+            </div>
+          </div>
+          <div style={{ height: 10, marginTop: 14, background: "#e2e8f0", borderRadius: 999, overflow: "hidden" }}>
+            <div
+              style={{
+                width: `${courseProgress.total_sessions > 0 ? Math.round((courseProgress.completed_sessions / courseProgress.total_sessions) * 100) : 0}%`,
+                height: "100%",
+                borderRadius: 999,
+                background: "linear-gradient(90deg, #6366f1, #818cf8)",
+                transition: "width 0.4s ease"
+              }}
+            />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8, marginTop: 14 }}>
+            {courseProgress.modules.map((mod) => {
+              const pct = mod.total_sessions > 0 ? Math.round((mod.completed_sessions / mod.total_sessions) * 100) : 0;
+              return (
+                <div key={mod.module_number} style={{ padding: "8px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontWeight: 600 }}>M{mod.module_number}</span>
+                    <span style={{ color: "var(--muted)" }}>{mod.completed_sessions}/{mod.total_sessions}</span>
+                  </div>
+                  <div style={{ height: 4, background: "#e2e8f0", borderRadius: 999 }}>
+                    <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: pct === 100 ? "#10b981" : "#6366f1" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="card" style={{ marginTop: 18, padding: 16 }}>
         <h2 style={{ marginTop: 0 }}>Load from JSON</h2>

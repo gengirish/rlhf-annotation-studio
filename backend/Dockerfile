@@ -9,6 +9,7 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY seed_task_packs.py ./
+COPY seed_course_content.py ./
 COPY tasks ./tasks
 
 RUN pip install --no-cache-dir --upgrade pip \
@@ -16,5 +17,5 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 EXPOSE 8000
 
-# Run migrations, seed task packs, then start the API
-CMD ["sh", "-c", "alembic upgrade head && python seed_task_packs.py && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Run migrations, seed task packs, seed course content, then start the API
+CMD ["sh", "-c", "alembic upgrade head && python seed_task_packs.py && python seed_course_content.py && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]

@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import DateTime, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.course import CourseSession
 
 
 class TaskPack(Base):
@@ -26,4 +29,14 @@ class TaskPack(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
+    )
+    session_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("course_sessions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    session: Mapped[CourseSession | None] = relationship(
+        "CourseSession", back_populates="task_packs"
     )

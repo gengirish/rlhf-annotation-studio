@@ -11,6 +11,7 @@ from app.routers import (
     audit,
     auth,
     consensus,
+    course,
     datasets,
     exams,
     health,
@@ -77,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(judge.router, prefix="/api/v1")
     app.include_router(quality.router, prefix="/api/v1")
     app.include_router(webhooks.router, prefix="/api/v1")
+    app.include_router(course.router, prefix="/api/v1")
     return app
 
 

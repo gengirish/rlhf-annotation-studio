@@ -2,6 +2,7 @@ from app.models.annotator import Annotator
 from app.models.api_key import APIKey
 from app.models.audit_log import AuditLog
 from app.models.consensus import ConsensusConfig, ConsensusTask
+from app.models.course import CourseModule, CourseSession
 from app.models.dataset import Dataset, DatasetVersion
 from app.models.exam import Exam, ExamAttempt, IntegrityEvent
 from app.models.iaa_result import IAAResult
@@ -23,6 +24,8 @@ __all__ = [
     "CalibrationTest",
     "ConsensusConfig",
     "ConsensusTask",
+    "CourseModule",
+    "CourseSession",
     "Dataset",
     "DatasetVersion",
     "Exam",
