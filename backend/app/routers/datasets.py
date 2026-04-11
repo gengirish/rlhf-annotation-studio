@@ -61,7 +61,7 @@ async def _get_dataset_or_404(db: AsyncSession, dataset_id: uuid.UUID) -> Datase
 async def create_dataset(
     body: DatasetCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user_or_api_key),
+    current_user: Annotator = Depends(require_admin),
 ) -> DatasetRead:
     ds = await DatasetService.create_dataset(db, current_user, body)
     return await _dataset_read_with_version_count(db, ds)
@@ -100,7 +100,7 @@ async def list_datasets(
 async def bulk_import_dataset(
     body: BulkImportRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user_or_api_key),
+    current_user: Annotator = Depends(require_admin),
 ) -> DatasetRead:
     ds = await DatasetService.create_dataset_from_bulk_import(db, current_user, body)
     return await _dataset_read_with_version_count(db, ds)
@@ -135,7 +135,7 @@ async def create_dataset_version(
     dataset_id: uuid.UUID,
     body: DatasetVersionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user_or_api_key),
+    current_user: Annotator = Depends(require_admin),
 ) -> DatasetVersionRead:
     ds = await _get_dataset_or_404(db, dataset_id)
     _require_org_dataset(current_user, ds)

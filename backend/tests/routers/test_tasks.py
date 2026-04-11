@@ -9,7 +9,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_user_or_api_key
 from app.models.task_pack import TaskPack
 from tests.conftest import FakeDB, FakeExecuteResult, _statement_sql, make_annotator_row
 
@@ -244,8 +244,21 @@ def test_get_pack_not_found(client: TestClient) -> None:
     assert resp.status_code == 404
 
 
+def test_create_pack_requires_admin(authed_client) -> None:
+    client = authed_client(role="annotator")
+    payload = {
+        "slug": "new-pack",
+        "name": "New Pack",
+        "description": "Desc",
+        "language": "python",
+        "tasks_json": [VALID_TASK],
+    }
+    resp = client.post("/api/v1/tasks/packs", json=payload)
+    assert resp.status_code == 403
+
+
 def test_create_pack_success(authed_client, fake_db: FakeTaskDB) -> None:
-    client = authed_client()
+    client = authed_client(role="admin")
     payload = {
         "slug": "new-pack",
         "name": "New Pack",
@@ -263,7 +276,7 @@ def test_create_pack_success(authed_client, fake_db: FakeTaskDB) -> None:
 
 
 def test_create_pack_duplicate_slug(authed_client, fake_db: FakeTaskDB) -> None:
-    client = authed_client()
+    client = authed_client(role="admin")
     fake_db.add(_make_task_pack(slug="taken", name="Taken"))
     payload = {
         "slug": "taken",
@@ -276,8 +289,25 @@ def test_create_pack_duplicate_slug(authed_client, fake_db: FakeTaskDB) -> None:
     assert resp.status_code == 409
 
 
+def test_update_pack_requires_admin(authed_client, fake_db: FakeTaskDB) -> None:
+    client = authed_client(role="annotator")
+    fake_db.add(_make_task_pack(slug="existing", name="Existing"))
+    resp = client.put(
+        "/api/v1/tasks/packs/existing",
+        json={"name": "Updated"},
+    )
+    assert resp.status_code == 403
+
+
+def test_delete_pack_requires_admin(authed_client, fake_db: FakeTaskDB) -> None:
+    client = authed_client(role="annotator")
+    fake_db.add(_make_task_pack(slug="no-delete", name="No"))
+    resp = client.delete("/api/v1/tasks/packs/no-delete")
+    assert resp.status_code == 403
+
+
 def test_delete_pack_success(authed_client, fake_db: FakeTaskDB) -> None:
-    client = authed_client()
+    client = authed_client(role="admin")
     pack = _make_task_pack(slug="to-delete", name="X")
     fake_db.add(pack)
     pid = pack.id
@@ -287,7 +317,7 @@ def test_delete_pack_success(authed_client, fake_db: FakeTaskDB) -> None:
 
 
 def test_delete_pack_not_found(authed_client) -> None:
-    client = authed_client()
+    client = authed_client(role="admin")
     resp = client.delete("/api/v1/tasks/packs/missing")
     assert resp.status_code == 404
 
@@ -325,6 +355,7 @@ def test_score_session(fake_db: FakeTaskDB, app: FastAPI) -> None:
         return user
 
     app.dependency_overrides[get_current_user] = override_current_user
+    app.dependency_overrides[get_current_user_or_api_key] = override_current_user
     client = TestClient(app)
     resp = client.post(
         "/api/v1/tasks/score-session",

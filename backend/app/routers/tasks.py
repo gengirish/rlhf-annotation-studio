@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import get_current_user_or_api_key
+from app.auth import get_current_user_or_api_key, require_admin
 from app.db import get_db
 from app.models import Annotator, TaskPack, WorkSession
 from app.schemas.gold_scoring import GoldScoreRequest, GoldScoreResponse
@@ -155,7 +155,7 @@ async def get_task_pack(slug: str, db: AsyncSession = Depends(get_db)) -> TaskPa
 async def create_task_pack(
     body: TaskPackCreate,
     db: AsyncSession = Depends(get_db),
-    _current_user: Annotator = Depends(get_current_user_or_api_key),
+    _current_user: Annotator = Depends(require_admin),
 ) -> TaskPackDetail:
     _raise_if_tasks_invalid(body.tasks_json)
     slug = body.slug.strip()
@@ -184,7 +184,7 @@ async def update_task_pack(
     slug: str,
     body: TaskPackUpdate,
     db: AsyncSession = Depends(get_db),
-    _current_user: Annotator = Depends(get_current_user_or_api_key),
+    _current_user: Annotator = Depends(require_admin),
 ) -> TaskPackDetail:
     result = await db.execute(select(TaskPack).where(TaskPack.slug == slug))
     pack = result.scalar_one_or_none()
@@ -224,7 +224,7 @@ async def update_task_pack(
 async def delete_task_pack(
     slug: str,
     db: AsyncSession = Depends(get_db),
-    _current_user: Annotator = Depends(get_current_user_or_api_key),
+    _current_user: Annotator = Depends(require_admin),
 ) -> Response:
     result = await db.execute(select(TaskPack).where(TaskPack.slug == slug))
     pack = result.scalar_one_or_none()
