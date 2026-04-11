@@ -131,10 +131,10 @@ export interface ReviewAssignment {
 
 export interface TaskPackListResponse {
   packs: TaskPackSummary[];
-  total: number;
-  limit: number;
-  offset: number;
-  has_more: boolean;
+  total?: number;
+  limit?: number;
+  offset?: number;
+  has_more?: boolean;
 }
 
 export interface TaskSearchHit {
@@ -226,9 +226,11 @@ export const api = {
       const res = await request<TaskPackListResponse>(
         `/api/v1/tasks/packs?limit=${pageSize}&offset=${offset}`
       );
-      all = all.concat(res.packs);
-      if (!res.has_more) break;
-      offset += res.limit;
+      const packs = Array.isArray(res.packs) ? res.packs : [];
+      all = all.concat(packs);
+      const hasMore = Boolean(res.has_more);
+      if (!hasMore) break;
+      offset += res.limit ?? pageSize;
     }
     return all;
   },
@@ -327,6 +329,69 @@ export const api = {
       const body = (await res.json().catch(() => ({}))) as { detail?: string };
       throw new ApiError(res.status, body.detail || "Delete failed");
     }
+  },
+
+  getExams: () => request<ExamRead[]>("/api/v1/exams"),
+  startExamAttempt: (examId: string) =>
+    request<ExamAttemptStartResponse>(`/api/v1/exams/${encodeURIComponent(examId)}/attempts/start`, {
+      method: "POST"
+    }),
+  getExamAttempt: (examId: string, attemptId: string) =>
+    request<ExamAttemptRead>(
+      `/api/v1/exams/${encodeURIComponent(examId)}/attempts/${encodeURIComponent(attemptId)}`
+    ),
+  saveExamAnswer: (
+    examId: string,
+    attemptId: string,
+    body: { task_id: string; annotation_json: Record<string, unknown>; time_spent_seconds?: number }
+  ) =>
+    request<ExamAttemptRead>(
+      `/api/v1/exams/${encodeURIComponent(examId)}/attempts/${encodeURIComponent(attemptId)}/answer`,
+      {
+        method: "PUT",
+        body: JSON.stringify(body)
+      }
+    ),
+  postExamIntegrityEvent: (
+    examId: string,
+    attemptId: string,
+    body: { event_type: string; severity: "info" | "warn" | "high"; payload_json?: Record<string, unknown> }
+  ) =>
+    request<IntegrityEventRead>(
+      `/api/v1/exams/${encodeURIComponent(examId)}/attempts/${encodeURIComponent(attemptId)}/integrity-events`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          event_type: body.event_type,
+          severity: body.severity,
+          payload_json: body.payload_json ?? {}
+        })
+      }
+    ),
+  submitExamAttempt: (examId: string, attemptId: string) =>
+    request<ExamAttemptSubmitResponse>(
+      `/api/v1/exams/${encodeURIComponent(examId)}/attempts/${encodeURIComponent(attemptId)}/submit`,
+      { method: "POST" }
+    ),
+  getExamAttemptResult: (examId: string, attemptId: string) =>
+    request<ExamResultRead>(
+      `/api/v1/exams/${encodeURIComponent(examId)}/attempts/${encodeURIComponent(attemptId)}/result`
+    ),
+  getExamReviewAttempts: () => request<ReviewAttemptSummary[]>("/api/v1/exams/review/attempts"),
+  releaseExamAttemptReview: (attemptId: string, body: ReviewReleaseRequest) =>
+    request<ReviewReleaseResponse>(
+      `/api/v1/exams/review/attempts/${encodeURIComponent(attemptId)}/release`,
+      {
+        method: "POST",
+        body: JSON.stringify(body)
+      }
+    ),
+  /** Resolves a pack UUID to full detail via catalog listing (no backend UUID route). */
+  getTaskPackById: async (taskPackId: string): Promise<TaskPackDetail | null> => {
+    const packs = await api.getAllTaskPacks();
+    const hit = packs.find((p) => p.id === taskPackId);
+    if (!hit) return null;
+    return api.getTaskPack(hit.slug);
   }
 };
 
@@ -342,4 +407,112 @@ export interface TaskPackSummary {
 
 export interface TaskPackDetail extends TaskPackSummary {
   tasks_json: TaskItem[];
+}
+
+export interface ExamRead {
+  id: string;
+  title: string;
+  description: string;
+  task_pack_id: string;
+  duration_minutes: number;
+  pass_threshold: number;
+  max_attempts: number;
+  is_published: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExamAttemptStartResponse {
+  id: string;
+  exam_id: string;
+  annotator_id: string;
+  started_at: string;
+  expires_at: string;
+  status: string;
+  answers_json: Record<string, unknown>;
+  task_times_json: Record<string, unknown>;
+  integrity_score: number;
+}
+
+export interface ExamAttemptRead {
+  id: string;
+  exam_id: string;
+  annotator_id: string;
+  started_at: string;
+  expires_at: string;
+  submitted_at: string | null;
+  status: string;
+  score: number | null;
+  passed: boolean | null;
+  answers_json: Record<string, unknown>;
+  task_times_json: Record<string, unknown>;
+  integrity_score: number;
+  review_notes: string | null;
+  released_at: string | null;
+  released_by: string | null;
+}
+
+export interface IntegrityEventRead {
+  id: string;
+  attempt_id: string;
+  event_type: string;
+  severity: string;
+  payload_json: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface ExamAttemptSubmitResponse {
+  id: string;
+  exam_id: string;
+  status: string;
+  submitted_at: string | null;
+  score: number | null;
+  passed: boolean | null;
+  integrity_score: number;
+}
+
+export interface ExamResultRead {
+  attempt_id: string;
+  exam_id: string;
+  status: string;
+  score: number | null;
+  passed: boolean | null;
+  integrity_score: number;
+  submitted_at: string | null;
+  released_at: string | null;
+  review_notes: string | null;
+  total_gold_tasks: number | null;
+  scored_tasks: number | null;
+}
+
+export interface ReviewAttemptSummary {
+  id: string;
+  exam_id: string;
+  exam_title: string;
+  annotator_id: string;
+  annotator_email: string | null;
+  started_at: string;
+  expires_at: string;
+  submitted_at: string | null;
+  status: string;
+  score: number | null;
+  passed: boolean | null;
+  integrity_score: number;
+  review_notes: string | null;
+  released_at: string | null;
+}
+
+export interface ReviewReleaseRequest {
+  release: boolean;
+  review_notes?: string | null;
+}
+
+export interface ReviewReleaseResponse {
+  id: string;
+  exam_id: string;
+  status: string;
+  released_at: string | null;
+  released_by: string | null;
+  review_notes: string | null;
 }

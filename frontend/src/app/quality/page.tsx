@@ -7,10 +7,12 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { QualityTimeline } from "@/components/charts/QualityTimeline";
 import { Badge, Button, Card, EmptyState, Modal, StatCard, Table, type Column } from "@/components/ui";
-import { qualityApi } from "@/lib/api-extensions";
+import { api, type TaskPackSummary } from "@/lib/api";
+import { judgeApi, qualityApi } from "@/lib/api-extensions";
 import { useAppStore, useHasHydrated } from "@/lib/state/store";
 import type {
   CalibrationTest,
+  LLMEvaluation,
   QualityDashboard,
   QualityDriftAlert,
   QualityLeaderboardEntry
@@ -122,6 +124,17 @@ function statusBadgeVariant(
   return "default";
 }
 
+function formatPreference(preference: unknown): string {
+  if (preference === 0) return "A";
+  if (preference === 1) return "B";
+  return "—";
+}
+
+function formatConfidence(confidence: unknown): string {
+  if (typeof confidence !== "number" || Number.isNaN(confidence)) return "—";
+  return `${Math.round(confidence * 100)}%`;
+}
+
 export default function QualityPage() {
   const router = useRouter();
   const user = useAppStore((s) => s.user);
@@ -138,6 +151,21 @@ export default function QualityPage() {
   const [calModalOpen, setCalModalOpen] = useState(false);
   const [calName, setCalName] = useState("");
   const [calSaving, setCalSaving] = useState(false);
+  const [taskPacks, setTaskPacks] = useState<TaskPackSummary[]>([]);
+  const [selectedPackId, setSelectedPackId] = useState("");
+  const [judgeTaskIds, setJudgeTaskIds] = useState("");
+  const [judgeModel, setJudgeModel] = useState("");
+  const [judgeTemperature, setJudgeTemperature] = useState("0.1");
+  const [judgeRunning, setJudgeRunning] = useState(false);
+  const [judgeActingId, setJudgeActingId] = useState<string | null>(null);
+  const [evaluations, setEvaluations] = useState<LLMEvaluation[]>([]);
+  const [evaluationsLoading, setEvaluationsLoading] = useState(false);
+  const [overrideModalOpen, setOverrideModalOpen] = useState(false);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<LLMEvaluation | null>(null);
+  const [overridePreference, setOverridePreference] = useState("");
+  const [overrideReasoning, setOverrideReasoning] = useState("");
+  const [overrideDimensions, setOverrideDimensions] = useState("");
+  const [overrideSaving, setOverrideSaving] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 900px)");
@@ -180,6 +208,43 @@ export default function QualityPage() {
   useEffect(() => {
     if (sessionId) void load();
   }, [sessionId, load]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    void api
+      .getAllTaskPacks()
+      .then((packs) => {
+        setTaskPacks(packs);
+        if (packs.length > 0) {
+          setSelectedPackId((prev) => prev || packs[0].id);
+        }
+      })
+      .catch((e) => {
+        toast.error(e instanceof Error ? e.message : "Failed to load task packs");
+      });
+  }, [sessionId]);
+
+  const loadEvaluations = useCallback(
+    async (packId: string) => {
+      if (!packId) return;
+      setEvaluationsLoading(true);
+      try {
+        const rows = await judgeApi.listEvaluations(packId);
+        setEvaluations(Array.isArray(rows) ? rows : []);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to load LLM evaluations");
+        setEvaluations([]);
+      } finally {
+        setEvaluationsLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!selectedPackId) return;
+    void loadEvaluations(selectedPackId);
+  }, [selectedPackId, loadEvaluations]);
 
   const leaderboardColumns: Column<QualityLeaderboardEntry>[] = useMemo(
     () => [
@@ -251,10 +316,138 @@ export default function QualityPage() {
     }
   }
 
+  async function handleRunJudge() {
+    if (!selectedPackId) {
+      toast.error("Choose a task pack first");
+      return;
+    }
+    const t = Number(judgeTemperature);
+    if (Number.isNaN(t) || t < 0 || t > 2) {
+      toast.error("Temperature must be between 0 and 2");
+      return;
+    }
+    const taskIds = judgeTaskIds
+      .split(/[\s,]+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    setJudgeRunning(true);
+    try {
+      const res = await judgeApi.evaluate({
+        task_pack_id: selectedPackId,
+        task_ids: taskIds.length ? taskIds : undefined,
+        config: {
+          model: judgeModel.trim() || undefined,
+          temperature: t
+        }
+      });
+      toast.success(
+        `Evaluated ${res.results.length} task${res.results.length === 1 ? "" : "s"} using ${res.judge_model}`
+      );
+      await loadEvaluations(selectedPackId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Judge evaluation failed");
+    } finally {
+      setJudgeRunning(false);
+    }
+  }
+
+  function openOverrideModal(row: LLMEvaluation) {
+    setSelectedEvaluation(row);
+    const human = row.human_override;
+    const auto = row.evaluation_json;
+    const pref =
+      typeof human?.preference === "number"
+        ? String(human.preference)
+        : typeof auto?.preference === "number"
+          ? String(auto.preference)
+          : "";
+    const reason =
+      typeof human?.reasoning === "string"
+        ? human.reasoning
+        : typeof auto?.reasoning === "string"
+          ? auto.reasoning
+          : "";
+    const dims = human?.dimensions ?? auto?.dimensions ?? {};
+    setOverridePreference(pref);
+    setOverrideReasoning(reason);
+    setOverrideDimensions(JSON.stringify(dims, null, 2));
+    setOverrideModalOpen(true);
+  }
+
+  async function handleSaveOverride() {
+    if (!selectedEvaluation) return;
+    const payload: {
+      preference?: number;
+      dimensions?: Record<string, number>;
+      reasoning?: string;
+    } = {};
+    if (overridePreference === "0" || overridePreference === "1") {
+      payload.preference = Number(overridePreference);
+    }
+    if (overrideReasoning.trim()) {
+      payload.reasoning = overrideReasoning.trim();
+    }
+    if (overrideDimensions.trim()) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(overrideDimensions);
+      } catch {
+        toast.error("Dimensions must be valid JSON");
+        return;
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        toast.error("Dimensions must be an object like {\"helpfulness\": 4}");
+        return;
+      }
+      const dims: Record<string, number> = {};
+      for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+        if (typeof v !== "number" || Number.isNaN(v)) {
+          toast.error(`Dimension '${k}' must be numeric`);
+          return;
+        }
+        dims[k] = Math.round(v);
+      }
+      payload.dimensions = dims;
+    }
+    if (!payload.reasoning && payload.preference === undefined && !payload.dimensions) {
+      toast.error("Set at least one override field");
+      return;
+    }
+    setOverrideSaving(true);
+    try {
+      await judgeApi.overrideEvaluation(selectedEvaluation.id, payload);
+      toast.success("Human override saved");
+      setOverrideModalOpen(false);
+      await loadEvaluations(selectedPackId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save override");
+    } finally {
+      setOverrideSaving(false);
+    }
+  }
+
+  async function handleJudgeDecision(evaluationId: string, action: "accept" | "reject") {
+    setJudgeActingId(evaluationId);
+    try {
+      if (action === "accept") {
+        await judgeApi.acceptEvaluation(evaluationId);
+      } else {
+        await judgeApi.rejectEvaluation(evaluationId);
+      }
+      toast.success(action === "accept" ? "Evaluation accepted" : "Evaluation rejected");
+      await loadEvaluations(selectedPackId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update evaluation status");
+    } finally {
+      setJudgeActingId(null);
+    }
+  }
+
   if (!user || !sessionId) return null;
 
   const trust = dashboard?.overall_trust_score ?? 0;
   const timelineData = dashboard?.timeline ?? [];
+  const canRunJudge = user.role === "admin" || user.role === "reviewer";
 
   return (
     <AppShell>
@@ -393,6 +586,167 @@ export default function QualityPage() {
         </Card>
       </div>
 
+      <div style={{ marginTop: 18 }}>
+        <Card title="LLM-as-Judge" subtitle="Run automated evaluations and manage human adjudication">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: narrow ? "1fr" : "2fr 1fr 1fr",
+              gap: 12,
+              marginBottom: 12
+            }}
+          >
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: 13, color: "#64748b" }}>Task pack</span>
+              <select
+                className="input"
+                value={selectedPackId}
+                onChange={(e) => setSelectedPackId(e.target.value)}
+              >
+                <option value="">Select a task pack</option>
+                {taskPacks.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.task_count})
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: 13, color: "#64748b" }}>Model (optional override)</span>
+              <input
+                className="input"
+                placeholder="Uses backend default model"
+                value={judgeModel}
+                onChange={(e) => setJudgeModel(e.target.value)}
+              />
+            </label>
+
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: 13, color: "#64748b" }}>Temperature</span>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                max={2}
+                step={0.1}
+                value={judgeTemperature}
+                onChange={(e) => setJudgeTemperature(e.target.value)}
+              />
+            </label>
+          </div>
+
+          <label style={{ display: "grid", gap: 6, marginBottom: 12 }}>
+            <span style={{ fontSize: 13, color: "#64748b" }}>
+              Task IDs (optional, comma or newline separated)
+            </span>
+            <textarea
+              className="input"
+              rows={2}
+              value={judgeTaskIds}
+              onChange={(e) => setJudgeTaskIds(e.target.value)}
+              placeholder="Leave empty to evaluate all tasks in the selected pack"
+            />
+          </label>
+
+          {!canRunJudge ? (
+            <p style={{ margin: "0 0 12px", color: "#92400e", fontSize: 13 }}>
+              Reviewer or admin role is required to run judge evaluations.
+            </p>
+          ) : null}
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+            <Button
+              variant="primary"
+              loading={judgeRunning}
+              disabled={!selectedPackId || !canRunJudge}
+              onClick={() => void handleRunJudge()}
+            >
+              Run evaluation
+            </Button>
+            <Button
+              variant="secondary"
+              loading={evaluationsLoading}
+              disabled={!selectedPackId}
+              onClick={() => void loadEvaluations(selectedPackId)}
+            >
+              Refresh results
+            </Button>
+          </div>
+
+          {evaluationsLoading ? (
+            <p style={{ color: "#64748b" }}>Loading evaluations…</p>
+          ) : evaluations.length === 0 ? (
+            <EmptyState
+              title="No evaluations yet"
+              description="Run an evaluation for the selected pack to populate judge results."
+            />
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: "left", padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Task</th>
+                    <th style={{ textAlign: "left", padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Model</th>
+                    <th style={{ textAlign: "left", padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Preference</th>
+                    <th style={{ textAlign: "left", padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Confidence</th>
+                    <th style={{ textAlign: "left", padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Status</th>
+                    <th style={{ textAlign: "left", padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Updated</th>
+                    <th style={{ textAlign: "left", padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evaluations.map((row) => {
+                    const prefSource = row.human_override?.preference ?? row.evaluation_json?.preference;
+                    return (
+                      <tr key={row.id} style={{ background: "#fff" }}>
+                        <td style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>{row.task_id}</td>
+                        <td style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>{row.judge_model}</td>
+                        <td style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>{formatPreference(prefSource)}</td>
+                        <td style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>{formatConfidence(row.confidence)}</td>
+                        <td style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>
+                          <Badge variant={statusBadgeVariant(row.status)}>{row.status}</Badge>
+                        </td>
+                        <td style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap" }}>
+                          {new Date(row.updated_at).toLocaleString()}
+                        </td>
+                        <td style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => openOverrideModal(row)}
+                            >
+                              Override
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              disabled={judgeActingId === row.id}
+                              onClick={() => void handleJudgeDecision(row.id, "accept")}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              disabled={judgeActingId === row.id}
+                              onClick={() => void handleJudgeDecision(row.id, "reject")}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+
       <Modal
         isOpen={calModalOpen}
         onClose={() => !calSaving && setCalModalOpen(false)}
@@ -417,6 +771,61 @@ export default function QualityPage() {
             placeholder="e.g. Q2 rubric calibration"
           />
         </label>
+      </Modal>
+
+      <Modal
+        isOpen={overrideModalOpen}
+        onClose={() => !overrideSaving && setOverrideModalOpen(false)}
+        title="Apply human override"
+        footer={
+          <>
+            <Button variant="secondary" disabled={overrideSaving} onClick={() => setOverrideModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" loading={overrideSaving} onClick={() => void handleSaveOverride()}>
+              Save override
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: "grid", gap: 12 }}>
+          <p style={{ margin: 0, color: "#64748b", fontSize: 13 }}>
+            Task: <strong>{selectedEvaluation?.task_id ?? "—"}</strong>
+          </p>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 13, color: "#64748b" }}>Preference</span>
+            <select
+              className="input"
+              value={overridePreference}
+              onChange={(e) => setOverridePreference(e.target.value)}
+            >
+              <option value="">No override</option>
+              <option value="0">A is better</option>
+              <option value="1">B is better</option>
+            </select>
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 13, color: "#64748b" }}>Reasoning</span>
+            <textarea
+              className="input"
+              rows={4}
+              value={overrideReasoning}
+              onChange={(e) => setOverrideReasoning(e.target.value)}
+              placeholder="Optional human adjudication reasoning"
+            />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 13, color: "#64748b" }}>Dimensions JSON</span>
+            <textarea
+              className="input"
+              rows={6}
+              value={overrideDimensions}
+              onChange={(e) => setOverrideDimensions(e.target.value)}
+              placeholder='{"helpfulness": 5, "safety": 4}'
+              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+            />
+          </label>
+        </div>
       </Modal>
     </AppShell>
   );

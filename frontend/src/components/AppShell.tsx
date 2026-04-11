@@ -2,7 +2,7 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { type PropsWithChildren, useState } from "react";
 
 import { useAppStore } from "@/lib/state/store";
@@ -19,6 +19,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     title: "Annotate",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: "⌂" },
+      { href: "/exams", label: "Exams", icon: "▣" },
       { href: "/task/0", label: "Current Task", icon: "✎" }
     ]
   },
@@ -33,6 +34,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     title: "Quality",
     items: [
       { href: "/reviews", label: "Review Queue", icon: "✓" },
+      { href: "/exams/review", label: "Exam Review", icon: "▤", roles: ["admin", "reviewer"] },
       { href: "/quality", label: "Quality Scores", icon: "◎" },
       { href: "/analytics", label: "Analytics", icon: "◔" }
     ]
@@ -49,6 +51,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
 ];
 
 export function AppShell({ children }: PropsWithChildren) {
+  const router = useRouter();
   const pathname = usePathname();
   const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
@@ -61,9 +64,19 @@ export function AppShell({ children }: PropsWithChildren) {
 
   const role = user?.role || "annotator";
 
+  function handleLogout() {
+    logout();
+    router.push("/auth");
+  }
+
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
     if (href.startsWith("/task/")) return pathname.startsWith("/task/");
+    if (href === "/exams") {
+      if (pathname.startsWith("/exams/review")) return false;
+      return pathname === "/exams" || pathname.startsWith("/exams/");
+    }
+    if (href === "/exams/review") return pathname.startsWith("/exams/review");
     return pathname === href;
   }
 
@@ -139,7 +152,7 @@ export function AppShell({ children }: PropsWithChildren) {
             </div>
           </div>
         )}
-        <button className="shell-nav-item" onClick={logout} title="Logout">
+        <button className="shell-nav-item" onClick={handleLogout} title="Logout">
           <span className="shell-nav-icon" aria-hidden="true">⏻</span>
           {!collapsed && <span>Logout</span>}
         </button>

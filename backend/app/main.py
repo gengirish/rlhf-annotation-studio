@@ -12,6 +12,7 @@ from app.routers import (
     auth,
     consensus,
     datasets,
+    exams,
     health,
     iaa,
     inference,
@@ -71,6 +72,7 @@ def create_app() -> FastAPI:
     app.include_router(audit.router, prefix="/api/v1")
     app.include_router(consensus.router, prefix="/api/v1")
     app.include_router(datasets.router, prefix="/api/v1")
+    app.include_router(exams.router, prefix="/api/v1")
     app.include_router(iaa.router, prefix="/api/v1")
     app.include_router(judge.router, prefix="/api/v1")
     app.include_router(quality.router, prefix="/api/v1")

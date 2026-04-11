@@ -61,6 +61,9 @@ export const useAppStore = create<AppState>()(
 
       setAuth: ({ user, token, sessionId }) => {
         localStorage.setItem("rlhf_authToken", token);
+        if (typeof document !== "undefined") {
+          document.cookie = `rlhf_session=1; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+        }
         const prev = get();
         const sessionChanged = prev.sessionId !== sessionId;
         set({
@@ -75,6 +78,9 @@ export const useAppStore = create<AppState>()(
 
       logout: () => {
         localStorage.removeItem("rlhf_authToken");
+        if (typeof document !== "undefined") {
+          document.cookie = "rlhf_session=; Path=/; Max-Age=0; SameSite=Lax";
+        }
         set({
           user: null,
           token: null,

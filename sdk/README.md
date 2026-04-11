@@ -22,6 +22,32 @@ iaa = client.compute_iaa(pack_id="00000000-0000-0000-0000-000000000000")
 export_text = client.export_dataset(dataset_id="00000000-0000-0000-0000-000000000000", version=1, format="dpo")
 ```
 
+### Exams quick start (SDK)
+
+```python
+from rlhf_studio import RLHFClient
+
+client = RLHFClient(token="eyJ...")
+
+# Annotator flow
+exams = client.list_exams()
+attempt = client.start_exam_attempt(exam_id=exams[0]["id"])
+client.save_exam_answer(
+    exam_id=attempt["exam_id"],
+    attempt_id=attempt["id"],
+    task_id="q1",
+    annotation_json={"preference": 0, "justification": "A is safer", "dimensions": {"safety": 5}},
+    time_spent_seconds=12.4,
+)
+submit = client.submit_exam_attempt(exam_id=attempt["exam_id"], attempt_id=attempt["id"])
+result = client.get_exam_attempt_result(exam_id=attempt["exam_id"], attempt_id=attempt["id"])
+
+# Reviewer flow
+pending = client.list_exam_review_attempts()
+if pending:
+    client.release_exam_attempt_review(pending[0]["id"], review_notes="Reviewed and released")
+```
+
 Use a JWT from `login()` instead of an API key:
 
 ```python
@@ -49,10 +75,27 @@ rlhf datasets list
 rlhf datasets export <dataset_uuid> --version 1 --format dpo --output ./output.jsonl
 rlhf iaa compute <task_pack_uuid>
 rlhf judge run <task_pack_uuid> --model gpt-4
+rlhf exams list
+rlhf exams start <exam_uuid>
+rlhf exams save-answer <exam_uuid> <attempt_uuid> q1 --annotation-json "{\"preference\":0,\"dimensions\":{\"safety\":5}}"
+rlhf exams submit <exam_uuid> <attempt_uuid>
+rlhf exams result <exam_uuid> <attempt_uuid>
+rlhf exams review-list
+rlhf exams review-release <attempt_uuid> --review-notes "Approved"
 rlhf quality leaderboard
 rlhf webhooks list
 rlhf api-keys create --name "CI Pipeline"
 ```
+
+## Exams API coverage
+
+The SDK now supports the exam lifecycle endpoints:
+
+- `list_exams()`, `create_exam(...)`
+- `start_exam_attempt(exam_id)`, `get_exam_attempt(exam_id, attempt_id)`
+- `save_exam_answer(...)`, `post_exam_integrity_event(...)`
+- `submit_exam_attempt(exam_id, attempt_id)`, `get_exam_attempt_result(exam_id, attempt_id)`
+- `list_exam_review_attempts()`, `release_exam_attempt_review(...)`
 
 Machine-readable output:
 

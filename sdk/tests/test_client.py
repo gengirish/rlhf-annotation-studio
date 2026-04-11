@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -114,3 +116,94 @@ def test_export_dataset_returns_string_data() -> None:
     client._client = httpx.Client(transport=transport, timeout=30.0, base_url="http://test")
     text = client.export_dataset("ds1", version=3, format="dpo")
     assert text == '{"x":1}\n'
+
+
+def test_exams_flow_endpoints_and_payloads() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/v1/exams":
+            if request.method == "GET":
+                return httpx.Response(200, json=[{"id": "exam-1"}])
+            if request.method == "POST":
+                body = json_bytes(request)
+                assert body["title"] == "Final Exam"
+                assert body["task_pack_id"] == "pack-1"
+                assert body["duration_minutes"] == 30
+                return httpx.Response(200, json={"id": "exam-1", **body})
+        if request.url.path == "/api/v1/exams/exam-1/attempts/start":
+            return httpx.Response(200, json={"id": "attempt-1", "exam_id": "exam-1"})
+        if request.url.path == "/api/v1/exams/exam-1/attempts/attempt-1/answer":
+            body = json_bytes(request)
+            assert request.method == "PUT"
+            assert body["task_id"] == "q1"
+            assert body["annotation_json"]["preference"] == 0
+            return httpx.Response(200, json={"ok": True})
+        if request.url.path == "/api/v1/exams/exam-1/attempts/attempt-1/submit":
+            return httpx.Response(200, json={"status": "submitted"})
+        if request.url.path == "/api/v1/exams/exam-1/attempts/attempt-1/result":
+            return httpx.Response(200, json={"status": "released", "score": 0.9})
+        return httpx.Response(404, json={"detail": "not found"})
+
+    transport = httpx.MockTransport(handler)
+    client = RLHFClient(base_url="http://test")
+    client._client = httpx.Client(transport=transport, timeout=30.0, base_url="http://test")
+
+    exams = client.list_exams()
+    assert exams == [{"id": "exam-1"}]
+
+    created = client.create_exam(
+        "Final Exam",
+        "pack-1",
+        30,
+        pass_threshold=0.8,
+        max_attempts=2,
+        description="Enterprise exam",
+        is_published=True,
+    )
+    assert created["is_published"] is True
+
+    attempt = client.start_exam_attempt("exam-1")
+    assert attempt["id"] == "attempt-1"
+
+    saved = client.save_exam_answer(
+        "exam-1",
+        "attempt-1",
+        "q1",
+        {"preference": 0, "dimensions": {"safety": 5}},
+        time_spent_seconds=14.5,
+    )
+    assert saved["ok"] is True
+
+    submitted = client.submit_exam_attempt("exam-1", "attempt-1")
+    assert submitted["status"] == "submitted"
+
+    result = client.get_exam_attempt_result("exam-1", "attempt-1")
+    assert result["status"] == "released"
+
+
+def test_exam_review_release_endpoint() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/v1/exams/review/attempts":
+            return httpx.Response(200, json=[{"id": "attempt-1"}])
+        if request.url.path == "/api/v1/exams/review/attempts/attempt-1/release":
+            body = json_bytes(request)
+            assert body["release"] is True
+            assert body["review_notes"] == "Approved"
+            return httpx.Response(200, json={"id": "attempt-1", "status": "released"})
+        return httpx.Response(404, json={"detail": "not found"})
+
+    transport = httpx.MockTransport(handler)
+    client = RLHFClient(base_url="http://test")
+    client._client = httpx.Client(transport=transport, timeout=30.0, base_url="http://test")
+
+    rows = client.list_exam_review_attempts()
+    assert rows == [{"id": "attempt-1"}]
+
+    released = client.release_exam_attempt_review("attempt-1", review_notes="Approved")
+    assert released["status"] == "released"
+
+
+def json_bytes(request: httpx.Request) -> dict:
+    raw = request.content.decode("utf-8")
+    parsed = json.loads(raw)
+    assert isinstance(parsed, dict)
+    return parsed

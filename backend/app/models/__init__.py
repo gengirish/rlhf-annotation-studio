@@ -3,6 +3,7 @@ from app.models.api_key import APIKey
 from app.models.audit_log import AuditLog
 from app.models.consensus import ConsensusConfig, ConsensusTask
 from app.models.dataset import Dataset, DatasetVersion
+from app.models.exam import Exam, ExamAttempt, IntegrityEvent
 from app.models.iaa_result import IAAResult
 from app.models.llm_evaluation import LLMEvaluation
 from app.models.organization import Organization
@@ -24,6 +25,9 @@ __all__ = [
     "ConsensusTask",
     "Dataset",
     "DatasetVersion",
+    "Exam",
+    "ExamAttempt",
+    "IntegrityEvent",
     "IAAResult",
     "LLMEvaluation",
     "Organization",

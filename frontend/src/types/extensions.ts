@@ -148,10 +148,48 @@ export interface LLMEvaluation {
   id: string;
   task_pack_id: string;
   task_id: string;
-  model: string;
-  score_json: Record<string, unknown>;
+  judge_model: string;
+  evaluation_json: Record<string, unknown>;
+  confidence: number | null;
+  human_override: Record<string, unknown> | null;
+  status: "pending" | "accepted" | "rejected" | "overridden" | string;
   created_at: string;
-  [key: string]: unknown;
+  updated_at: string;
+}
+
+export interface JudgeConfig {
+  model?: string | null;
+  temperature?: number;
+  prompt_template?: string | null;
+  dimensions?: string[] | null;
+}
+
+export interface JudgeResult {
+  task_id: string;
+  preference: number | null;
+  dimensions: Record<string, number> | null;
+  reasoning: string;
+  confidence: number;
+}
+
+export interface JudgeBatchResponse {
+  task_pack_id: string;
+  results: JudgeResult[];
+  judge_model: string;
+  total_tokens: number;
+  total_latency_ms: number;
+}
+
+export interface JudgeEvaluateRequest {
+  task_pack_id: string;
+  task_ids?: string[] | null;
+  config?: JudgeConfig;
+}
+
+export interface HumanOverrideRequest {
+  preference?: number | null;
+  dimensions?: Record<string, number> | null;
+  reasoning?: string | null;
 }
 
 export interface ConsensusTask {

@@ -1,4 +1,10 @@
 import { ApiError } from "@/lib/api";
+import type {
+  HumanOverrideRequest,
+  JudgeBatchResponse,
+  JudgeEvaluateRequest,
+  LLMEvaluation
+} from "@/types/extensions";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -137,14 +143,27 @@ export const iaaApi = {
 const J = "/api/v1/judge";
 
 export const judgeApi = {
-  evaluate: (body: Record<string, unknown>) =>
-    apiFetch<unknown>(`${J}/evaluate`, { method: "POST", body: JSON.stringify(body) }),
+  evaluate: (body: JudgeEvaluateRequest) =>
+    apiFetch<JudgeBatchResponse>(`${J}/evaluate`, { method: "POST", body: JSON.stringify(body) }),
   listEvaluations: (taskPackId: string) =>
-    apiFetch<unknown[]>(`${J}/evaluations/${encodeURIComponent(taskPackId)}`),
+    apiFetch<LLMEvaluation[]>(`${J}/evaluations/${encodeURIComponent(taskPackId)}`),
   getEvaluation: (taskPackId: string, taskId: string) =>
-    apiFetch<unknown>(
+    apiFetch<LLMEvaluation>(
       `${J}/evaluations/${encodeURIComponent(taskPackId)}/${encodeURIComponent(taskId)}`
-    )
+    ),
+  overrideEvaluation: (evaluationId: string, body: HumanOverrideRequest) =>
+    apiFetch<LLMEvaluation>(`${J}/evaluations/${encodeURIComponent(evaluationId)}/override`, {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  acceptEvaluation: (evaluationId: string) =>
+    apiFetch<LLMEvaluation>(`${J}/evaluations/${encodeURIComponent(evaluationId)}/accept`, {
+      method: "POST"
+    }),
+  rejectEvaluation: (evaluationId: string) =>
+    apiFetch<LLMEvaluation>(`${J}/evaluations/${encodeURIComponent(evaluationId)}/reject`, {
+      method: "POST"
+    })
 };
 
 const C = "/api/v1/consensus";

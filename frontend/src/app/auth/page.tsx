@@ -100,7 +100,14 @@ export default function AuthPage() {
             </>
           ) : null}
           <input className="input" name="email" type="email" placeholder="Email" required />
-          <input className="input" name="password" type="password" placeholder="Password (8+ chars, upper + lower + digit)" minLength={8} required />
+          <input
+            className="input"
+            name="password"
+            type="password"
+            placeholder={mode === "register" ? "Password (8+ chars, upper + lower + digit)" : "Password"}
+            minLength={mode === "register" ? 8 : undefined}
+            required
+          />
           <button className="btn btn-primary" type="submit" disabled={loading}>
             {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
           </button>

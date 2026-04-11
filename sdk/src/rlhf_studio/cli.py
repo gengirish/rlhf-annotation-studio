@@ -330,6 +330,167 @@ def judge_run(ctx: click.Context, pack_id: str, model: str | None) -> None:
     _print_result(row, as_json)
 
 
+@cli.group("exams")
+@click.pass_context
+def exams_group(ctx: click.Context) -> None:
+    """Exam lifecycle and review workflows."""
+    _ = ctx
+
+
+@exams_group.command("list")
+@click.pass_context
+def exams_list(ctx: click.Context) -> None:
+    obj = root_context(ctx)
+    client: RLHFClient = obj["client"]
+    as_json: bool = obj["as_json"]
+    try:
+        rows = client.list_exams()
+    except RLHFAPIError as e:
+        _die(e, as_json)
+    _print_result(rows, as_json)
+
+
+@exams_group.command("start")
+@click.argument("exam_id")
+@click.pass_context
+def exams_start(ctx: click.Context, exam_id: str) -> None:
+    obj = root_context(ctx)
+    client: RLHFClient = obj["client"]
+    as_json: bool = obj["as_json"]
+    try:
+        row = client.start_exam_attempt(exam_id)
+    except RLHFAPIError as e:
+        _die(e, as_json)
+    _print_result(row, as_json)
+
+
+@exams_group.command("attempt")
+@click.argument("exam_id")
+@click.argument("attempt_id")
+@click.pass_context
+def exams_attempt(ctx: click.Context, exam_id: str, attempt_id: str) -> None:
+    obj = root_context(ctx)
+    client: RLHFClient = obj["client"]
+    as_json: bool = obj["as_json"]
+    try:
+        row = client.get_exam_attempt(exam_id, attempt_id)
+    except RLHFAPIError as e:
+        _die(e, as_json)
+    _print_result(row, as_json)
+
+
+@exams_group.command("save-answer")
+@click.argument("exam_id")
+@click.argument("attempt_id")
+@click.argument("task_id")
+@click.option(
+    "--annotation-json",
+    required=True,
+    help="JSON object string for annotation payload, e.g. '{\"preference\":0,\"dimensions\":{\"safety\":5}}'.",
+)
+@click.option("--time-spent-seconds", type=float, default=None)
+@click.pass_context
+def exams_save_answer(
+    ctx: click.Context,
+    exam_id: str,
+    attempt_id: str,
+    task_id: str,
+    annotation_json: str,
+    time_spent_seconds: float | None,
+) -> None:
+    obj = root_context(ctx)
+    client: RLHFClient = obj["client"]
+    as_json: bool = obj["as_json"]
+    try:
+        parsed = json.loads(annotation_json)
+        if not isinstance(parsed, dict):
+            raise ValueError("--annotation-json must decode to a JSON object")
+        row = client.save_exam_answer(
+            exam_id,
+            attempt_id,
+            task_id=task_id,
+            annotation_json=parsed,
+            time_spent_seconds=time_spent_seconds,
+        )
+    except ValueError as e:
+        if as_json:
+            console.print_json(data={"error": True, "detail": str(e)})
+        else:
+            console.print(f"[red]{e}[/red]")
+        sys.exit(1)
+    except RLHFAPIError as e:
+        _die(e, as_json)
+    _print_result(row, as_json)
+
+
+@exams_group.command("submit")
+@click.argument("exam_id")
+@click.argument("attempt_id")
+@click.pass_context
+def exams_submit(ctx: click.Context, exam_id: str, attempt_id: str) -> None:
+    obj = root_context(ctx)
+    client: RLHFClient = obj["client"]
+    as_json: bool = obj["as_json"]
+    try:
+        row = client.submit_exam_attempt(exam_id, attempt_id)
+    except RLHFAPIError as e:
+        _die(e, as_json)
+    _print_result(row, as_json)
+
+
+@exams_group.command("result")
+@click.argument("exam_id")
+@click.argument("attempt_id")
+@click.pass_context
+def exams_result(ctx: click.Context, exam_id: str, attempt_id: str) -> None:
+    obj = root_context(ctx)
+    client: RLHFClient = obj["client"]
+    as_json: bool = obj["as_json"]
+    try:
+        row = client.get_exam_attempt_result(exam_id, attempt_id)
+    except RLHFAPIError as e:
+        _die(e, as_json)
+    _print_result(row, as_json)
+
+
+@exams_group.command("review-list")
+@click.pass_context
+def exams_review_list(ctx: click.Context) -> None:
+    obj = root_context(ctx)
+    client: RLHFClient = obj["client"]
+    as_json: bool = obj["as_json"]
+    try:
+        rows = client.list_exam_review_attempts()
+    except RLHFAPIError as e:
+        _die(e, as_json)
+    _print_result(rows, as_json)
+
+
+@exams_group.command("review-release")
+@click.argument("attempt_id")
+@click.option("--review-notes", default=None)
+@click.option("--release/--no-release", default=True)
+@click.pass_context
+def exams_review_release(
+    ctx: click.Context,
+    attempt_id: str,
+    review_notes: str | None,
+    release: bool,
+) -> None:
+    obj = root_context(ctx)
+    client: RLHFClient = obj["client"]
+    as_json: bool = obj["as_json"]
+    try:
+        row = client.release_exam_attempt_review(
+            attempt_id,
+            release=release,
+            review_notes=review_notes,
+        )
+    except RLHFAPIError as e:
+        _die(e, as_json)
+    _print_result(row, as_json)
+
+
 @cli.group("quality")
 @click.pass_context
 def quality_group(ctx: click.Context) -> None:

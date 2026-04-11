@@ -284,6 +284,108 @@ class RLHFClient:
         r = self._request("POST", "/api/v1/judge/evaluate", json_body=body)
         return r.json()
 
+    # --- Exams ---
+
+    def list_exams(self) -> list[dict[str, Any]]:
+        r = self._request("GET", "/api/v1/exams")
+        data = r.json()
+        return data if isinstance(data, list) else []
+
+    def create_exam(
+        self,
+        title: str,
+        task_pack_id: str,
+        duration_minutes: int,
+        pass_threshold: float = 0.7,
+        max_attempts: int = 1,
+        *,
+        description: str = "",
+        is_published: bool = False,
+    ) -> dict[str, Any]:
+        body = {
+            "title": title,
+            "description": description,
+            "task_pack_id": task_pack_id,
+            "duration_minutes": duration_minutes,
+            "pass_threshold": pass_threshold,
+            "max_attempts": max_attempts,
+            "is_published": is_published,
+        }
+        r = self._request("POST", "/api/v1/exams", json_body=body)
+        return r.json()
+
+    def start_exam_attempt(self, exam_id: str) -> dict[str, Any]:
+        r = self._request("POST", f"/api/v1/exams/{exam_id}/attempts/start")
+        return r.json()
+
+    def get_exam_attempt(self, exam_id: str, attempt_id: str) -> dict[str, Any]:
+        r = self._request("GET", f"/api/v1/exams/{exam_id}/attempts/{attempt_id}")
+        return r.json()
+
+    def save_exam_answer(
+        self,
+        exam_id: str,
+        attempt_id: str,
+        task_id: str,
+        annotation_json: dict[str, Any],
+        *,
+        time_spent_seconds: float | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "task_id": task_id,
+            "annotation_json": annotation_json,
+        }
+        if time_spent_seconds is not None:
+            body["time_spent_seconds"] = time_spent_seconds
+        r = self._request("PUT", f"/api/v1/exams/{exam_id}/attempts/{attempt_id}/answer", json_body=body)
+        return r.json()
+
+    def post_exam_integrity_event(
+        self,
+        exam_id: str,
+        attempt_id: str,
+        event_type: str,
+        severity: str,
+        payload_json: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "event_type": event_type,
+            "severity": severity,
+            "payload_json": payload_json or {},
+        }
+        r = self._request(
+            "POST",
+            f"/api/v1/exams/{exam_id}/attempts/{attempt_id}/integrity-events",
+            json_body=body,
+        )
+        return r.json()
+
+    def submit_exam_attempt(self, exam_id: str, attempt_id: str) -> dict[str, Any]:
+        r = self._request("POST", f"/api/v1/exams/{exam_id}/attempts/{attempt_id}/submit")
+        return r.json()
+
+    def get_exam_attempt_result(self, exam_id: str, attempt_id: str) -> dict[str, Any]:
+        r = self._request("GET", f"/api/v1/exams/{exam_id}/attempts/{attempt_id}/result")
+        return r.json()
+
+    def list_exam_review_attempts(self) -> list[dict[str, Any]]:
+        r = self._request("GET", "/api/v1/exams/review/attempts")
+        data = r.json()
+        return data if isinstance(data, list) else []
+
+    def release_exam_attempt_review(
+        self,
+        attempt_id: str,
+        *,
+        release: bool = True,
+        review_notes: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"release": release}
+        if review_notes is not None:
+            body["review_notes"] = review_notes
+        r = self._request("POST", f"/api/v1/exams/review/attempts/{attempt_id}/release", json_body=body)
+        return r.json()
+
     # --- Quality ---
 
     def get_quality_score(self, annotator_id: str) -> dict[str, Any]:
