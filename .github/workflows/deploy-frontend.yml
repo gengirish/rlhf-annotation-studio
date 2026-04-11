@@ -1,0 +1,79 @@
+name: Deploy Frontend (Vercel)
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "frontend/**"
+      - "vercel.json"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Pre-flight: build + test before deploy
+  # ──────────────────────────────────────────────
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: node-${{ runner.os }}-
+
+      - name: Install, lint, build, test
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+          npm run test
+        working-directory: frontend
+
+  # ──────────────────────────────────────────────
+  # Deploy to Vercel (production)
+  # ──────────────────────────────────────────────
+  deploy:
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build for production
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to production
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployed to: $URL"
+
+      - name: Smoke test
+        run: |
+          DEPLOY_URL="${{ steps.deploy.outputs.url }}"
+          echo "Testing $DEPLOY_URL ..."
+          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "$DEPLOY_URL" || echo "000")
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::Landing page returned HTTP $STATUS"
+          else
+            echo "Landing page OK (200)"
+          fi

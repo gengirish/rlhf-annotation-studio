@@ -1,0 +1,158 @@
+name: PR Preview & Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Change detection for conditional jobs
+  # ──────────────────────────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      migrations: ${{ steps.filter.outputs.migrations }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            migrations:
+              - 'backend/alembic/versions/**'
+
+  # ──────────────────────────────────────────────
+  # Migration review notice
+  # ──────────────────────────────────────────────
+  migration-review:
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: List new migration files
+        id: migrations
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'backend/alembic/versions/*.py')
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$FILES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          COUNT=$(echo "$FILES" | grep -c . || true)
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on PR
+        if: steps.migrations.outputs.count != '0'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: migration-notice
+          message: |
+            ### Database Migration Notice
+
+            This PR includes **${{ steps.migrations.outputs.count }}** new migration(s):
+
+            ```
+            ${{ steps.migrations.outputs.files }}
+            ```
+
+            **Review checklist:**
+            - [ ] Migration is backward-compatible (no column drops/renames without a transition period)
+            - [ ] Downgrade path works correctly
+            - [ ] Indexes are added for new foreign keys
+            - [ ] No data loss on rollback
+
+  # ──────────────────────────────────────────────
+  # Backend diff coverage
+  # ──────────────────────────────────────────────
+  backend-coverage:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('backend/pyproject.toml') }}
+          restore-keys: pip-${{ runner.os }}-
+
+      - name: Install and test with coverage
+        run: |
+          pip install -e ".[dev]" pytest-cov
+          python -m pytest -q \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=json:coverage.json \
+            --cov-fail-under=60
+        working-directory: backend
+
+      - name: Post coverage summary
+        if: always()
+        run: |
+          if [ -f backend/coverage.json ]; then
+            TOTAL=$(python -c "import json; d=json.load(open('backend/coverage.json')); print(f\"{d['totals']['percent_covered']:.1f}%\")")
+            echo "### Backend Coverage: $TOTAL" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ──────────────────────────────────────────────
+  # Frontend preview deploy (Vercel)
+  # ──────────────────────────────────────────────
+  frontend-preview:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        continue-on-error: true
+
+      - name: Build preview
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        continue-on-error: true
+
+      - name: Deploy preview
+        id: preview
+        run: |
+          URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} 2>/dev/null || echo "")
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Comment preview URL
+        if: steps.preview.outputs.url != ''
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: preview-deploy
+          message: |
+            ### Preview Deploy
+
+            **URL:** ${{ steps.preview.outputs.url }}
+            **Commit:** ${{ github.sha }}

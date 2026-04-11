@@ -5,81 +5,215 @@ on:
     branches: [master]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # ──────────────────────────────────────────────
+  # Backend: lint, security audit, test, coverage
+  # ──────────────────────────────────────────────
   backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('backend/pyproject.toml') }}
+          restore-keys: pip-${{ runner.os }}-
+
       - name: Install backend
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]" pytest-cov pip-audit
         working-directory: backend
+
       - name: Audit Python dependencies
         run: pip-audit --progress-spinner=off
         working-directory: backend
         continue-on-error: true
-      - name: Ruff
+
+      - name: Ruff lint
         run: ruff check .
         working-directory: backend
+
+      - name: Ruff format check
+        run: ruff format --check .
+        working-directory: backend
+        continue-on-error: true
+
       - name: Run backend tests
-        run: python -m pytest -q --cov=app --cov-report=term
+        run: |
+          python -m pytest -q \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=60
         working-directory: backend
 
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+
+  # ──────────────────────────────────────────────
+  # Migration safety: verify chain is linear
+  # ──────────────────────────────────────────────
+  migration-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('backend/pyproject.toml') }}
+          restore-keys: pip-${{ runner.os }}-
+
+      - name: Install backend
+        run: pip install -e .
+        working-directory: backend
+
+      - name: Verify Alembic migration chain
+        run: |
+          python -c "
+          from alembic.config import Config
+          from alembic.script import ScriptDirectory
+          cfg = Config('alembic.ini')
+          sd = ScriptDirectory.from_config(cfg)
+          heads = sd.get_heads()
+          if len(heads) != 1:
+              raise SystemExit(f'ERROR: {len(heads)} heads found: {heads}. Merge required.')
+          print(f'Migration chain OK — single head: {heads[0]}')
+          revs = list(sd.walk_revisions())
+          print(f'Total migrations: {len(revs)}')
+          "
+        working-directory: backend
+
+  # ──────────────────────────────────────────────
+  # Frontend: lint + build (type-checking)
+  # ──────────────────────────────────────────────
   frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: node-${{ runner.os }}-
+
       - name: Install frontend
         run: npm ci
         working-directory: frontend
+
       - name: Audit npm dependencies
         run: npm audit --audit-level=high
         working-directory: frontend
         continue-on-error: true
+
       - name: Lint
         run: npm run lint
         working-directory: frontend
+
       - name: Build
         run: npm run build
         working-directory: frontend
 
+      - name: Check bundle size
+        run: |
+          TOTAL=$(du -sk .next/ | cut -f1)
+          echo "Total .next size: ${TOTAL}KB"
+          if [ "$TOTAL" -gt 51200 ]; then
+            echo "::warning::Bundle size ${TOTAL}KB exceeds 50MB threshold"
+          fi
+        working-directory: frontend
+
+  # ──────────────────────────────────────────────
+  # Frontend unit tests (Vitest)
+  # ──────────────────────────────────────────────
   frontend-unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: node-${{ runner.os }}-
+
       - name: Install frontend
         run: npm ci
         working-directory: frontend
+
       - name: Run unit tests
         run: npm run test
         working-directory: frontend
 
+  # ──────────────────────────────────────────────
+  # Frontend E2E tests (Playwright)
+  # ──────────────────────────────────────────────
   frontend-e2e:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: node-${{ runner.os }}-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+
       - name: Install frontend
         run: npm ci
         working-directory: frontend
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
         working-directory: frontend
+
       - name: Build
         run: npm run build
         working-directory: frontend
+
       - name: Start server and run E2E tests
         working-directory: frontend
         env:
@@ -88,9 +222,53 @@ jobs:
           npm start &
           npx wait-on http://localhost:3000
           npx playwright test
-      - name: Upload Playwright HTML report
-        if: failure()
+
+      - name: Upload Playwright report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: frontend/playwright-report/
+
+  # ──────────────────────────────────────────────
+  # Docker image build (validate Dockerfiles)
+  # ──────────────────────────────────────────────
+  docker-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - { context: backend, name: api }
+          - { context: frontend, name: web }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.service.name }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service.context }}
+          push: false
+          tags: rlhf-${{ matrix.service.name }}:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ──────────────────────────────────────────────
+  # Gate: all checks must pass
+  # ──────────────────────────────────────────────
+  ci-pass:
+    if: always()
+    needs: [backend, migration-check, frontend, frontend-unit, frontend-e2e, docker-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs passed
+        run: |
+          RESULTS='${{ toJSON(needs.*.result) }}'
+          echo "Job results: $RESULTS"
+          if echo "$RESULTS" | grep -qE '"failure"|"cancelled"'; then
+            echo "::error::One or more CI jobs failed"
+            exit 1
+          fi
+          echo "All CI checks passed"

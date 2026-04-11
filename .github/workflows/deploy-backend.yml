@@ -1,0 +1,97 @@
+name: Deploy Backend (Fly.io)
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+    inputs:
+      skip_migrations:
+        description: "Skip database migrations"
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Pre-flight: run tests before deploying
+  # ──────────────────────────────────────────────
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('backend/pyproject.toml') }}
+          restore-keys: pip-${{ runner.os }}-
+
+      - name: Install and test
+        run: |
+          pip install -e ".[dev]" pytest-cov
+          ruff check .
+          python -m pytest -q --cov=app --cov-fail-under=60
+        working-directory: backend
+
+  # ──────────────────────────────────────────────
+  # Deploy to Fly.io
+  # ──────────────────────────────────────────────
+  deploy:
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-action/setup-flyctl@master
+
+      - name: Check migration status
+        if: ${{ !inputs.skip_migrations }}
+        run: |
+          echo "Migrations will run automatically via Dockerfile CMD"
+          echo "Checking for new migration files in this push..."
+          MIGRATION_FILES=$(git diff --name-only HEAD~1 HEAD -- 'backend/alembic/versions/*.py' 2>/dev/null || echo "")
+          if [ -n "$MIGRATION_FILES" ]; then
+            echo "::notice::New migrations detected:"
+            echo "$MIGRATION_FILES"
+          else
+            echo "No new migration files in this push"
+          fi
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only --strategy rolling
+        working-directory: backend
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Verify deployment health
+        run: |
+          sleep 10
+          STATUS=$(flyctl status --json | jq -r '.Machines[0].state // "unknown"')
+          echo "Machine state: $STATUS"
+          if [ "$STATUS" != "started" ]; then
+            echo "::warning::Machine not in 'started' state: $STATUS"
+          fi
+
+          HEALTH=$(curl -sf https://rlhf-annotation-api.fly.dev/api/v1/health || echo '{"status":"unreachable"}')
+          echo "Health check: $HEALTH"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Smoke test API
+        run: |
+          echo "Testing core endpoints..."
+          curl -sf https://rlhf-annotation-api.fly.dev/api/v1/health | jq .
+          curl -sf https://rlhf-annotation-api.fly.dev/api/v1/course/overview | jq '.total_modules, .total_sessions'
+          echo "Smoke tests passed"
