@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
 import { Pagination } from "@/components/ui/Pagination";
 import { StatCard } from "@/components/ui/StatCard";
-import api from "@/lib/api";
+import { api } from "@/lib/api";
 import { judgeApi } from "@/lib/api-extensions";
 import { useAppStore } from "@/lib/state/store";
 import type { LLMEvaluation, HumanOverrideRequest } from "@/types/extensions";
