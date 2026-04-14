@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     custom_base_url: str = ""
     custom_default_model: str = ""
 
+    # Gemini (used for LLM-as-Judge exam reviews)
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
+
     # AgentMail (email notifications via rlhf@agentmail.to)
     agentmail_api_key: str | None = None
     agentmail_inbox_id: str | None = None

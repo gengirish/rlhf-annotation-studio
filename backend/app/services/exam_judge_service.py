@@ -1,12 +1,18 @@
-"""LLM-as-Judge reviewer for exam submissions."""
+"""LLM-as-Judge reviewer for exam submissions.
+
+Uses Google Gemini when GEMINI_API_KEY is configured, otherwise falls back
+to the existing OpenAI-compatible inference provider.
+"""
 
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
 from typing import Any
 
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -18,9 +24,68 @@ from app.exam_rubric import (
     build_exam_judge_user_prompt,
 )
 from app.models.exam import Exam, ExamAttempt
-from app.services.llm_judge_service import _judge_chat_completion
+
+log = logging.getLogger(__name__)
 
 _JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*([\s\S]*?)```", re.IGNORECASE)
+_GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+
+async def _gemini_chat_completion(
+    settings: Settings,
+    *,
+    model: str,
+    messages: list[dict[str, str]],
+    max_tokens: int,
+    temperature: float,
+) -> tuple[str, str | None, int | None]:
+    """Call the Gemini REST API with an OpenAI-style messages list."""
+    api_key = settings.gemini_api_key
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is not configured")
+
+    system_parts: list[dict[str, str]] = []
+    contents: list[dict[str, Any]] = []
+    for msg in messages:
+        role = msg["role"]
+        text = msg["content"]
+        if role == "system":
+            system_parts.append({"text": text})
+        else:
+            gemini_role = "model" if role == "assistant" else "user"
+            contents.append({"role": gemini_role, "parts": [{"text": text}]})
+
+    body: dict[str, Any] = {
+        "contents": contents,
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+        },
+    }
+    if system_parts:
+        body["systemInstruction"] = {"parts": system_parts}
+
+    url = _GEMINI_URL.format(model=model)
+    timeout = httpx.Timeout(settings.inference_timeout_seconds)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        resp = await client.post(url, json=body, params={"key": api_key})
+
+    if resp.status_code >= 400:
+        detail = resp.text[:500]
+        raise RuntimeError(f"Gemini API error ({resp.status_code}): {detail}")
+
+    data = resp.json()
+    candidates = data.get("candidates") or []
+    text_out = ""
+    if candidates:
+        parts = candidates[0].get("content", {}).get("parts", [])
+        text_out = "".join(p.get("text", "") for p in parts)
+
+    usage = data.get("usageMetadata") or {}
+    total_tokens = usage.get("totalTokenCount")
+    tokens: int | None = int(total_tokens) if total_tokens is not None else None
+
+    return text_out, model, tokens
 
 
 def _isolate_json(text: str) -> str:
@@ -125,7 +190,18 @@ async def judge_exam_attempt(
     tasks_json = exam.task_pack.tasks_json if isinstance(exam.task_pack.tasks_json, list) else []
     answers = attempt.answers_json if isinstance(attempt.answers_json, dict) else {}
 
-    judge_model_id = (model or "").strip() or settings.active_default_model
+    use_gemini = bool(settings.gemini_api_key)
+    if use_gemini:
+        judge_model_id = (model or "").strip() or settings.gemini_model
+        _chat_fn = _gemini_chat_completion
+        log.info("Exam judge using Gemini model: %s", judge_model_id)
+    else:
+        from app.services.llm_judge_service import _judge_chat_completion
+
+        judge_model_id = (model or "").strip() or settings.active_default_model
+        _chat_fn = _judge_chat_completion
+        log.info("Exam judge using inference provider: %s, model: %s", settings.inference_provider, judge_model_id)
+
     system_msg = build_exam_judge_system_prompt()
 
     per_task: list[dict[str, Any]] = []
@@ -159,7 +235,7 @@ async def judge_exam_attempt(
         ]
 
         t0 = time.perf_counter()
-        raw_text, used_model, tokens = await _judge_chat_completion(
+        raw_text, used_model, tokens = await _chat_fn(
             settings,
             model=judge_model_id,
             messages=messages,
