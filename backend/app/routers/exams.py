@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user, require_admin, require_reviewer_or_admin
 from app.db import get_db
 from app.models import Annotator
+from app.exam_rubric import EXAM_REVIEW_RUBRIC_CRITERIA
 from app.schemas.exam import (
     ExamAnswerSave,
     ExamAttemptRead,
@@ -19,6 +20,7 @@ from app.schemas.exam import (
     ReviewAttemptSummary,
     ReviewReleaseRequest,
     ReviewReleaseResponse,
+    RubricCriterionRead,
 )
 from app.services import exam_service
 
@@ -42,6 +44,11 @@ async def list_exams(
 ) -> list[ExamRead]:
     rows = await exam_service.list_exams(db, current_user)
     return [exam_service.to_exam_read(r) for r in rows]
+
+
+@router.get("/review/rubric-criteria", response_model=list[RubricCriterionRead])
+async def list_rubric_criteria() -> list[RubricCriterionRead]:
+    return [RubricCriterionRead.model_validate(c) for c in EXAM_REVIEW_RUBRIC_CRITERIA]
 
 
 @router.get("/review/attempts", response_model=list[ReviewAttemptSummary])

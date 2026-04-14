@@ -13,6 +13,7 @@ from app.auth import ROLE_ADMIN, ROLE_REVIEWER
 from app.models.annotator import Annotator
 from app.models.exam import Exam, ExamAttempt, IntegrityEvent
 from app.models.task_pack import TaskPack
+from app.exam_rubric import rubric_rows_from_stored
 from app.schemas.exam import (
     ExamAnswerSave,
     ExamAttemptRead,
@@ -26,6 +27,7 @@ from app.schemas.exam import (
     ReviewAttemptSummary,
     ReviewReleaseRequest,
     ReviewReleaseResponse,
+    RubricScoreRow,
 )
 from app.services.gold_scoring_service import GoldScoringService
 
@@ -342,6 +344,9 @@ async def read_result(
         total_gold = gold.total_gold_tasks
         scored = gold.scored_tasks
 
+    rubric_raw = attempt.review_rubric_scores_json if isinstance(attempt.review_rubric_scores_json, dict) else {}
+    rubric = [RubricScoreRow(**r) for r in rubric_rows_from_stored(rubric_raw)]
+
     return ExamResultRead(
         attempt_id=attempt.id,
         exam_id=attempt.exam_id,
@@ -354,6 +359,7 @@ async def read_result(
         review_notes=attempt.review_notes,
         total_gold_tasks=total_gold,
         scored_tasks=scored,
+        rubric=rubric,
     )
 
 
@@ -369,6 +375,8 @@ async def list_review_attempts(db: AsyncSession) -> list[ReviewAttemptSummary]:
     rows = result.all()
     out: list[ReviewAttemptSummary] = []
     for att, ex, ann in rows:
+        raw_rubric = att.review_rubric_scores_json if isinstance(att.review_rubric_scores_json, dict) else {}
+        rubric_scores = {k: v for k, v in raw_rubric.items() if isinstance(v, int) and not isinstance(v, bool)}
         out.append(
             ReviewAttemptSummary(
                 id=att.id,
@@ -385,6 +393,7 @@ async def list_review_attempts(db: AsyncSession) -> list[ReviewAttemptSummary]:
                 integrity_score=float(att.integrity_score),
                 review_notes=att.review_notes,
                 released_at=att.released_at,
+                review_rubric_scores=rubric_scores,
             ),
         )
     return out
@@ -421,6 +430,8 @@ async def release_attempt(
     attempt.released_by = reviewer.id
     if body.review_notes is not None:
         attempt.review_notes = body.review_notes.strip() or None
+    if body.review_rubric_scores is not None:
+        attempt.review_rubric_scores_json = body.review_rubric_scores
 
     await db.commit()
     await db.refresh(attempt)
@@ -444,6 +455,8 @@ def to_submit_response(row: ExamAttempt) -> ExamAttemptSubmitResponse:
 
 
 def to_release_response(row: ExamAttempt) -> ReviewReleaseResponse:
+    raw = row.review_rubric_scores_json if isinstance(row.review_rubric_scores_json, dict) else {}
+    rubric_scores = {k: v for k, v in raw.items() if isinstance(v, int) and not isinstance(v, bool)}
     return ReviewReleaseResponse(
         id=row.id,
         exam_id=row.exam_id,
@@ -451,4 +464,5 @@ def to_release_response(row: ExamAttempt) -> ReviewReleaseResponse:
         released_at=row.released_at,
         released_by=row.released_by,
         review_notes=row.review_notes,
+        review_rubric_scores=rubric_scores,
     )

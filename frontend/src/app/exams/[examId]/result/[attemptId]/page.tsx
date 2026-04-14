@@ -115,6 +115,39 @@ export default function ExamResultPage() {
                   </dd>
                 </div>
               ) : null}
+              {result.rubric && result.rubric.length > 0 ? (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <dt style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, marginBottom: 8 }}>
+                    Structured feedback
+                  </dt>
+                  <dd style={{ margin: 0 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                      {result.rubric.map((row) => (
+                        <div
+                          key={row.id}
+                          style={{
+                            border: "1px solid var(--border)",
+                            borderRadius: 10,
+                            padding: 12,
+                            background: "var(--card, #fff)"
+                          }}
+                        >
+                          <div style={{ fontWeight: 700, fontSize: 15 }}>{row.title}</div>
+                          <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4, lineHeight: 1.45 }}>
+                            {row.description}
+                          </div>
+                          <div style={{ marginTop: 10, fontSize: 15 }}>
+                            <span style={{ color: "var(--muted)", fontSize: 12, fontWeight: 600 }}>Rating</span>
+                            <span style={{ marginLeft: 8 }}>
+                              {row.score != null ? `${row.score} / 5` : "—"}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </dd>
+                </div>
+              ) : null}
               {result.review_notes ? (
                 <div>
                   <dt style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>Review notes</dt>

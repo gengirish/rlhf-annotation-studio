@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 ExamAttemptStatus = Literal["active", "submitted", "timed_out", "released"]
 IntegritySeverity = Literal["info", "warn", "high"]
@@ -68,6 +68,10 @@ class ExamAttemptRead(BaseModel):
     review_notes: str | None
     released_at: datetime | None
     released_by: UUID | None
+    review_rubric_scores: dict[str, int] = Field(
+        default_factory=dict,
+        validation_alias=AliasChoices("review_rubric_scores_json"),
+    )
 
 
 class ExamAnswerSave(BaseModel):
@@ -113,6 +117,19 @@ class ExamAttemptSubmitResponse(BaseModel):
     integrity_score: float
 
 
+class RubricCriterionRead(BaseModel):
+    id: str
+    title: str
+    description: str
+
+
+class RubricScoreRow(BaseModel):
+    id: str
+    title: str
+    description: str
+    score: int | None = None
+
+
 class ExamResultRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -127,6 +144,7 @@ class ExamResultRead(BaseModel):
     review_notes: str | None
     total_gold_tasks: int | None = None
     scored_tasks: int | None = None
+    rubric: list[RubricScoreRow] = Field(default_factory=list)
 
 
 class ReviewAttemptSummary(BaseModel):
@@ -146,11 +164,27 @@ class ReviewAttemptSummary(BaseModel):
     integrity_score: float
     review_notes: str | None
     released_at: datetime | None
+    review_rubric_scores: dict[str, int] = Field(default_factory=dict)
 
 
 class ReviewReleaseRequest(BaseModel):
     release: bool = True
     review_notes: str | None = Field(default=None, max_length=16_384)
+    review_rubric_scores: dict[str, int] | None = None
+
+    @field_validator("review_rubric_scores", mode="before")
+    @classmethod
+    def _validate_rubric_scores(cls, v: object) -> dict[str, int] | None:
+        if v is None:
+            return None
+        if not isinstance(v, dict):
+            raise ValueError("review_rubric_scores must be an object mapping criterion id to 1–5")
+        from app.exam_rubric import normalize_rubric_scores
+
+        try:
+            return normalize_rubric_scores(v)
+        except ValueError as e:
+            raise ValueError(str(e)) from e
 
 
 class ReviewReleaseResponse(BaseModel):
@@ -162,3 +196,4 @@ class ReviewReleaseResponse(BaseModel):
     released_at: datetime | None
     released_by: UUID | None
     review_notes: str | None
+    review_rubric_scores: dict[str, int] = Field(default_factory=dict)

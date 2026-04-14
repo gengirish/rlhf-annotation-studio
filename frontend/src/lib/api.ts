@@ -377,6 +377,8 @@ export const api = {
     request<ExamResultRead>(
       `/api/v1/exams/${encodeURIComponent(examId)}/attempts/${encodeURIComponent(attemptId)}/result`
     ),
+  getRubricCriteria: () =>
+    request<Array<{ id: string; title: string; description: string }>>("/api/v1/exams/review/rubric-criteria"),
   getExamReviewAttempts: () => request<ReviewAttemptSummary[]>("/api/v1/exams/review/attempts"),
   releaseExamAttemptReview: (attemptId: string, body: ReviewReleaseRequest) =>
     request<ReviewReleaseResponse>(
@@ -472,6 +474,13 @@ export interface ExamAttemptSubmitResponse {
   integrity_score: number;
 }
 
+export interface RubricScoreRow {
+  id: string;
+  title: string;
+  description: string;
+  score: number | null;
+}
+
 export interface ExamResultRead {
   attempt_id: string;
   exam_id: string;
@@ -484,6 +493,7 @@ export interface ExamResultRead {
   review_notes: string | null;
   total_gold_tasks: number | null;
   scored_tasks: number | null;
+  rubric?: RubricScoreRow[];
 }
 
 export interface ReviewAttemptSummary {
@@ -501,11 +511,13 @@ export interface ReviewAttemptSummary {
   integrity_score: number;
   review_notes: string | null;
   released_at: string | null;
+  review_rubric_scores?: Record<string, number>;
 }
 
 export interface ReviewReleaseRequest {
   release: boolean;
   review_notes?: string | null;
+  review_rubric_scores?: Record<string, number> | null;
 }
 
 export interface ReviewReleaseResponse {
@@ -515,4 +527,5 @@ export interface ReviewReleaseResponse {
   released_at: string | null;
   released_by: string | null;
   review_notes: string | null;
+  review_rubric_scores?: Record<string, number>;
 }

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { ExamReviewRubric } from "@/components/ExamReviewRubric";
 import { api, ApiError, type ReviewAttemptSummary } from "@/lib/api";
 import { useAppStore, useHasHydrated } from "@/lib/state/store";
 
@@ -17,6 +18,7 @@ export default function ExamReviewPage() {
   const [rows, setRows] = useState<ReviewAttemptSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [notesById, setNotesById] = useState<Record<string, string>>({});
+  const [rubricByAttemptId, setRubricByAttemptId] = useState<Record<string, Record<string, number | undefined>>>({});
   const [actingId, setActingId] = useState<string | null>(null);
 
   const allowed = user?.role === "admin" || user?.role === "reviewer";
@@ -31,7 +33,20 @@ export default function ExamReviewPage() {
     setLoading(true);
     try {
       const data = await api.getExamReviewAttempts();
-      setRows(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setRows(list);
+      setRubricByAttemptId((prev) => {
+        const next = { ...prev };
+        for (const r of list) {
+          const fromServer = r.review_rubric_scores;
+          if (fromServer && Object.keys(fromServer).length > 0) {
+            next[r.id] = { ...fromServer };
+          } else if (next[r.id] === undefined) {
+            next[r.id] = {};
+          }
+        }
+        return next;
+      });
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Failed to load review queue");
       setRows([]);
@@ -46,12 +61,24 @@ export default function ExamReviewPage() {
     }
   }, [user, sessionId, allowed, load]);
 
+  function rubricPayloadFor(attemptId: string): Record<string, number> | undefined {
+    const row = rubricByAttemptId[attemptId];
+    if (!row) return undefined;
+    const out: Record<string, number> = {};
+    for (const [k, v] of Object.entries(row)) {
+      if (typeof v === "number" && v >= 1 && v <= 5) out[k] = v;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }
+
   async function release(attemptId: string) {
     setActingId(attemptId);
     try {
+      const rubric = rubricPayloadFor(attemptId);
       await api.releaseExamAttemptReview(attemptId, {
         release: true,
-        review_notes: notesById[attemptId]?.trim() || null
+        review_notes: notesById[attemptId]?.trim() || null,
+        review_rubric_scores: rubric ?? null
       });
       toast.success("Attempt released");
       await load();
@@ -113,7 +140,7 @@ export default function ExamReviewPage() {
                   <th style={{ padding: 12 }}>Status</th>
                   <th style={{ padding: 12 }}>Score</th>
                   <th style={{ padding: 12 }}>Integrity</th>
-                  <th style={{ padding: 12, minWidth: 200 }}>Reviewer notes</th>
+                  <th style={{ padding: 12, minWidth: 280 }}>Structured feedback & notes</th>
                   <th style={{ padding: 12 }}>Action</th>
                 </tr>
               </thead>
@@ -133,19 +160,31 @@ export default function ExamReviewPage() {
                     <td style={{ padding: 12 }}>{r.score != null ? `${(r.score * 100).toFixed(0)}%` : "—"}</td>
                     <td style={{ padding: 12 }}>{(r.integrity_score * 100).toFixed(0)}%</td>
                     <td style={{ padding: 12 }}>
-                      <textarea
-                        style={{
-                          width: "100%",
-                          minHeight: 64,
-                          padding: 8,
-                          borderRadius: 8,
-                          border: "1px solid var(--border)",
-                          font: "inherit"
-                        }}
-                        placeholder="Optional notes shown to the annotator…"
-                        value={notesById[r.id] ?? ""}
-                        onChange={(e) => setNotesById((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                      />
+                      <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 440 }}>
+                        <ExamReviewRubric
+                          disabled={Boolean(r.released_at)}
+                          value={rubricByAttemptId[r.id] ?? {}}
+                          onChange={(criterionId, score) =>
+                            setRubricByAttemptId((prev) => ({
+                              ...prev,
+                              [r.id]: { ...(prev[r.id] ?? {}), [criterionId]: score }
+                            }))
+                          }
+                        />
+                        <textarea
+                          style={{
+                            width: "100%",
+                            minHeight: 64,
+                            padding: 8,
+                            borderRadius: 8,
+                            border: "1px solid var(--border)",
+                            font: "inherit"
+                          }}
+                          placeholder="Optional notes shown to the annotator…"
+                          value={notesById[r.id] ?? ""}
+                          onChange={(e) => setNotesById((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                        />
+                      </div>
                     </td>
                     <td style={{ padding: 12 }}>
                       <button
