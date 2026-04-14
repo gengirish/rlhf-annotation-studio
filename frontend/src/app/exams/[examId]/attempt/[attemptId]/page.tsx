@@ -12,46 +12,29 @@ import type { TaskItem } from "@/types";
 
 const INTEGRITY_THROTTLE_MS = 5000;
 
-function parseDimensionsJson(raw: string): Record<string, number> | null {
-  const t = raw.trim();
-  if (!t) return {};
-  try {
-    const v = JSON.parse(t) as unknown;
-    if (typeof v !== "object" || v === null || Array.isArray(v)) return null;
-    const out: Record<string, number> = {};
-    for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
-      if (typeof val === "number" && Number.isFinite(val)) out[k] = val;
-      else return null;
-    }
-    return out;
-  } catch {
-    return null;
-  }
-}
+const JUSTIFICATION_MIN_CHARS = 10;
 
 function annotationFromStored(entry: unknown): {
   preference: number | "";
   justification: string;
-  dimensionsJson: string;
+  dimensions: Record<string, number>;
 } {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-    return { preference: "", justification: "", dimensionsJson: "{}" };
+    return { preference: "", justification: "", dimensions: {} };
   }
   const o = entry as Record<string, unknown>;
   const pref = o.preference;
   const preference =
     typeof pref === "number" && Number.isFinite(pref) ? pref : ("" as const);
   const justification = typeof o.justification === "string" ? o.justification : "";
-  const dims = o.dimensions;
-  let dimensionsJson = "{}";
-  if (dims && typeof dims === "object" && !Array.isArray(dims)) {
-    try {
-      dimensionsJson = JSON.stringify(dims, null, 2);
-    } catch {
-      dimensionsJson = "{}";
+  const dims: Record<string, number> = {};
+  const rawDims = o.dimensions;
+  if (rawDims && typeof rawDims === "object" && !Array.isArray(rawDims)) {
+    for (const [k, val] of Object.entries(rawDims as Record<string, unknown>)) {
+      if (typeof val === "number" && Number.isFinite(val)) dims[k] = val;
     }
   }
-  return { preference: preference === "" ? "" : preference, justification, dimensionsJson };
+  return { preference: preference === "" ? "" : preference, justification, dimensions: dims };
 }
 
 function buildAnnotationJson(
@@ -85,7 +68,7 @@ export default function ExamAttemptPage() {
   const [taskIndex, setTaskIndex] = useState(0);
   const [preference, setPreference] = useState<number | "">("");
   const [justification, setJustification] = useState("");
-  const [dimensionsJson, setDimensionsJson] = useState("{}");
+  const [dimensionScores, setDimensionScores] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -230,14 +213,22 @@ export default function ExamAttemptPage() {
     const parsed = annotationFromStored(raw);
     setPreference(parsed.preference);
     setJustification(parsed.justification);
-    setDimensionsJson(parsed.dimensionsJson);
+    setDimensionScores(parsed.dimensions);
   }, [task, attempt?.answers_json]);
 
   async function saveCurrentAnswer() {
     if (!task || !attempt || attempt.status !== "active") return;
-    const dims = parseDimensionsJson(dimensionsJson);
-    if (dims === null) {
-      toast.error("Dimensions must be a JSON object with numeric values only.");
+    const dims: Record<string, number> = {};
+    for (const d of task.dimensions) {
+      const s = dimensionScores[d.name];
+      if (s === undefined) {
+        toast.error("Rate all metrics before saving.");
+        return;
+      }
+      dims[d.name] = s;
+    }
+    if (justification.trim().length < JUSTIFICATION_MIN_CHARS) {
+      toast.error(`Add at least ${JUSTIFICATION_MIN_CHARS} characters in justification.`);
       return;
     }
     const annotation = buildAnnotationJson(task, preference, justification, dims);
@@ -396,7 +387,7 @@ export default function ExamAttemptPage() {
             </div>
 
             {task.type === "comparison" ? (
-              <div style={{ marginBottom: 12 }}>
+              <div style={{ marginBottom: 16 }}>
                 <div style={{ fontWeight: 600, marginBottom: 8 }}>Preference (optional)</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   <button
@@ -429,8 +420,50 @@ export default function ExamAttemptPage() {
                 </div>
               </div>
             ) : (
-              <p style={{ fontSize: 13, color: "var(--muted)" }}>
-                For {task.type} tasks, use the dimensions JSON below; add free-form notes in justification if needed.
+              <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
+                Rate each metric below, then add your justification.
+              </p>
+            )}
+
+            {task.dimensions.length > 0 ? (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontWeight: 600, marginBottom: 12 }}>Metrics</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {task.dimensions.map((dimension) => (
+                    <div key={dimension.name}>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: "var(--foreground, #1e293b)" }}>{dimension.name}</div>
+                      {dimension.description ? (
+                        <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4, lineHeight: 1.45 }}>{dimension.description}</div>
+                      ) : null}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                        {Array.from({ length: dimension.scale }).map((_, idx) => {
+                          const score = idx + 1;
+                          const selected = dimensionScores[dimension.name] === score;
+                          return (
+                            <button
+                              key={score}
+                              type="button"
+                              className={`btn ${selected ? "btn-primary" : ""}`}
+                              disabled={readOnly}
+                              onClick={() =>
+                                setDimensionScores((prev) => ({
+                                  ...prev,
+                                  [dimension.name]: score
+                                }))
+                              }
+                            >
+                              {score}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
+                This task has no rating dimensions configured in the pack.
               </p>
             )}
 
@@ -441,28 +474,7 @@ export default function ExamAttemptPage() {
               value={justification}
               disabled={readOnly}
               onChange={(e) => setJustification(e.target.value)}
-              placeholder="Explain your ratings or preference…"
-            />
-
-            <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>
-              Dimensions (JSON object: name → number)
-            </label>
-            <textarea
-              className="card"
-              style={{
-                width: "100%",
-                minHeight: 100,
-                padding: 12,
-                marginBottom: 14,
-                fontFamily: "ui-monospace, monospace",
-                fontSize: 13,
-                border: "1px solid var(--border)",
-                borderRadius: 8
-              }}
-              value={dimensionsJson}
-              disabled={readOnly}
-              onChange={(e) => setDimensionsJson(e.target.value)}
-              placeholder={'{\n  "clarity": 3\n}'}
+              placeholder={`Write justification (minimum ${JUSTIFICATION_MIN_CHARS} chars)`}
             />
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>

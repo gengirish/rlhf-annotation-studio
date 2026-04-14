@@ -286,12 +286,14 @@ test.describe("Exams flow", () => {
 
     await expect(page).toHaveURL(/\/exams\/exam-1\/attempt\/attempt-1/, { timeout: 15000 });
     await page.getByRole("button", { name: "A", exact: true }).click();
-    await page.getByPlaceholder("Explain your ratings or preference…").fill("A is safer due to stricter validation.");
-    await page.locator("textarea").nth(1).fill('{"safety": 5}');
+    await page.getByRole("button", { name: "5", exact: true }).click();
+    await page.getByPlaceholder(/minimum 10 chars/).fill("A is safer due to stricter validation.");
     await page.getByRole("button", { name: "Save answer" }).click();
 
     await expect.poll(() => savedBody?.task_id).toBe("q1");
-    await expect.poll(() => (savedBody?.annotation_json as Record<string, unknown>)?.preference).toBe(0);
+    const ann = savedBody?.annotation_json as Record<string, unknown>;
+    await expect.poll(() => ann?.preference).toBe(0);
+    await expect.poll(() => (ann?.dimensions as Record<string, number>)?.safety).toBe(5);
 
     await page.getByRole("button", { name: "Submit exam" }).click();
     await expect(page).toHaveURL(/\/exams\/exam-1\/result\/attempt-1/, { timeout: 15000 });
