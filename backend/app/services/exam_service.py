@@ -14,6 +14,11 @@ from app.models.annotator import Annotator
 from app.models.exam import Exam, ExamAttempt, IntegrityEvent
 from app.models.task_pack import TaskPack
 from app.exam_rubric import rubric_rows_from_stored
+from app.services.email_service import (
+    send_exam_released_notification,
+    send_exam_submitted_notification,
+    send_review_queue_notification,
+)
 from app.schemas.exam import (
     ExamAnswerSave,
     ExamAttemptRead,
@@ -283,6 +288,37 @@ async def log_integrity_event(
     return IntegrityEventRead.model_validate(ev)
 
 
+def _notify_reviewers_of_submission(
+    db: AsyncSession,
+    annotator_name: str,
+    exam_title: str,
+) -> None:
+    """Best-effort notification to admins/reviewers. Sync call, failures logged."""
+    import asyncio
+
+    async def _inner() -> None:
+        result = await db.execute(
+            select(Annotator).where(Annotator.role.in_((ROLE_ADMIN, ROLE_REVIEWER))),
+        )
+        reviewers = list(result.scalars().all())
+        for rev in reviewers:
+            try:
+                send_review_queue_notification(
+                    reviewer_email=rev.email,
+                    reviewer_name=rev.name,
+                    annotator_name=annotator_name,
+                    exam_title=exam_title,
+                )
+            except Exception:
+                pass
+
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_inner())
+    except RuntimeError:
+        pass
+
+
 async def submit_attempt(
     db: AsyncSession,
     exam_id: UUID,
@@ -312,6 +348,19 @@ async def submit_attempt(
     _apply_gold_to_attempt(attempt, exam)
     await db.commit()
     await db.refresh(attempt)
+
+    try:
+        send_exam_submitted_notification(
+            annotator_email=user.email,
+            annotator_name=user.name,
+            exam_title=exam.title,
+            score=attempt.score,
+            passed=attempt.passed,
+        )
+        _notify_reviewers_of_submission(db, user.name, exam.title)
+    except Exception:
+        pass
+
     return attempt
 
 
@@ -435,6 +484,26 @@ async def release_attempt(
 
     await db.commit()
     await db.refresh(attempt)
+
+    try:
+        ann_result = await db.execute(
+            select(Annotator).where(Annotator.id == attempt.annotator_id),
+        )
+        ann = ann_result.scalar_one_or_none()
+        exam = attempt.exam
+        exam_title = exam.title if exam else "Exam"
+        if ann:
+            send_exam_released_notification(
+                annotator_email=ann.email,
+                annotator_name=ann.name,
+                exam_title=exam_title,
+                score=attempt.score,
+                passed=attempt.passed,
+                review_notes=attempt.review_notes,
+            )
+    except Exception:
+        pass
+
     return attempt
 
 

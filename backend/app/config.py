@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     custom_base_url: str = ""
     custom_default_model: str = ""
 
+    # AgentMail (email notifications via rlhf@agentmail.to)
+    agentmail_api_key: str | None = None
+    agentmail_inbox_id: str | None = None
+    agentmail_enabled: bool = True
+
     @property
     def active_api_token(self) -> str | None:
         if self.inference_provider == "nvidia":
