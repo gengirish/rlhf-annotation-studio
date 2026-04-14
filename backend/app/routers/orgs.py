@@ -9,6 +9,11 @@ from app.db import get_db
 from app.models import Annotator, Organization, ReviewAssignment
 from app.schemas.annotator import AnnotatorRead
 from app.schemas.organization import OrgCreate, OrgMemberAdd, OrgRead, OrgUpdate, RoleUpdateRequest
+from app.services.email_service import (
+    send_org_created_notification,
+    send_team_member_added_admin_notification,
+    send_team_member_added_notification,
+)
 
 router = APIRouter(prefix="/orgs", tags=["orgs"])
 
@@ -49,6 +54,17 @@ async def create_org(
     await db.commit()
     await db.refresh(org)
     await db.refresh(current_user)
+
+    try:
+        send_org_created_notification(
+            creator_email=current_user.email,
+            creator_name=current_user.name,
+            org_name=org.name,
+            org_slug=org.slug,
+        )
+    except Exception:
+        pass
+
     return OrgRead.model_validate(org)
 
 
@@ -136,6 +152,33 @@ async def add_org_member(
     member.org_id = org_id
     await db.commit()
     await db.refresh(member)
+
+    org = await _get_org_or_404(db, org_id)
+    try:
+        send_team_member_added_notification(
+            member_email=member.email,
+            member_name=member.name,
+            org_name=org.name,
+            added_by_name=current_user.name,
+        )
+        admins = await db.execute(
+            select(Annotator).where(
+                Annotator.org_id == org_id,
+                Annotator.role == ROLE_ADMIN,
+                Annotator.id != member.id,
+            )
+        )
+        for admin in admins.scalars().all():
+            send_team_member_added_admin_notification(
+                admin_email=admin.email,
+                admin_name=admin.name,
+                member_name=member.name,
+                member_email=member.email,
+                org_name=org.name,
+            )
+    except Exception:
+        pass
+
     return AnnotatorRead.model_validate(member)
 
 

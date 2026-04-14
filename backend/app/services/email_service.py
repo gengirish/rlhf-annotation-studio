@@ -150,3 +150,74 @@ def send_review_queue_notification(
         "<p style='color:#64748b;font-size:13px;'>— RLHF Annotation Studio</p>"
     )
     return send_email(reviewer_email, subject, text, html)
+
+
+def send_org_created_notification(
+    creator_email: str,
+    creator_name: str,
+    org_name: str,
+    org_slug: str,
+) -> bool:
+    subject = f"Organization created: {org_name}"
+    text = (
+        f"Hi {creator_name},\n\n"
+        f"Your organization \"{org_name}\" (slug: {org_slug}) has been created.\n"
+        "You have been assigned the admin role.\n\n"
+        "You can now invite team members from the Settings page.\n\n"
+        "— RLHF Annotation Studio"
+    )
+    html = (
+        f"<p>Hi {creator_name},</p>"
+        f'<p>Your organization <strong>"{org_name}"</strong> '
+        f"(slug: <code>{org_slug}</code>) has been created.</p>"
+        "<p>You have been assigned the <strong>admin</strong> role.</p>"
+        "<p>You can now invite team members from the Settings page.</p>"
+        "<p style='color:#64748b;font-size:13px;'>— RLHF Annotation Studio</p>"
+    )
+    return send_email(creator_email, subject, text, html)
+
+
+def send_team_member_added_notification(
+    member_email: str,
+    member_name: str,
+    org_name: str,
+    added_by_name: str,
+) -> bool:
+    subject = f"You've been added to {org_name}"
+    text = (
+        f"Hi {member_name},\n\n"
+        f"{added_by_name} added you to the organization \"{org_name}\" "
+        "on RLHF Annotation Studio.\n\n"
+        "Log in to access your team's tasks, exams, and review workflows.\n\n"
+        "— RLHF Annotation Studio"
+    )
+    html = (
+        f"<p>Hi {member_name},</p>"
+        f"<p><strong>{added_by_name}</strong> added you to the organization "
+        f'<strong>"{org_name}"</strong> on RLHF Annotation Studio.</p>'
+        "<p>Log in to access your team's tasks, exams, and review workflows.</p>"
+        "<p style='color:#64748b;font-size:13px;'>— RLHF Annotation Studio</p>"
+    )
+    return send_email(member_email, subject, text, html)
+
+
+def send_team_member_added_admin_notification(
+    admin_email: str,
+    admin_name: str,
+    member_name: str,
+    member_email: str,
+    org_name: str,
+) -> bool:
+    subject = f"New team member joined {org_name}: {member_name}"
+    text = (
+        f"Hi {admin_name},\n\n"
+        f"{member_name} ({member_email}) has been added to \"{org_name}\".\n\n"
+        "— RLHF Annotation Studio"
+    )
+    html = (
+        f"<p>Hi {admin_name},</p>"
+        f"<p><strong>{member_name}</strong> ({member_email}) has been added to "
+        f'<strong>"{org_name}"</strong>.</p>'
+        "<p style='color:#64748b;font-size:13px;'>— RLHF Annotation Studio</p>"
+    )
+    return send_email(admin_email, subject, text, html)
