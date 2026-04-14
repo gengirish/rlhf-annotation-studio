@@ -51,6 +51,13 @@ class EvaluationRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class EvaluationListResponse(BaseModel):
+    items: list[EvaluationRead]
+    total: int
+    limit: int
+    offset: int
+
+
 class HumanOverrideRequest(BaseModel):
     preference: int | None = None
     dimensions: dict[str, int] | None = None

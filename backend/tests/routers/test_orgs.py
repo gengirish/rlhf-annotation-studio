@@ -208,6 +208,8 @@ def test_add_member_success(fake_db: FakeOrgDB, authed_client) -> None:
         phone=None,
         role="annotator",
         org_id=None,
+        is_active=True,
+        deactivated_at=None,
         created_at=datetime.now(UTC),
     )
     fake_db.rows[invitee.id] = invitee
@@ -244,6 +246,8 @@ def test_update_role_admin_success(fake_db: FakeOrgDB, authed_client) -> None:
         phone=None,
         role="annotator",
         org_id=org.id,
+        is_active=True,
+        deactivated_at=None,
         created_at=datetime.now(UTC),
     )
     fake_db.rows[member.id] = member
@@ -268,6 +272,8 @@ def test_update_role_non_admin_returns_403(fake_db: FakeOrgDB, authed_client) ->
         phone=None,
         role="annotator",
         org_id=org.id,
+        is_active=True,
+        deactivated_at=None,
         created_at=datetime.now(UTC),
     )
     fake_db.rows[member.id] = member
@@ -277,4 +283,116 @@ def test_update_role_non_admin_returns_403(fake_db: FakeOrgDB, authed_client) ->
         f"{API_ORGS}/{org.id}/members/{member.id}/role",
         json={"role": "reviewer"},
     )
+    assert resp.status_code == 403
+
+
+def test_remove_member_admin_success(fake_db: FakeOrgDB, authed_client) -> None:
+    org = make_org_row()
+    fake_db.rows[org.id] = org
+    member = SimpleNamespace(
+        id=uuid4(),
+        name="To Remove",
+        email="remove-me@example.com",
+        phone=None,
+        role="annotator",
+        org_id=org.id,
+        is_active=True,
+        deactivated_at=None,
+        created_at=datetime.now(UTC),
+    )
+    fake_db.rows[member.id] = member
+
+    client = authed_client(role=ROLE_ADMIN, org_id=org.id)
+    resp = client.delete(f"{API_ORGS}/{org.id}/members/{member.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["is_active"] is False
+    assert data["org_id"] is None
+    assert member.is_active is False
+    assert member.org_id is None
+    assert member.deactivated_at is not None
+
+
+def test_remove_member_non_admin_returns_403(fake_db: FakeOrgDB, authed_client) -> None:
+    org = make_org_row()
+    fake_db.rows[org.id] = org
+    member = SimpleNamespace(
+        id=uuid4(),
+        name="Target",
+        email="target@example.com",
+        phone=None,
+        role="annotator",
+        org_id=org.id,
+        is_active=True,
+        deactivated_at=None,
+        created_at=datetime.now(UTC),
+    )
+    fake_db.rows[member.id] = member
+
+    client = authed_client(role="annotator", org_id=org.id)
+    resp = client.delete(f"{API_ORGS}/{org.id}/members/{member.id}")
+    assert resp.status_code == 403
+
+
+def test_remove_member_self_returns_400(fake_db: FakeOrgDB, authed_client, app) -> None:
+    """Admin cannot remove themselves from the org."""
+    from app.auth import get_current_user
+
+    org = make_org_row()
+    fake_db.rows[org.id] = org
+
+    admin_user = SimpleNamespace(
+        id=uuid4(),
+        name="Admin Self",
+        email="admin-self@example.com",
+        phone=None,
+        role=ROLE_ADMIN,
+        org_id=org.id,
+        is_active=True,
+        deactivated_at=None,
+        created_at=datetime.now(UTC),
+    )
+    fake_db.rows[admin_user.id] = admin_user
+
+    async def override_self():
+        return admin_user
+
+    app.dependency_overrides[get_current_user] = override_self
+    from fastapi.testclient import TestClient
+
+    client = TestClient(app)
+    resp = client.delete(f"{API_ORGS}/{org.id}/members/{admin_user.id}")
+    assert resp.status_code == 400
+    assert "yourself" in resp.json()["detail"].lower()
+
+
+def test_remove_member_not_found_returns_404(fake_db: FakeOrgDB, authed_client) -> None:
+    org = make_org_row()
+    fake_db.rows[org.id] = org
+    missing_id = uuid4()
+
+    client = authed_client(role=ROLE_ADMIN, org_id=org.id)
+    resp = client.delete(f"{API_ORGS}/{org.id}/members/{missing_id}")
+    assert resp.status_code == 404
+
+
+def test_remove_member_wrong_org_returns_403(fake_db: FakeOrgDB, authed_client) -> None:
+    org = make_org_row()
+    fake_db.rows[org.id] = org
+    other_org_id = uuid4()
+    member = SimpleNamespace(
+        id=uuid4(),
+        name="Other Org Member",
+        email="other-org@example.com",
+        phone=None,
+        role="annotator",
+        org_id=other_org_id,
+        is_active=True,
+        deactivated_at=None,
+        created_at=datetime.now(UTC),
+    )
+    fake_db.rows[member.id] = member
+
+    client = authed_client(role=ROLE_ADMIN, org_id=org.id)
+    resp = client.delete(f"{API_ORGS}/{org.id}/members/{member.id}")
     assert resp.status_code == 403

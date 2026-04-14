@@ -34,6 +34,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     title: "Quality",
     items: [
       { href: "/reviews", label: "Review Queue", icon: "✓" },
+      { href: "/auto-reviews", label: "Auto Reviews", icon: "⚡", roles: ["admin", "reviewer"] },
       { href: "/exams/review", label: "Exam Review", icon: "▤", roles: ["admin", "reviewer"] },
       { href: "/quality", label: "Quality Scores", icon: "◎" },
       { href: "/analytics", label: "Analytics", icon: "◔" }
@@ -77,6 +78,7 @@ export function AppShell({ children }: PropsWithChildren) {
       return pathname === "/exams" || pathname.startsWith("/exams/");
     }
     if (href === "/exams/review") return pathname.startsWith("/exams/review");
+    if (href === "/auto-reviews") return pathname.startsWith("/auto-reviews");
     return pathname === href;
   }
 

@@ -91,6 +91,11 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)) -> AuthR
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
+    if not getattr(annotator, "is_active", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account has been deactivated",
+        )
 
     ws_result = await db.execute(
         select(WorkSession)

@@ -158,6 +158,8 @@ def make_annotator_row(*, role: str = "annotator", org_id: UUID | None = None) -
         name="Test User",
         email="test@example.com",
         phone=None,
+        is_active=True,
+        deactivated_at=None,
         created_at=datetime.now(UTC),
     )
 

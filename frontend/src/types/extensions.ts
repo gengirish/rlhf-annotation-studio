@@ -186,6 +186,13 @@ export interface JudgeEvaluateRequest {
   config?: JudgeConfig;
 }
 
+export interface EvaluationListResponse {
+  items: LLMEvaluation[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface HumanOverrideRequest {
   preference?: number | null;
   dimensions?: Record<string, number> | null;

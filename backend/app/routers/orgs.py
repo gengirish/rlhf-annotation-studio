@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -119,7 +120,9 @@ async def list_org_members(
     _require_org_member(current_user, org_id)
 
     result = await db.execute(
-        select(Annotator).where(Annotator.org_id == org_id).order_by(Annotator.name)
+        select(Annotator)
+        .where(Annotator.org_id == org_id, Annotator.is_active.is_(True))
+        .order_by(Annotator.name)
     )
     members = result.scalars().all()
     return [AnnotatorRead.model_validate(m) for m in members]
@@ -218,6 +221,57 @@ async def update_member_role(
     return AnnotatorRead.model_validate(member)
 
 
+@router.delete(
+    "/{org_id}/members/{member_id}",
+    response_model=AnnotatorRead,
+)
+async def remove_org_member(
+    org_id: UUID,
+    member_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: Annotator = Depends(get_current_user),
+) -> AnnotatorRead:
+    """Soft-delete a member from the organization. Admin only.
+
+    Sets is_active=False, records deactivated_at, and clears org_id.
+    The member's data is preserved but they can no longer log in.
+    """
+    await _get_org_or_404(db, org_id)
+    _require_org_member(current_user, org_id)
+    if current_user.role != ROLE_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required",
+        )
+
+    if member_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot remove yourself from the organization",
+        )
+
+    member = await db.get(Annotator, member_id)
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Member not found",
+        )
+    if member.org_id != org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Member is not in this organization",
+        )
+
+    member.is_active = False
+    member.deactivated_at = datetime.now(UTC)
+    member.org_id = None
+    member.role = "annotator"
+
+    await db.commit()
+    await db.refresh(member)
+    return AnnotatorRead.model_validate(member)
+
+
 @router.get("/{org_id}/team-stats")
 async def team_stats(
     org_id: UUID,
@@ -228,7 +282,9 @@ async def team_stats(
     _require_org_member(current_user, org_id)
 
     result = await db.execute(
-        select(Annotator).where(Annotator.org_id == org_id).order_by(Annotator.name)
+        select(Annotator)
+        .where(Annotator.org_id == org_id, Annotator.is_active.is_(True))
+        .order_by(Annotator.name)
     )
     members = result.scalars().all()
     member_ids = [m.id for m in members]

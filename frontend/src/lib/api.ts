@@ -307,6 +307,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email } satisfies AddOrgMemberBody)
     }),
+  removeOrgMember: (orgId: string, memberId: string) =>
+    request<OrgMember>(
+      `/api/v1/orgs/${encodeURIComponent(orgId)}/members/${encodeURIComponent(memberId)}`,
+      { method: "DELETE" }
+    ),
   createTaskPack: (body: TaskPackUpsertBody) =>
     request<TaskPackDetail>("/api/v1/tasks/packs", {
       method: "POST",

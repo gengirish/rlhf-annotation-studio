@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api";
 import type {
+  EvaluationListResponse,
   HumanOverrideRequest,
   JudgeBatchResponse,
   JudgeEvaluateRequest,
@@ -145,6 +146,15 @@ const J = "/api/v1/judge";
 export const judgeApi = {
   evaluate: (body: JudgeEvaluateRequest) =>
     apiFetch<JudgeBatchResponse>(`${J}/evaluate`, { method: "POST", body: JSON.stringify(body) }),
+  listAllEvaluations: (params?: { task_pack_id?: string; status?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.task_pack_id) qs.set("task_pack_id", params.task_pack_id);
+    if (params?.status) qs.set("status", params.status);
+    if (params?.limit !== undefined) qs.set("limit", String(params.limit));
+    if (params?.offset !== undefined) qs.set("offset", String(params.offset));
+    const q = qs.toString();
+    return apiFetch<EvaluationListResponse>(`${J}/evaluations${q ? `?${q}` : ""}`);
+  },
   listEvaluations: (taskPackId: string) =>
     apiFetch<LLMEvaluation[]>(`${J}/evaluations/${encodeURIComponent(taskPackId)}`),
   getEvaluation: (taskPackId: string, taskId: string) =>

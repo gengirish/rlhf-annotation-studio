@@ -60,6 +60,11 @@ async def get_annotator_from_bearer_token(token: str, db: AsyncSession) -> Annot
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account has been deactivated",
+        )
     return user
 
 

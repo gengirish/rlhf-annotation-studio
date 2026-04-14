@@ -78,6 +78,7 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
   const [roleBusyId, setRoleBusyId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [reviewActingId, setReviewActingId] = useState<string | null>(null);
   const [notesById, setNotesById] = useState<Record<string, string>>({});
 
@@ -147,6 +148,21 @@ export default function TeamPage() {
       toast.error(err instanceof Error ? err.message : "Role update failed");
     } finally {
       setRoleBusyId(null);
+    }
+  }
+
+  async function handleRemoveMember(memberId: string, memberName: string) {
+    if (!orgId || !isAdmin) return;
+    if (!confirm(`Remove ${memberName} from the organization? They will be deactivated and lose access.`)) return;
+    setRemovingId(memberId);
+    try {
+      await api.removeOrgMember(orgId, memberId);
+      toast.success(`${memberName} has been removed`);
+      await loadOrgData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Remove failed");
+    } finally {
+      setRemovingId(null);
     }
   }
 
@@ -265,6 +281,7 @@ export default function TeamPage() {
                     <th style={thtd}>Submitted</th>
                     <th style={thtd}>Approved</th>
                     <th style={thtd}>Rejected</th>
+                    {isAdmin ? <th style={thtd}>Actions</th> : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -299,6 +316,23 @@ export default function TeamPage() {
                         <td style={thtd}>{statNum(stats, "submitted")}</td>
                         <td style={thtd}>{statNum(stats, "approved")}</td>
                         <td style={thtd}>{statNum(stats, "rejected")}</td>
+                        {isAdmin ? (
+                          <td style={thtd}>
+                            {m.id !== user?.id ? (
+                              <button
+                                type="button"
+                                className="btn btn-danger"
+                                style={{ fontSize: 12, padding: "4px 10px" }}
+                                disabled={removingId === m.id}
+                                onClick={() => void handleRemoveMember(m.id, m.name)}
+                              >
+                                {removingId === m.id ? "Removing…" : "Remove"}
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: 12, color: "var(--muted)" }}>You</span>
+                            )}
+                          </td>
+                        ) : null}
                       </tr>
                     );
                   })}

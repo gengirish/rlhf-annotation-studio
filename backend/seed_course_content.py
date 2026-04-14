@@ -339,10 +339,11 @@ async def main(content_dir: Path | None, dry_run: bool) -> None:
             if content_dir is not None
             else [str(p) for p in _default_content_dir_candidates()]
         )
-        print("Could not resolve content directory. Tried:")
+        print("Course content directory not found (non-fatal). Tried:")
         for t in tried:
             print(f"  {t}")
-        sys.exit(1)
+        print("Skipping course content seeding.")
+        return
 
     print(f"Using content directory: {resolved}")
 

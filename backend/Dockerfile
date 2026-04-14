@@ -17,5 +17,5 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 EXPOSE 8000
 
-# Run migrations, seed task packs, seed course content, then start the API
-CMD ["sh", "-c", "alembic upgrade head && python seed_task_packs.py && python seed_course_content.py && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Migrations & task seeds are required; course content seed is optional (may not have content dir)
+CMD ["sh", "-c", "alembic upgrade head && python seed_task_packs.py && (python seed_course_content.py || true) && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
