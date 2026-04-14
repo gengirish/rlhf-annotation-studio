@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { ExamReviewRubric } from "@/components/ExamReviewRubric";
-import { api, ApiError, type ReviewAttemptSummary } from "@/lib/api";
+import { api, ApiError, type ExamJudgeResponse, type ReviewAttemptSummary } from "@/lib/api";
 import { useAppStore, useHasHydrated } from "@/lib/state/store";
 
 export default function ExamReviewPage() {
@@ -20,6 +20,7 @@ export default function ExamReviewPage() {
   const [notesById, setNotesById] = useState<Record<string, string>>({});
   const [rubricByAttemptId, setRubricByAttemptId] = useState<Record<string, Record<string, number | undefined>>>({});
   const [actingId, setActingId] = useState<string | null>(null);
+  const [judgingId, setJudgingId] = useState<string | null>(null);
 
   const allowed = user?.role === "admin" || user?.role === "reviewer";
 
@@ -86,6 +87,29 @@ export default function ExamReviewPage() {
       toast.error(e instanceof ApiError ? e.message : "Release failed");
     } finally {
       setActingId(null);
+    }
+  }
+
+  async function autoReview(attemptId: string) {
+    setJudgingId(attemptId);
+    try {
+      const result: ExamJudgeResponse = await api.judgeExamAttempt(attemptId);
+      if (result.rubric_scores && Object.keys(result.rubric_scores).length > 0) {
+        setRubricByAttemptId((prev) => ({
+          ...prev,
+          [attemptId]: { ...result.rubric_scores }
+        }));
+      }
+      if (result.reasoning) {
+        setNotesById((prev) => ({ ...prev, [attemptId]: result.reasoning }));
+      }
+      toast.success(
+        `LLM judge completed (${result.judge_model}, ${result.total_latency_ms}ms, ${result.total_tokens} tokens)`
+      );
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Auto-review failed");
+    } finally {
+      setJudgingId(null);
     }
   }
 
@@ -187,14 +211,25 @@ export default function ExamReviewPage() {
                       </div>
                     </td>
                     <td style={{ padding: 12 }}>
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        disabled={Boolean(r.released_at) || actingId === r.id}
-                        onClick={() => void release(r.id)}
-                      >
-                        {actingId === r.id ? "…" : r.released_at ? "Released" : "Release"}
-                      </button>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <button
+                          type="button"
+                          className="btn"
+                          disabled={Boolean(r.released_at) || judgingId === r.id || actingId === r.id}
+                          onClick={() => void autoReview(r.id)}
+                          title="Run LLM judge to pre-fill rubric scores and notes"
+                        >
+                          {judgingId === r.id ? "Judging…" : "Auto-review"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          disabled={Boolean(r.released_at) || actingId === r.id}
+                          onClick={() => void release(r.id)}
+                        >
+                          {actingId === r.id ? "…" : r.released_at ? "Released" : "Release"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

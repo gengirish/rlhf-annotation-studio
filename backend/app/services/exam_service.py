@@ -62,10 +62,12 @@ def _apply_gold_to_attempt(attempt: ExamAttempt, exam: Exam) -> tuple[int, int]:
     tasks = pack.tasks_json if pack and isinstance(pack.tasks_json, list) else []
     answers = attempt.answers_json if isinstance(attempt.answers_json, dict) else {}
     gold = GoldScoringService().score_workspace(tasks, answers)
-    attempt.score = gold.overall_accuracy
+    # No gold keys in the pack → nothing to grade; store null, not 0.0 (avoids misleading "0%").
     if gold.total_gold_tasks <= 0:
+        attempt.score = None
         attempt.passed = None
     else:
+        attempt.score = gold.overall_accuracy
         thr = float(exam.pass_threshold)
         attempt.passed = float(gold.overall_accuracy) >= thr
     return gold.total_gold_tasks, gold.scored_tasks
@@ -446,6 +448,27 @@ async def list_review_attempts(db: AsyncSession) -> list[ReviewAttemptSummary]:
             ),
         )
     return out
+
+
+async def get_attempt_for_review(
+    db: AsyncSession,
+    attempt_id: UUID,
+) -> ExamAttempt:
+    """Load an attempt with exam + task_pack eagerly, for use by the LLM judge."""
+    result = await db.execute(
+        select(ExamAttempt)
+        .options(selectinload(ExamAttempt.exam).selectinload(Exam.task_pack))
+        .where(ExamAttempt.id == attempt_id),
+    )
+    attempt = result.scalar_one_or_none()
+    if attempt is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exam attempt not found")
+    if attempt.status not in (STATUS_SUBMITTED, STATUS_TIMED_OUT):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only submitted or timed-out attempts can be judged",
+        )
+    return attempt
 
 
 async def release_attempt(

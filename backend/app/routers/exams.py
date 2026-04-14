@@ -7,12 +7,16 @@ from app.auth import get_current_user, require_admin, require_reviewer_or_admin
 from app.db import get_db
 from app.models import Annotator
 from app.exam_rubric import EXAM_REVIEW_RUBRIC_CRITERIA
+from app.config import get_settings
 from app.schemas.exam import (
     ExamAnswerSave,
     ExamAttemptRead,
     ExamAttemptStartResponse,
     ExamAttemptSubmitResponse,
     ExamCreate,
+    ExamJudgeRequest,
+    ExamJudgeResponse,
+    ExamJudgeTaskResult,
     ExamRead,
     ExamResultRead,
     IntegrityEventCreate,
@@ -23,6 +27,7 @@ from app.schemas.exam import (
     RubricCriterionRead,
 )
 from app.services import exam_service
+from app.services.exam_judge_service import judge_exam_attempt
 
 router = APIRouter(prefix="/exams", tags=["exams"])
 
@@ -71,6 +76,53 @@ async def release_attempt_review(
 ) -> ReviewReleaseResponse:
     row = await exam_service.release_attempt(db, attempt_id, current_user, body)
     return exam_service.to_release_response(row)
+
+
+@router.post(
+    "/review/attempts/{attempt_id}/judge",
+    response_model=ExamJudgeResponse,
+)
+async def judge_attempt_with_llm(
+    attempt_id: UUID,
+    body: ExamJudgeRequest = ExamJudgeRequest(),
+    db: AsyncSession = Depends(get_db),
+    current_user: Annotator = Depends(require_reviewer_or_admin),
+) -> ExamJudgeResponse:
+    attempt = await exam_service.get_attempt_for_review(db, attempt_id)
+    settings = get_settings()
+    result = await judge_exam_attempt(
+        db,
+        attempt,
+        settings=settings,
+        model=body.model,
+        temperature=body.temperature,
+    )
+    attempt.review_rubric_scores_json = result["rubric_scores"]
+    attempt.review_notes = result["reasoning"]
+
+    if body.auto_release:
+        from app.schemas.exam import ReviewReleaseRequest
+
+        release_body = ReviewReleaseRequest(
+            release=True,
+            review_notes=result["reasoning"],
+            review_rubric_scores=result["rubric_scores"],
+        )
+        await exam_service.release_attempt(db, attempt_id, current_user, release_body)
+    else:
+        await db.commit()
+        await db.refresh(attempt)
+
+    return ExamJudgeResponse(
+        attempt_id=attempt.id,
+        rubric_scores=result["rubric_scores"],
+        per_task=[ExamJudgeTaskResult(**t) for t in result["per_task"]],
+        reasoning=result["reasoning"],
+        total_tokens=result["total_tokens"],
+        total_latency_ms=result["total_latency_ms"],
+        judge_model=result["judge_model"],
+        auto_released=body.auto_release,
+    )
 
 
 @router.post(

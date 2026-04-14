@@ -69,6 +69,71 @@ def normalize_rubric_scores(raw: dict[str, Any] | None) -> dict[str, int]:
     return out
 
 
+def build_rubric_criteria_description() -> str:
+    """Format rubric criteria for inclusion in an LLM judge prompt."""
+    lines: list[str] = []
+    for c in EXAM_REVIEW_RUBRIC_CRITERIA:
+        lines.append(f"- **{c['title']}** (id: `{c['id']}`, integer 1–5): {c['description']}")
+    return "\n".join(lines)
+
+
+def build_exam_judge_system_prompt() -> str:
+    return (
+        "You are an expert exam reviewer for an RLHF Annotation Studio. "
+        "You evaluate candidate answers to coding/debugging tasks against a structured rubric. "
+        "Respond with a single JSON object only — no markdown code fences, no text before or after."
+    )
+
+
+def build_exam_judge_user_prompt(
+    task_prompt: str,
+    response_texts: list[tuple[str, str]],
+    candidate_answer: dict[str, Any],
+) -> str:
+    """Build the user message for the LLM judge.
+
+    Args:
+        task_prompt: The original task prompt shown to the candidate.
+        response_texts: List of (label, text) for each response option.
+        candidate_answer: The candidate's annotation_json (preference, dimensions, justification).
+    """
+    rubric_desc = build_rubric_criteria_description()
+
+    sections = [f"## Task Prompt\n{task_prompt}\n"]
+
+    if response_texts:
+        for label, text in response_texts:
+            sections.append(f"## {label}\n{text}\n")
+
+    sections.append("## Candidate's Answer")
+    pref = candidate_answer.get("preference")
+    if pref is not None:
+        sections.append(f"Preference: {pref}")
+    dims = candidate_answer.get("dimensions")
+    if isinstance(dims, dict) and dims:
+        dims_str = ", ".join(f"{k}: {v}" for k, v in dims.items())
+        sections.append(f"Dimension ratings: {dims_str}")
+    justification = candidate_answer.get("justification", "")
+    if justification:
+        sections.append(f"Justification: {justification}")
+    sections.append("")
+
+    rubric_ids = ", ".join(f'"{c["id"]}"' for c in EXAM_REVIEW_RUBRIC_CRITERIA)
+
+    sections.append(f"## Evaluation Rubric\n{rubric_desc}\n")
+    sections.append(
+        "Evaluate the candidate's answer against the rubric above. "
+        "Provide your assessment as a JSON object:\n"
+        f'{{"rubric_scores": {{{rubric_ids}: <integer 1-5 each>}}, '
+        '"reasoning": "concise overall assessment of the answer quality", '
+        '"confidence": <float 0.0 to 1.0>}\n\n'
+        "Use the exact rubric criterion IDs as keys. "
+        "Each score must be an integer from 1 (poor) to 5 (excellent)."
+    )
+
+    return "\n".join(sections)
+
+
 def rubric_rows_from_stored(stored: dict[str, Any] | None) -> list[dict[str, Any]]:
     """Build display rows: every criterion with score from JSON or None."""
     s = stored or {}

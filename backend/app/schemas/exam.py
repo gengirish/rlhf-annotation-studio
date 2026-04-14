@@ -197,3 +197,30 @@ class ReviewReleaseResponse(BaseModel):
     released_by: UUID | None
     review_notes: str | None
     review_rubric_scores: dict[str, int] = Field(default_factory=dict)
+
+
+class ExamJudgeRequest(BaseModel):
+    model: str | None = Field(default=None, max_length=256)
+    temperature: float = Field(default=0.1, ge=0.0, le=2.0)
+    auto_release: bool = False
+
+
+class ExamJudgeTaskResult(BaseModel):
+    task_id: str
+    task_title: str
+    rubric_scores: dict[str, int]
+    reasoning: str
+    confidence: float
+    tokens: int | None = None
+    latency_ms: int | None = None
+
+
+class ExamJudgeResponse(BaseModel):
+    attempt_id: UUID
+    rubric_scores: dict[str, int]
+    per_task: list[ExamJudgeTaskResult]
+    reasoning: str
+    total_tokens: int
+    total_latency_ms: int
+    judge_model: str
+    auto_released: bool = False

@@ -388,6 +388,14 @@ export const api = {
         body: JSON.stringify(body)
       }
     ),
+  judgeExamAttempt: (attemptId: string, config?: ExamJudgeRequest) =>
+    request<ExamJudgeResponse>(
+      `/api/v1/exams/review/attempts/${encodeURIComponent(attemptId)}/judge`,
+      {
+        method: "POST",
+        body: JSON.stringify(config ?? {})
+      }
+    ),
   /** Resolves a pack UUID to full detail via catalog listing (no backend UUID route). */
   getTaskPackById: async (taskPackId: string): Promise<TaskPackDetail | null> => {
     const packs = await api.getAllTaskPacks();
@@ -528,4 +536,31 @@ export interface ReviewReleaseResponse {
   released_by: string | null;
   review_notes: string | null;
   review_rubric_scores?: Record<string, number>;
+}
+
+export interface ExamJudgeRequest {
+  model?: string | null;
+  temperature?: number;
+  auto_release?: boolean;
+}
+
+export interface ExamJudgeTaskResult {
+  task_id: string;
+  task_title: string;
+  rubric_scores: Record<string, number>;
+  reasoning: string;
+  confidence: number;
+  tokens: number | null;
+  latency_ms: number | null;
+}
+
+export interface ExamJudgeResponse {
+  attempt_id: string;
+  rubric_scores: Record<string, number>;
+  per_task: ExamJudgeTaskResult[];
+  reasoning: string;
+  total_tokens: number;
+  total_latency_ms: number;
+  judge_model: string;
+  auto_released: boolean;
 }
