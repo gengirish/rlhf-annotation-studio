@@ -379,7 +379,7 @@ export default function AutoReviewsPage() {
             />
           </label>
 
-          {overrideTarget?.evaluation_json?.dimensions && (
+          {overrideTarget?.evaluation_json?.dimensions != null && (
             <div>
               <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", display: "block", marginBottom: 8 }}>
                 Dimension Scores
@@ -554,7 +554,7 @@ function EvalRow({ ev, prefSource, isExpanded, actingId, packName, onToggle, onA
                 {ev.human_override && (
                   <div style={{ marginTop: 12 }}>
                     <Badge variant="warning">Human Override Applied</Badge>
-                    {ev.human_override.reasoning && (
+                    {ev.human_override.reasoning != null && (
                       <div
                         style={{
                           marginTop: 8,
