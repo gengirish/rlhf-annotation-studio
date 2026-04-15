@@ -7,7 +7,7 @@ import httpx
 
 from app.config import Settings
 
-MODEL_ID_RE = re.compile(r"^[\w\-.]+/[\w\-.]+(?::[\w\-]+)?$")
+MODEL_ID_RE = re.compile(r"^[\w\-.]+/[\w\-.]+(?:/[\w\-.]+)*(?::[\w\-]+)?$")
 
 HUGGINGFACE_MODELS = [
     {"id": "Qwen/Qwen2.5-Coder-32B-Instruct", "name": "Qwen 2.5 Coder 32B", "tag": "code"},
@@ -59,7 +59,56 @@ NVIDIA_MODELS = [
     },
 ]
 
+OPENROUTER_MODELS = [
+    {
+        "id": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+        "name": "Llama 3.3 Nemotron Super 49B v1.5",
+        "tag": "reasoning",
+    },
+    {
+        "id": "nvidia/llama-3.1-nemotron-70b-instruct",
+        "name": "Llama 3.1 Nemotron 70B Instruct",
+        "tag": "general",
+    },
+    {
+        "id": "nvidia/nemotron-3-super-120b-a12b",
+        "name": "Nemotron 3 Super 120B",
+        "tag": "reasoning",
+    },
+    {
+        "id": "nvidia/nemotron-nano-9b-v2",
+        "name": "Nemotron Nano 9B v2",
+        "tag": "fast",
+    },
+    {
+        "id": "nvidia/nemotron-3-nano-30b-a3b",
+        "name": "Nemotron 3 Nano 30B",
+        "tag": "fast",
+    },
+    {
+        "id": "meta-llama/llama-3.3-70b-instruct",
+        "name": "Llama 3.3 70B Instruct",
+        "tag": "general",
+    },
+    {
+        "id": "qwen/qwen-2.5-coder-32b-instruct",
+        "name": "Qwen 2.5 Coder 32B",
+        "tag": "code",
+    },
+    {
+        "id": "mistralai/mistral-small-24b-instruct-2501",
+        "name": "Mistral Small 24B",
+        "tag": "general",
+    },
+    {
+        "id": "google/gemini-2.5-flash-preview",
+        "name": "Gemini 2.5 Flash Preview",
+        "tag": "fast",
+    },
+]
+
 MODELS_BY_PROVIDER: dict[str, list[dict[str, str]]] = {
+    "openrouter": OPENROUTER_MODELS,
     "huggingface": HUGGINGFACE_MODELS,
     "nvidia": NVIDIA_MODELS,
     "custom": [],
@@ -98,6 +147,21 @@ def _extract_message_text(data: dict[str, Any]) -> str:
     return ""
 
 
+def _build_headers(settings: Settings) -> dict[str, str]:
+    token = settings.active_api_token
+    if not token:
+        provider = settings.inference_provider
+        raise RuntimeError(f"API token is not configured for provider '{provider}'")
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    if settings.inference_provider == "openrouter":
+        headers["HTTP-Referer"] = "https://rlhf-annotation-frontend.vercel.app"
+        headers["X-Title"] = settings.openrouter_site_name
+    return headers
+
+
 async def hf_chat_completion(
     settings: Settings,
     *,
@@ -108,16 +172,9 @@ async def hf_chat_completion(
     seed: int | None,
 ) -> tuple[str, str | None]:
     validate_model_id(model)
-    token = settings.active_api_token
-    if not token:
-        provider = settings.inference_provider
-        raise RuntimeError(f"API token is not configured for provider '{provider}'")
+    headers = _build_headers(settings)
 
     url = settings.active_base_url.rstrip("/") + "/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }
     body: dict[str, Any] = {
         "model": model,
         "messages": messages,
@@ -162,16 +219,9 @@ async def hf_chat_completion_stream(
     seed: int | None,
 ) -> AsyncIterator[str]:
     validate_model_id(model)
-    token = settings.active_api_token
-    if not token:
-        provider = settings.inference_provider
-        raise RuntimeError(f"API token is not configured for provider '{provider}'")
+    headers = _build_headers(settings)
 
     url = settings.active_base_url.rstrip("/") + "/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }
     body: dict[str, Any] = {
         "model": model,
         "messages": messages,

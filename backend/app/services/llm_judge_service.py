@@ -331,16 +331,10 @@ async def _judge_chat_completion(
     temperature: float,
 ) -> tuple[str, str | None, int | None]:
     """OpenAI-compatible chat call; no strict model-id validation."""
-    token = settings.active_api_token
-    if not token:
-        provider = settings.inference_provider
-        raise RuntimeError(f"API token is not configured for provider '{provider}'")
+    from app.services.hf_inference import _build_headers
 
+    headers = _build_headers(settings)
     url = settings.active_base_url.rstrip("/") + "/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }
     body: dict[str, Any] = {
         "model": model,
         "messages": messages,

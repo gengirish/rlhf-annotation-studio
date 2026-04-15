@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
 
-    # Inference provider: "huggingface", "nvidia", or "custom"
-    inference_provider: str = "huggingface"
+    # Inference provider: "openrouter", "huggingface", "nvidia", or "custom"
+    inference_provider: str = "openrouter"
     inference_enabled: bool = True
     inference_require_auth: bool = False
     inference_max_tokens: int = 1024
@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     nvidia_api_token: str | None = None
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
     nvidia_default_model: str = "nvidia/llama-3.3-nemotron-super-49b-v1"
+
+    # OpenRouter (OpenAI-compatible gateway to many providers)
+    openrouter_api_key: str | None = None
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_default_model: str = "nvidia/llama-3.3-nemotron-super-49b-v1.5"
+    openrouter_site_name: str = "RLHF Annotation Studio"
 
     # Custom OpenAI-compatible provider
     custom_api_token: str | None = None
@@ -60,6 +66,8 @@ class Settings(BaseSettings):
 
     @property
     def active_api_token(self) -> str | None:
+        if self.inference_provider == "openrouter":
+            return self.openrouter_api_key
         if self.inference_provider == "nvidia":
             return self.nvidia_api_token
         if self.inference_provider == "custom":
@@ -68,6 +76,8 @@ class Settings(BaseSettings):
 
     @property
     def active_base_url(self) -> str:
+        if self.inference_provider == "openrouter":
+            return self.openrouter_base_url
         if self.inference_provider == "nvidia":
             return self.nvidia_base_url
         if self.inference_provider == "custom":
@@ -76,6 +86,8 @@ class Settings(BaseSettings):
 
     @property
     def active_default_model(self) -> str:
+        if self.inference_provider == "openrouter":
+            return self.openrouter_default_model
         if self.inference_provider == "nvidia":
             return self.nvidia_default_model
         if self.inference_provider == "custom":
@@ -92,6 +104,8 @@ class Settings(BaseSettings):
             self.nvidia_api_token = os.environ.get("NVIDIA_API_KEY") or os.environ.get(
                 "NGC_API_KEY",
             )
+        if not self.openrouter_api_key:
+            self.openrouter_api_key = os.environ.get("OPENROUTER_API_KEY")
         return self
 
     @model_validator(mode="after")
