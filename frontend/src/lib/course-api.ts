@@ -5,20 +5,10 @@ import type {
   CourseSessionRead
 } from "@/types/course";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
-
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("rlhf_authToken");
-}
+import { request } from "@/lib/api";
 
 async function courseFetch<T>(path: string): Promise<T> {
-  const token = getToken();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${API_BASE}/api/v1/course${path}`, { headers });
-  if (!res.ok) throw new Error(`Course API error: ${res.status}`);
-  return res.json() as Promise<T>;
+  return request<T>(`/api/v1/course${path}`);
 }
 
 export const courseApi = {

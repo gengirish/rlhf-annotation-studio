@@ -1,10 +1,10 @@
 # RLHF Annotation Studio
 
-A lightweight annotation platform for practicing Reinforcement Learning from Human Feedback (RLHF) workflows. The project now uses a **Pure Next.js frontend** with a **FastAPI backend**, preserving the original annotation workflows with a production-friendly architecture.
+A lightweight annotation platform for practicing Reinforcement Learning from Human Feedback (RLHF) workflows. The project uses a **Pure Next.js frontend** with a **FastAPI backend**, preserving the original annotation workflows with a production-friendly architecture.
 
 **Frontend:** Next.js App Router app in `frontend/`.
 
-**Backend:** FastAPI in `backend/` (with `src/rlhf_api` package compatibility wrapper), workspace sync to PostgreSQL/Neon, and live Hugging Face inference routes. See `backend/README.md`.
+**Backend:** FastAPI in `backend/` (with `src/rlhf_api` package compatibility wrapper), workspace sync to PostgreSQL/Neon, live Hugging Face inference routes, and extended APIs for quality, exams, datasets, webhooks, and more. See `backend/README.md`.
 
 **Local full stack:** `docker/docker-compose.yml` provides `frontend`, `backend`, `postgres`, and `redis` services.
 
@@ -54,26 +54,46 @@ See `deploy/DEPLOY-VERCEL-FLY.md` for the exact CLI workflow.
 ## What's Included
 
 ```
-RLHF/
+rlhf-annotation-studio/
 ├── frontend/                         ← Next.js App Router frontend
 │   ├── src/app/
 │   │   ├── auth/                     ← Login / register
 │   │   ├── dashboard/                ← Task library, stats, session sync
 │   │   ├── task/[taskId]/            ← Annotation workflow
 │   │   ├── reviews/                  ← Review queue + pending + team
-│   │   ├── team/                     ← Team management (admin/reviewer)
+│   │   ├── auto-reviews/             ← LLM-assisted review flows
+│   │   ├── quality/                  ← Quality scores, leaderboard, drift, calibration
 │   │   ├── analytics/                ← Session metrics
+│   │   ├── team/                     ← Team management (admin/reviewer)
 │   │   ├── settings/                 ← Org settings
-│   │   └── author/                   ← Task authoring
+│   │   ├── author/                   ← Task authoring
+│   │   ├── datasets/                 ← Dataset library, versions, diff, export
+│   │   ├── audit/                    ← Audit log viewer
+│   │   ├── webhooks/                 ← Webhook configuration and deliveries
+│   │   ├── exams/                    ← Exam list and flows
+│   │   ├── exams/review/             ← Instructor review of exam attempts
+│   │   ├── exams/[examId]/attempt/[attemptId]/  ← Take / resume an exam
+│   │   ├── exams/[examId]/result/[attemptId]/   ← Attempt results
+│   │   ├── certificates/           ← Issued certificates (org)
+│   │   ├── certificate/[id]/        ← Public certificate verification page
+│   │   └── course/                  ← Course modules, sessions, progress
 │   ├── src/lib/                      ← API client, Zustand store
-│   └── tests/e2e/                    ← Playwright E2E tests
+│   ├── tests/e2e/                    ← Playwright E2E tests
+│   └── tests/unit/                 ← Vitest unit tests (store, API client)
+├── sdk/                              ← Python client + CLI (`rlhf` command)
+│   ├── src/rlhf_studio/
+│   ├── tests/
+│   └── README.md
 ├── backend/                          ← FastAPI + Neon PostgreSQL
 │   ├── app/
-│   │   ├── auth.py                   ← JWT auth + role-based dependencies
-│   │   ├── routers/                  ← health, auth, sessions, tasks, reviews, orgs, inference, metrics
-│   │   ├── models/                   ← Annotator (with role), Organization, ReviewAssignment, etc.
+│   │   ├── auth.py                   ← JWT auth + API keys + role-based dependencies
+│   │   ├── routers/                  ← health, auth, sessions, tasks, reviews, orgs,
+│   │   │                             ← inference, metrics, api_keys, audit, consensus,
+│   │   │                             ← datasets, exams, iaa, judge, quality, webhooks,
+│   │   │                             ← course, certificates
+│   │   ├── models/                   ← Annotator (with role), Organization, datasets, exams, …
 │   │   └── schemas/                  ← Pydantic request/response models
-│   ├── alembic/versions/             ← DB migrations (001–007)
+│   ├── alembic/versions/             ← DB migrations (001–021)
 │   ├── tasks/                        ← JSON task pack source files
 │   └── README.md
 ├── docker/
@@ -155,9 +175,34 @@ Minimal example:
 - **Keyboard shortcuts**: arrow keys to navigate, number keys for quick preference selection
 - **Export to Markdown** — copy to clipboard or download as `.md` file
 - **Validation** — prevents submission without complete ratings and justification
-- **Offline-first local persistence** — works fully client-side without any backend
+- **Offline-first local persistence** — core annotation UX works client-side; connect the API for sync and org features
 - **Optional API sync** — persist workspace snapshots to backend/Neon when `API_BASE` is set
 - **Optional authenticated inference** — Hugging Face-backed live generation via FastAPI endpoints
+- **Exams** with integrity monitoring and LLM-as-judge auto-grading
+- **Certificates** with public verification links
+- **Datasets** with versioning, diff, and export
+- **Webhooks** for event notifications
+- **Audit logging** for compliance
+- **Inter-annotator agreement (IAA)** computation
+- **Consensus workflows** for disputed annotations
+- **Quality scoring** with leaderboard and drift detection
+- **Calibration tests** for ongoing annotator alignment
+- **Course content** with modules and progress tracking
+- **Python SDK** with CLI (`rlhf` command)
+- **API key authentication** (Bearer JWT and `X-API-Key` for programmatic access)
+
+---
+
+## Python SDK
+
+The `sdk/` directory provides a Python client and CLI for programmatic access:
+
+```bash
+pip install -e sdk/
+rlhf --help
+```
+
+See `sdk/README.md` for full documentation.
 
 ---
 
@@ -201,7 +246,7 @@ Admin/Reviewer assigns task pack to annotator
 
 ## API Endpoints and Auth Expectations
 
-When `API_BASE` is configured, the UI uses these endpoints:
+When `API_BASE` is configured, the UI uses these endpoints. Protected routes accept **JWT** (`Authorization: Bearer <token>`) and, where implemented, **`X-API-Key`** for the same operations as the interactive UI.
 
 ### Auth
 | Method | Path | Auth | Description |
@@ -209,10 +254,19 @@ When `API_BASE` is configured, the UI uses these endpoints:
 | `POST` | `/api/v1/auth/register` | No | Create account → JWT + session_id |
 | `POST` | `/api/v1/auth/login` | No | Login → JWT + session_id (response includes `role` and `org_id`) |
 
+### API Keys (CRUD)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/api-keys` | JWT | Create API key (secret shown once) |
+| `GET` | `/api/v1/api-keys` | JWT | List keys (metadata only) |
+| `PATCH` | `/api/v1/api-keys/{key_id}` | JWT | Update key (e.g. label) |
+| `DELETE` | `/api/v1/api-keys/{key_id}` | JWT | Revoke key |
+
 ### Health & Inference
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/api/v1/health` | No | Liveness check |
+| `GET` | `/api/v1/health/ready` | No | Readiness check |
 | `GET` | `/api/v1/inference/status` | No | Whether inference is enabled |
 | `GET` | `/api/v1/inference/models` | No | Available HF model list |
 | `POST` | `/api/v1/inference/stream` | Optional | Live streaming text generation |
@@ -221,16 +275,17 @@ When `API_BASE` is configured, the UI uses these endpoints:
 ### Sessions & Workspace
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/api/v1/sessions/bootstrap` | No | Legacy bootstrap path |
+| `POST` | `/api/v1/sessions/bootstrap` | JWT | Legacy bootstrap (deprecated) |
 | `GET` | `/api/v1/sessions/{id}/workspace` | JWT | Load workspace snapshot |
 | `PUT` | `/api/v1/sessions/{id}/workspace` | JWT | Save workspace snapshot |
-| `GET` | `/api/v1/sessions/{id}/workspace/history` | JWT | Last 20 workspace revisions |
+| `GET` | `/api/v1/sessions/{id}/workspace/history` | JWT | Last workspace revisions |
 
 ### Tasks
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/api/v1/tasks/packs` | No | List task pack catalog |
 | `GET` | `/api/v1/tasks/packs/{slug}` | No | Full task pack with tasks |
+| `GET` | `/api/v1/tasks/search` | JWT | Search task packs |
 | `POST` | `/api/v1/tasks/packs` | JWT | Create task pack |
 | `PUT` | `/api/v1/tasks/packs/{slug}` | JWT | Update task pack |
 | `DELETE` | `/api/v1/tasks/packs/{slug}` | JWT | Delete task pack |
@@ -241,7 +296,7 @@ When `API_BASE` is configured, the UI uses these endpoints:
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/api/v1/reviews/queue` | JWT | Current user's assigned tasks |
-| `GET` | `/api/v1/reviews/pending` | JWT (admin/reviewer) | All submitted reviews awaiting approval |
+| `GET` | `/api/v1/reviews/pending` | JWT (admin/reviewer) | Submitted reviews awaiting approval |
 | `GET` | `/api/v1/reviews/team` | JWT (admin/reviewer) | All team review assignments (filterable) |
 | `POST` | `/api/v1/reviews/assign` | JWT (admin/reviewer) | Assign a single task to an annotator |
 | `POST` | `/api/v1/reviews/bulk-assign` | JWT (admin/reviewer) | Assign entire task pack to an annotator |
@@ -257,6 +312,7 @@ When `API_BASE` is configured, the UI uses these endpoints:
 | `GET` | `/api/v1/orgs/{id}/members` | JWT (member) | List org members |
 | `POST` | `/api/v1/orgs/{id}/members` | JWT (member) | Add member by email |
 | `PUT` | `/api/v1/orgs/{id}/members/{mid}/role` | JWT (admin) | Change member role |
+| `DELETE` | `/api/v1/orgs/{id}/members/{mid}` | JWT (admin) | Soft-remove member from org |
 | `GET` | `/api/v1/orgs/{id}/team-stats` | JWT (admin/reviewer) | Per-member annotation stats |
 
 ### Metrics
@@ -265,10 +321,121 @@ When `API_BASE` is configured, the UI uses these endpoints:
 | `GET` | `/api/v1/metrics/session/{id}/summary` | JWT | Session completion stats |
 | `GET` | `/api/v1/metrics/session/{id}/timeline` | JWT | Completion timeline |
 
+### Audit
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/v1/audit/logs` | JWT | Paginated audit log |
+| `GET` | `/api/v1/audit/logs/me` | JWT | Current user's activity |
+| `GET` | `/api/v1/audit/logs/resource/{resource_type}/{resource_id}` | JWT | History for a resource |
+| `GET` | `/api/v1/audit/stats` | JWT | Aggregate audit statistics |
+
+### Consensus
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/consensus/setup` | JWT | Create consensus configuration |
+| `GET` | `/api/v1/consensus/config/{task_pack_id}` | JWT | Read configuration |
+| `GET` | `/api/v1/consensus/status/{task_pack_id}` | JWT | Status for a pack |
+| `GET` | `/api/v1/consensus/next/{task_pack_id}` | JWT | Next consensus task for annotator |
+| `POST` | `/api/v1/consensus/tasks/{consensus_task_id}/submit` | JWT | Submit consensus annotation |
+| `GET` | `/api/v1/consensus/tasks/{consensus_task_id}` | JWT | Get consensus task |
+| `POST` | `/api/v1/consensus/tasks/{consensus_task_id}/resolve` | JWT | Resolve dispute |
+| `GET` | `/api/v1/consensus/disputed/{task_pack_id}` | JWT | List disputed tasks |
+
+### Datasets
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/datasets` | JWT | Create dataset |
+| `GET` | `/api/v1/datasets` | JWT | List datasets |
+| `POST` | `/api/v1/datasets/import` | JWT | Import dataset |
+| `GET` | `/api/v1/datasets/{dataset_id}` | JWT | Dataset detail |
+| `POST` | `/api/v1/datasets/{dataset_id}/versions` | JWT | Create version |
+| `GET` | `/api/v1/datasets/{dataset_id}/versions/{version}` | JWT | Read version |
+| `GET` | `/api/v1/datasets/{dataset_id}/versions/{version}/export` | JWT | Export version |
+| `GET` | `/api/v1/datasets/{dataset_id}/diff` | JWT | Diff between versions |
+| `DELETE` | `/api/v1/datasets/{dataset_id}` | JWT | Delete dataset |
+
+### Exams
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/exams` | JWT (admin) | Create exam |
+| `GET` | `/api/v1/exams` | JWT | List exams |
+| `GET` | `/api/v1/exams/review/rubric-criteria` | JWT | Rubric criteria for manual review |
+| `GET` | `/api/v1/exams/review/attempts` | JWT (admin/reviewer) | Attempts awaiting review |
+| `POST` | `/api/v1/exams/review/attempts/{attempt_id}/release` | JWT (admin/reviewer) | Release graded attempt |
+| `POST` | `/api/v1/exams/review/attempts/{attempt_id}/judge` | JWT (admin/reviewer) | LLM judge / auto-grade |
+| `POST` | `/api/v1/exams/{exam_id}/attempts/start` | JWT | Start or resume attempt |
+| `GET` | `/api/v1/exams/{exam_id}/attempts/{attempt_id}` | JWT | Get in-progress attempt |
+| `PUT` | `/api/v1/exams/{exam_id}/attempts/{attempt_id}/answer` | JWT | Save answers |
+| `POST` | `/api/v1/exams/{exam_id}/attempts/{attempt_id}/integrity-events` | JWT | Log integrity events |
+| `POST` | `/api/v1/exams/{exam_id}/attempts/{attempt_id}/submit` | JWT | Submit attempt |
+| `GET` | `/api/v1/exams/{exam_id}/attempts/{attempt_id}/result` | JWT | Graded result |
+
+### IAA
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/iaa/compute` | JWT | Compute IAA for selections |
+| `GET` | `/api/v1/iaa/summary/{task_pack_id}` | JWT | Latest IAA summary for a pack |
+
+### Judge (LLM evaluations)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/judge/evaluate` | JWT | Run batch judge evaluation |
+| `GET` | `/api/v1/judge/evaluations` | JWT | List evaluations |
+| `GET` | `/api/v1/judge/evaluations/{task_pack_id}` | JWT | Evaluations for a pack |
+| `GET` | `/api/v1/judge/evaluations/{task_pack_id}/{task_id}` | JWT | Single task evaluation |
+| `POST` | `/api/v1/judge/evaluations/{evaluation_id}/override` | JWT | Manual override |
+| `POST` | `/api/v1/judge/evaluations/{evaluation_id}/accept` | JWT | Accept judge output |
+| `POST` | `/api/v1/judge/evaluations/{evaluation_id}/reject` | JWT | Reject judge output |
+
+### Quality
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/v1/quality/score/{annotator_id}` | JWT | Annotator quality score |
+| `GET` | `/api/v1/quality/leaderboard` | JWT | Leaderboard |
+| `GET` | `/api/v1/quality/dashboard` | JWT | Org quality dashboard |
+| `GET` | `/api/v1/quality/drift/{annotator_id}` | JWT (admin/reviewer) | Drift alerts |
+| `POST` | `/api/v1/quality/calibration` | JWT (admin) | Create calibration test |
+| `GET` | `/api/v1/quality/calibration` | JWT | List calibration tests |
+| `POST` | `/api/v1/quality/calibration/{test_id}/attempt` | JWT | Submit calibration attempt |
+| `GET` | `/api/v1/quality/calibration/{test_id}/results` | JWT (admin/reviewer) | Calibration results |
+| `POST` | `/api/v1/quality/recompute/{annotator_id}` | JWT (admin) | Recompute scores |
+
+### Webhooks
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/webhooks` | JWT | Create webhook |
+| `GET` | `/api/v1/webhooks` | JWT | List webhooks |
+| `GET` | `/api/v1/webhooks/{webhook_id}` | JWT | Get webhook |
+| `GET` | `/api/v1/webhooks/{webhook_id}/deliveries` | JWT | Delivery history |
+| `POST` | `/api/v1/webhooks/{webhook_id}/test` | JWT | Send test delivery |
+| `PATCH` | `/api/v1/webhooks/{webhook_id}` | JWT | Update webhook |
+| `DELETE` | `/api/v1/webhooks/{webhook_id}` | JWT | Delete webhook |
+
+### Course
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/v1/course/overview` | JWT | Course overview |
+| `GET` | `/api/v1/course/modules` | JWT | List modules |
+| `GET` | `/api/v1/course/modules/{number}` | JWT | Module detail |
+| `GET` | `/api/v1/course/sessions/{number}` | JWT | Session content |
+| `GET` | `/api/v1/course/sessions/{number}/rubric` | JWT | Session rubric |
+| `GET` | `/api/v1/course/sessions/{number}/questions` | JWT | Session questions |
+| `GET` | `/api/v1/course/sessions/{number}/resources` | JWT | Session resources |
+| `GET` | `/api/v1/course/progress` | JWT | User progress |
+
+### Certificates
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/certificates` | JWT | Issue certificate |
+| `GET` | `/api/v1/certificates` | JWT | List org certificates |
+| `GET` | `/api/v1/certificates/mine` | JWT | Current user's certificates |
+| `GET` | `/api/v1/certificates/{certificate_id}/public` | No | Public verification payload |
+
 Notes:
-- Auth uses JWT stored in localStorage. Login/register return token, annotator (with role), and session_id.
+- Auth uses JWT stored in localStorage for the browser. Login/register return token, annotator (with role), and session_id.
+- Programmatic clients may use **Bearer JWT** or **X-API-Key** where the backend exposes `get_current_user_or_api_key`.
 - Inference routes enforce JWT only when `INFERENCE_REQUIRE_AUTH=true`.
-- Review and org management endpoints enforce role-based access (admin or reviewer required).
+- Review, org, exam, and quality endpoints enforce role-based access as implemented in each router.
 
 ---
 
@@ -321,7 +488,8 @@ Before annotating, read the relevant rubric in the `guidelines/` folder:
 ### Assessment Ideas
 
 - Compare student annotations to a "gold standard" annotation set
-- Measure inter-annotator agreement across the class
+- Measure inter-annotator agreement across the class (see **IAA** API and analytics)
+- Use **exams** and **calibration tests** for summative and ongoing checks
 - Have students create their own task sets and swap with peers
 - Discuss disagreements as a class to build calibration
 
@@ -362,7 +530,7 @@ Works in any modern browser: Chrome, Firefox, Edge, Safari. Run with `frontend` 
 
 ## Testing
 
-The project has three test layers. All commands below assume you are in the repo root.
+The project has layered tests. Commands below assume you are in the repo root.
 
 ### Backend unit tests (pytest)
 
@@ -372,17 +540,18 @@ pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-Covers auth, workspace, orgs, reviews, tasks, metrics, annotation validation, and gold scoring (82 tests).
+Covers auth, workspace and sessions, organizations, reviews, tasks (including validation and search), metrics, gold scoring, API keys, audit, consensus, datasets, webhooks, quality and calibration, IAA, LLM judge and exam judge services, org/judge HTTP routers, and related unit tests (170 tests).
 
 ### Frontend unit tests (Vitest)
 
 ```bash
 cd frontend
+npm install
 npm run test          # single run
 npm run test:watch    # watch mode
 ```
 
-Covers Zustand store actions and the API client (26 tests).
+Covers the Zustand store (`tests/unit/store.test.ts`) and the API client (`tests/unit/api.test.ts`).
 
 ### Frontend E2E tests (Playwright)
 
@@ -392,7 +561,25 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Covers auth, dashboard, task annotation, export/validation, responsive layout, reviews, settings, author, and analytics (6 spec files).
+Spec files under `frontend/tests/e2e/`:
+
+- `auth-dashboard.spec.ts`
+- `task-annotation.spec.ts`
+- `exams-flow.spec.ts`
+- `settings-author.spec.ts`
+- `auto-reviews.spec.ts`
+- `analytics-nav-sync.spec.ts`
+- `export-validation.spec.ts`
+- `new-features.spec.ts`
+- `responsive.spec.ts`
+
+### Python SDK tests
+
+```bash
+cd sdk
+pip install -e ".[dev]"
+python -m pytest -q
+```
 
 ### Run everything
 
@@ -400,21 +587,30 @@ Covers auth, dashboard, task annotation, export/validation, responsive layout, r
 npm run test:all
 ```
 
-CI runs all three layers on every push to `master` and on pull requests (see `.github/workflows/ci.yml`).
+CI runs the configured test layers on every push to `master` and on pull requests (see `.github/workflows/ci.yml`).
+
+---
+
+## Alembic migrations
+
+Schema changes live in `backend/alembic/versions/` as numbered revisions **001–021** (annotators/sessions through certificates and related features). Apply with Alembic from `backend/` per `backend/README.md`.
 
 ---
 
 ## Release Gate
 
-A production release is blocked unless **all three** checks are complete:
+A production release is blocked unless **all** of the following are complete:
 
-- [ ] **All tests pass**  
-      Run backend test suite from `backend/` (example: `python -m pytest`).
-- [ ] **Deploy smoke pass**  
-      Run `scripts/e2e-test.ps1` and confirm `0 failed` in the summary.
-- [ ] **Manual scenario checklist completed**  
-      Validate critical user flows:
-  - create account and log in;
-  - load a task pack and submit at least one task;
-  - verify workspace autosync indicator shows state transitions (idle -> syncing -> synced);
-  - export Markdown/JSONL successfully.
+- [ ] **Automated tests pass**  
+      Backend: `cd backend` then `python -m pytest`.  
+      Frontend unit: `cd frontend` then `npm run test`.  
+      SDK: `cd sdk` then `python -m pytest` (if shipping SDK changes).  
+      Optional: full monorepo `npm run test:all` when dependencies are installed.
+- [ ] **Deploy / E2E smoke pass**  
+      Run `scripts/e2e-test.ps1` (or equivalent CI Playwright job) and confirm `0 failed` in the summary.
+- [ ] **Manual scenario checklist**  
+      - Create account and log in (JWT + session).  
+      - Load a task pack, annotate, and submit at least one task through the review flow where applicable.  
+      - Confirm workspace autosync indicator transitions (idle → syncing → synced).  
+      - Export Markdown/JSONL successfully.  
+      - Spot-check org-only features you rely on: **datasets** (version/export), **webhooks** (test delivery), **audit** log visibility, **quality** dashboard, **exams** (attempt → submit → result), **certificates** (issue + public link), **course** progress, **API keys** (create/revoke) if used in integrations.

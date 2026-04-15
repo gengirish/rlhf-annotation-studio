@@ -77,11 +77,13 @@ async def list_pending_reviews(
     db: AsyncSession = Depends(get_db),
     current_user: Annotator = Depends(require_reviewer_or_admin),
 ) -> list[ReviewAssignmentRead]:
-    result = await db.execute(
-        select(ReviewAssignment)
-        .where(ReviewAssignment.status == STATUS_SUBMITTED)
-        .order_by(ReviewAssignment.updated_at.asc())
-    )
+    q = select(ReviewAssignment).where(ReviewAssignment.status == STATUS_SUBMITTED)
+    if current_user.org_id is not None:
+        q = q.join(Annotator, ReviewAssignment.annotator_id == Annotator.id).where(
+            Annotator.org_id == current_user.org_id
+        )
+    q = q.order_by(ReviewAssignment.updated_at.asc())
+    result = await db.execute(q)
     rows = result.scalars().all()
     return [ReviewAssignmentRead.model_validate(r) for r in rows]
 
@@ -94,6 +96,10 @@ async def list_team_reviews(
     annotator_id: str | None = Query(None),
 ) -> list[ReviewAssignmentRead]:
     q = select(ReviewAssignment)
+    if current_user.org_id is not None:
+        q = q.join(Annotator, ReviewAssignment.annotator_id == Annotator.id).where(
+            Annotator.org_id == current_user.org_id
+        )
     if status_filter is not None and status_filter.strip():
         q = q.where(ReviewAssignment.status == status_filter.strip())
     if annotator_id is not None and annotator_id.strip():
@@ -171,6 +177,14 @@ async def update_review_assignment(
     row = await db.get(ReviewAssignment, assignment_id)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found")
+
+    if current_user.org_id is not None:
+        assignee = await db.get(Annotator, row.annotator_id)
+        if assignee is None or assignee.org_id != current_user.org_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Assignment belongs to a different organization",
+            )
 
     row.status = body.status.strip()
     row.reviewer_notes = body.reviewer_notes

@@ -1,8 +1,12 @@
-import time
+import logging
+import time as _time
+import uuid
+from collections import defaultdict
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.db import warm_pool
@@ -28,6 +32,17 @@ from app.routers import (
     webhooks,
 )
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("app")
+
+_rate_limit_store: dict[str, list[float]] = defaultdict(list)
+_RATE_LIMIT_WINDOW = 60  # seconds
+_RATE_LIMIT_MAX = 30  # requests per window
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -46,10 +61,18 @@ def create_app() -> FastAPI:
     )
 
     @app.middleware("http")
-    async def add_timing_header(request: Request, call_next):
-        t0 = time.perf_counter()
+    async def add_request_id(request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        request.state.request_id = request_id
         response = await call_next(request)
-        response.headers["X-Response-Time"] = f"{(time.perf_counter() - t0) * 1000:.0f}ms"
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+    @app.middleware("http")
+    async def add_timing_header(request: Request, call_next):
+        t0 = _time.perf_counter()
+        response = await call_next(request)
+        response.headers["X-Response-Time"] = f"{(_time.perf_counter() - t0) * 1000:.0f}ms"
         return response
 
     origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
@@ -61,6 +84,35 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def rate_limit_inference(request: Request, call_next):
+        if request.url.path.startswith("/api/v1/inference/") and request.method == "POST":
+            client_ip = request.client.host if request.client else "unknown"
+            now = _time.time()
+            window = _rate_limit_store[client_ip]
+            window[:] = [t for t in window if now - t < _RATE_LIMIT_WINDOW]
+            if len(window) >= _RATE_LIMIT_MAX:
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": "Rate limit exceeded. Try again later."},
+                )
+            window.append(now)
+        return await call_next(request)
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(request: Request, exc: Exception):
+        request_id = getattr(request.state, "request_id", "unknown")
+        logger.exception(
+            "Unhandled error [request_id=%s] %s %s",
+            request_id,
+            request.method,
+            request.url.path,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error", "request_id": request_id},
+        )
 
     app.include_router(health.router, prefix="/api/v1")
     app.include_router(auth.router, prefix="/api/v1")

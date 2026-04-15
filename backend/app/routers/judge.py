@@ -138,7 +138,7 @@ async def override_evaluation(
     evaluation_id: UUID,
     body: HumanOverrideRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: Annotator = Depends(get_current_user_or_api_key),
+    current_user: Annotator = Depends(require_reviewer_or_admin),
 ) -> EvaluationRead:
     if body.preference is None and body.dimensions is None and body.reasoning is None:
         raise HTTPException(
@@ -155,7 +155,7 @@ async def override_evaluation(
 async def accept_evaluation(
     evaluation_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _user: Annotator = Depends(get_current_user_or_api_key),
+    _user: Annotator = Depends(require_reviewer_or_admin),
 ) -> EvaluationRead:
     row = await db.get(LLMEvaluation, evaluation_id)
     if row is None:
@@ -170,7 +170,7 @@ async def accept_evaluation(
 async def reject_evaluation(
     evaluation_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _user: Annotator = Depends(get_current_user_or_api_key),
+    _user: Annotator = Depends(require_reviewer_or_admin),
 ) -> EvaluationRead:
     row = await db.get(LLMEvaluation, evaluation_id)
     if row is None:

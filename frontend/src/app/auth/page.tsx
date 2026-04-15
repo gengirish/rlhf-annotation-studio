@@ -67,48 +67,52 @@ export default function AuthPage() {
         <h1 style={{ marginTop: 0 }}>RLHF Annotation Studio</h1>
         <p style={{ marginTop: 8, color: "var(--muted)" }}>{title}</p>
 
-        <div style={{ display: "flex", gap: 8, marginTop: 20, marginBottom: 20 }}>
-          <button className={`btn ${mode === "login" ? "btn-primary" : ""}`} onClick={() => setMode("login")}>
+        <div role="group" aria-label="Authentication mode" style={{ display: "flex", gap: 8, marginTop: 20, marginBottom: 20 }}>
+          <button className={`btn ${mode === "login" ? "btn-primary" : ""}`} aria-pressed={mode === "login"} onClick={() => setMode("login")}>
             Login
           </button>
-          <button
-            className={`btn ${mode === "register" ? "btn-primary" : ""}`}
-            onClick={() => setMode("register")}
-          >
+          <button className={`btn ${mode === "register" ? "btn-primary" : ""}`} aria-pressed={mode === "register"} onClick={() => setMode("register")}>
             Register
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
           {mode === "register" ? (
             <>
-              <input className="input" name="name" placeholder="Full name" required />
-              <input className="input" name="phone" placeholder="Phone (optional)" />
-              <div>
-                <label style={{ fontSize: 13, color: "var(--muted)", marginBottom: 4, display: "block" }}>
-                  Role
-                </label>
-                <select
-                  className="input"
-                  name="role"
-                  defaultValue="annotator"
-                  style={{ width: "100%", padding: "8px 12px", cursor: "pointer" }}
-                >
+              <div style={{ display: "grid", gap: 4 }}>
+                <label htmlFor="auth-name" style={{ fontSize: 13, fontWeight: 500 }}>Full name</label>
+                <input className="input" id="auth-name" name="name" autoComplete="name" required />
+              </div>
+              <div style={{ display: "grid", gap: 4 }}>
+                <label htmlFor="auth-phone" style={{ fontSize: 13, fontWeight: 500, color: "var(--muted)" }}>Phone (optional)</label>
+                <input className="input" id="auth-phone" name="phone" autoComplete="tel" />
+              </div>
+              <div style={{ display: "grid", gap: 4 }}>
+                <label htmlFor="auth-role" style={{ fontSize: 13, fontWeight: 500 }}>Role</label>
+                <select className="input" id="auth-role" name="role" defaultValue="annotator">
                   <option value="annotator">Annotator</option>
                 </select>
               </div>
             </>
           ) : null}
-          <input className="input" name="email" type="email" placeholder="Email" required />
-          <input
-            className="input"
-            name="password"
-            type="password"
-            placeholder={mode === "register" ? "Password (8+ chars, upper + lower + digit)" : "Password"}
-            minLength={mode === "register" ? 8 : undefined}
-            required
-          />
-          <button className="btn btn-primary" type="submit" disabled={loading}>
+          <div style={{ display: "grid", gap: 4 }}>
+            <label htmlFor="auth-email" style={{ fontSize: 13, fontWeight: 500 }}>Email</label>
+            <input className="input" id="auth-email" name="email" type="email" autoComplete="email" required />
+          </div>
+          <div style={{ display: "grid", gap: 4 }}>
+            <label htmlFor="auth-password" style={{ fontSize: 13, fontWeight: 500 }}>Password</label>
+            <input
+              className="input"
+              id="auth-password"
+              name="password"
+              type="password"
+              autoComplete={mode === "register" ? "new-password" : "current-password"}
+              placeholder={mode === "register" ? "8+ chars, upper + lower + digit" : ""}
+              minLength={mode === "register" ? 8 : undefined}
+              required
+            />
+          </div>
+          <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: 4 }}>
             {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>

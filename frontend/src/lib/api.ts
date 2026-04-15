@@ -8,7 +8,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("rlhf_authToken") : null;
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -20,11 +20,22 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("rlhf_authToken");
+      document.cookie = "rlhf_session=; Max-Age=0; path=/";
+      window.location.href = "/auth";
+    }
     const body = (await res.json().catch(() => ({}))) as { detail?: string };
     throw new ApiError(res.status, body.detail || "Request failed");
   }
 
-  return (await res.json()) as T;
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export interface AuthResponse {

@@ -38,7 +38,11 @@ def _raise_if_tasks_invalid(tasks_json: list[dict[str, Any]]) -> None:
 
 
 @router.post("/validate", response_model=TaskValidationResponse)
-async def validate_tasks(body: TaskValidationRequest) -> TaskValidationResponse:
+async def validate_tasks(
+    body: TaskValidationRequest,
+    db: AsyncSession = Depends(get_db),
+    _user: Annotator = Depends(get_current_user_or_api_key),
+) -> TaskValidationResponse:
     issues, invalid_rows = TaskValidationService().validate_tasks(body.tasks)
     valid_tasks = len(body.tasks) - len(invalid_rows)
     ok = not issues if body.strict_mode else valid_tasks > 0
@@ -56,6 +60,7 @@ async def list_task_packs(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
+    _user: Annotator = Depends(get_current_user_or_api_key),
 ) -> TaskPackListResponse:
     total_result = await db.execute(select(func.count(TaskPack.id)))
     total = int(total_result.scalar_one() or 0)
@@ -80,6 +85,7 @@ async def search_tasks(
     task_type: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    _user: Annotator = Depends(get_current_user_or_api_key),
 ) -> TaskSearchResponse:
     query = q.strip()
     if not query:
@@ -143,7 +149,11 @@ async def search_tasks(
 
 
 @router.get("/packs/{slug}", response_model=TaskPackDetail)
-async def get_task_pack(slug: str, db: AsyncSession = Depends(get_db)) -> TaskPackDetail:
+async def get_task_pack(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+    _user: Annotator = Depends(get_current_user_or_api_key),
+) -> TaskPackDetail:
     result = await db.execute(select(TaskPack).where(TaskPack.slug == slug))
     pack = result.scalar_one_or_none()
     if pack is None:

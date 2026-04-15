@@ -1,4 +1,4 @@
-import { ApiError } from "@/lib/api";
+import { request } from "@/lib/api";
 import type {
   EvaluationListResponse,
   HumanOverrideRequest,
@@ -7,34 +7,8 @@ import type {
   LLMEvaluation
 } from "@/types/extensions";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
-
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("rlhf_authToken") : null;
-  const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {})
-    }
-  });
-
-  if (res.status === 204) {
-    return undefined as T;
-  }
-
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { detail?: string };
-    throw new ApiError(res.status, body.detail || "Request failed");
-  }
-
-  const text = await res.text();
-  if (!text) {
-    return undefined as T;
-  }
-  return JSON.parse(text) as T;
+  return request<T>(path, options);
 }
 
 const Q = "/api/v1/quality";

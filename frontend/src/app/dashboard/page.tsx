@@ -131,8 +131,9 @@ export default function DashboardPage() {
           limit: 20,
         });
         setSearchResults(res);
-      } catch {
+      } catch (err) {
         setSearchResults(null);
+        toast.error(err instanceof Error ? err.message : "Search failed");
       } finally {
         setSearchLoading(false);
       }
@@ -155,7 +156,7 @@ export default function DashboardPage() {
           scored_tasks: score.scored_tasks
         });
       } catch {
-        // silent: gold scoring may be unavailable
+        setQualityScore(null);
       }
     }
     void fetchQualityScore();
@@ -236,6 +237,7 @@ export default function DashboardPage() {
         setSyncState("synced");
       } catch {
         setSyncState("error");
+        toast.error("Workspace sync failed — your work is saved locally");
       }
     };
 
@@ -413,8 +415,14 @@ export default function DashboardPage() {
       >
         <div>
           <h1 style={{ margin: 0 }}>Dashboard</h1>
-          <p style={{ margin: "6px 0 0", color: "var(--muted)" }}>
-            Session sync: <b>{syncState}</b>
+          <p style={{ margin: "6px 0 0", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%", display: "inline-block",
+              background: syncState === "synced" ? "var(--success)" : syncState === "error" ? "var(--danger)" : syncState === "syncing" ? "var(--primary)" : "var(--border)"
+            }} />
+            <span style={{ color: syncState === "error" ? "var(--danger)" : "var(--muted)" }}>
+              {syncState === "synced" ? "Saved to cloud" : syncState === "syncing" ? "Saving..." : syncState === "error" ? "Sync failed — saved locally" : "Not synced"}
+            </span>
           </p>
         </div>
         <button className="btn" onClick={restoreWorkspace}>

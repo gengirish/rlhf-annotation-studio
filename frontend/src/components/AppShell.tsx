@@ -98,7 +98,7 @@ export function AppShell({ children }: PropsWithChildren) {
             setCollapsed(!collapsed);
             setMobileOpen(false);
           }}
-          title={collapsed ? "Expand" : "Collapse"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? "▸" : "◂"}
         </button>
@@ -155,7 +155,7 @@ export function AppShell({ children }: PropsWithChildren) {
             </div>
           </div>
         )}
-        <button className="shell-nav-item" onClick={handleLogout} title="Logout">
+        <button className="shell-nav-item" onClick={handleLogout} aria-label="Log out">
           <span className="shell-nav-icon" aria-hidden="true">⏻</span>
           {!collapsed && <span>Logout</span>}
         </button>
@@ -165,13 +165,14 @@ export function AppShell({ children }: PropsWithChildren) {
 
   return (
     <div className="shell-layout">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       {sidebar}
       {mobileOpen && (
-        <div className="shell-overlay" onClick={() => setMobileOpen(false)} />
+        <div className="shell-overlay" onClick={() => setMobileOpen(false)} role="presentation" />
       )}
       <div className="shell-main">
         <header className="shell-topbar">
-          <button className="shell-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
+          <button className="shell-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileOpen}>
             ☰
           </button>
           <Link href="/dashboard" className="shell-topbar-logo">
@@ -187,7 +188,7 @@ export function AppShell({ children }: PropsWithChildren) {
             )}
           </div>
         </header>
-        <main className="shell-content">{children}</main>
+        <main id="main-content" className="shell-content">{children}</main>
       </div>
     </div>
   );
