@@ -41,12 +41,12 @@ See `deploy/DEPLOY-VERCEL-FLY.md` for the exact CLI workflow.
 
 | Service | URL |
 |---------|-----|
-| Frontend | https://rlhf-annotation-frontend.vercel.app |
-| Auth | https://rlhf-annotation-frontend.vercel.app/auth |
-| Dashboard | https://rlhf-annotation-frontend.vercel.app/dashboard |
+| Frontend | https://rlhf-studio.intelliforge.tech |
+| Auth | https://rlhf-studio.intelliforge.tech/auth |
+| Dashboard | https://rlhf-studio.intelliforge.tech/dashboard |
 | API (direct) | https://rlhf-annotation-api.fly.dev |
-| API health | https://rlhf-annotation-frontend.vercel.app/api/v1/health |
-| Task packs | https://rlhf-annotation-frontend.vercel.app/api/v1/tasks/packs |
+| API health | https://rlhf-studio.intelliforge.tech/api/v1/health |
+| Task packs | https://rlhf-studio.intelliforge.tech/api/v1/tasks/packs |
 | API docs | https://rlhf-annotation-api.fly.dev/api/docs |
 
 ---

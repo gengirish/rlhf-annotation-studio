@@ -170,12 +170,12 @@ The CLI uses **`vercel.json`**: `buildCommand` (`npm run vercel-build`), `output
 
 | Service | URL |
 |---------|-----|
-| Frontend | https://rlhf-annotation-frontend.vercel.app |
-| Auth page | https://rlhf-annotation-frontend.vercel.app/auth |
-| Dashboard | https://rlhf-annotation-frontend.vercel.app/dashboard |
+| Frontend | https://rlhf-studio.intelliforge.tech |
+| Auth page | https://rlhf-studio.intelliforge.tech/auth |
+| Dashboard | https://rlhf-studio.intelliforge.tech/dashboard |
 | API (Fly, direct) | https://rlhf-annotation-api.fly.dev |
-| API health (via Vercel rewrite) | https://rlhf-annotation-frontend.vercel.app/api/v1/health |
-| Task packs catalog | https://rlhf-annotation-frontend.vercel.app/api/v1/tasks/packs |
+| API health (via Vercel rewrite) | https://rlhf-studio.intelliforge.tech/api/v1/health |
+| Task packs catalog | https://rlhf-studio.intelliforge.tech/api/v1/tasks/packs |
 | API interactive docs | https://rlhf-annotation-api.fly.dev/api/docs |
 
 ## Smoke test
@@ -183,7 +183,7 @@ The CLI uses **`vercel.json`**: `buildCommand` (`npm run vercel-build`), `output
 1. Open the **Frontend** URL above (or copy from `vercel --prod` output).
 2. Register or log in at `/auth`.
 3. Dashboard should load task packs from the API — traffic goes to `/api/v1/tasks/packs` and is rewritten to Fly.
-4. Verify API health: `curl https://rlhf-annotation-frontend.vercel.app/api/v1/health` should return `{"status":"ok"}`.
+4. Verify API health: `curl https://rlhf-studio.intelliforge.tech/api/v1/health` should return `{"status":"ok"}`.
 
 ---
 

@@ -157,7 +157,7 @@ def _build_headers(settings: Settings) -> dict[str, str]:
         "Content-Type": "application/json",
     }
     if settings.inference_provider == "openrouter":
-        headers["HTTP-Referer"] = "https://rlhf-annotation-frontend.vercel.app"
+        headers["HTTP-Referer"] = "https://rlhf-studio.intelliforge.tech"
         headers["X-Title"] = settings.openrouter_site_name
     return headers
 

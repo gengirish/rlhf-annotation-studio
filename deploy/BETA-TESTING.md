@@ -4,8 +4,8 @@ This document is for beta testers validating the production exam workflow, RBAC 
 
 ## Environment
 
-- Frontend: `https://rlhf-annotation-frontend.vercel.app`
-- Exams page: `https://rlhf-annotation-frontend.vercel.app/exams`
+- Frontend: `https://rlhf-studio.intelliforge.tech`
+- Exams page: `https://rlhf-studio.intelliforge.tech/exams`
 
 ## Test Accounts (Production)
 
