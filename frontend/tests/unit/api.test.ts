@@ -5,10 +5,12 @@ const mockFetch = vi.fn();
 globalThis.fetch = mockFetch as typeof fetch;
 
 function jsonResponse(data: unknown, status = 200) {
+  const body = JSON.stringify(data);
   return Promise.resolve({
     ok: status >= 200 && status < 300,
     status,
-    json: () => Promise.resolve(data)
+    json: () => Promise.resolve(data),
+    text: () => Promise.resolve(body)
   } as Response);
 }
 
@@ -16,7 +18,8 @@ function errorResponse(status: number, detail?: string) {
   return Promise.resolve({
     ok: false,
     status,
-    json: () => Promise.resolve(detail ? { detail } : {})
+    json: () => Promise.resolve(detail ? { detail } : {}),
+    text: () => Promise.resolve(JSON.stringify(detail ? { detail } : {}))
   } as Response);
 }
 
