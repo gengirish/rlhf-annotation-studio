@@ -221,3 +221,80 @@ def send_team_member_added_admin_notification(
         "<p style='color:#64748b;font-size:13px;'>— RLHF Annotation Studio</p>"
     )
     return send_email(admin_email, subject, text, html)
+
+
+SUBMISSION_INBOX = "rlhf@agentmail.to"
+
+
+def send_exam_submission_inbox_copy(
+    annotator_name: str,
+    annotator_email: str,
+    exam_title: str,
+    exam_id: str,
+    attempt_id: str,
+    score: float | None,
+    passed: bool | None,
+    submitted_at: str,
+    answers_summary: dict[str, Any] | None = None,
+) -> bool:
+    """Send a detailed copy of every exam submission to the central inbox."""
+    score_str = f"{score * 100:.1f}%" if score is not None else "pending review"
+    passed_str = "Yes" if passed else ("No" if passed is False else "pending review")
+    subject = f"[Exam Submission] {annotator_name} — {exam_title}"
+    text = (
+        f"Exam Submission Record\n"
+        f"{'=' * 40}\n\n"
+        f"Annotator:    {annotator_name} ({annotator_email})\n"
+        f"Exam:         {exam_title}\n"
+        f"Exam ID:      {exam_id}\n"
+        f"Attempt ID:   {attempt_id}\n"
+        f"Submitted at: {submitted_at}\n"
+        f"Score:        {score_str}\n"
+        f"Passed:       {passed_str}\n"
+    )
+    if answers_summary:
+        text += f"\nAnswers submitted: {len(answers_summary)} task(s)\n"
+        for task_id, answer in list(answers_summary.items())[:20]:
+            preview = str(answer)[:120]
+            text += f"  - {task_id}: {preview}\n"
+        if len(answers_summary) > 20:
+            text += f"  ... and {len(answers_summary) - 20} more\n"
+    text += "\n— RLHF Annotation Studio (automated)"
+
+    html = (
+        "<div style='font-family:system-ui,sans-serif;max-width:640px;'>"
+        "<h2 style='margin:0 0 16px;color:#1e293b;'>Exam Submission Record</h2>"
+        "<table style='border-collapse:collapse;width:100%;'>"
+        f"<tr><td style='padding:6px 12px 6px 0;font-weight:600;color:#475569;'>Annotator</td>"
+        f"<td style='padding:6px 0;'>{annotator_name} ({annotator_email})</td></tr>"
+        f"<tr><td style='padding:6px 12px 6px 0;font-weight:600;color:#475569;'>Exam</td>"
+        f"<td style='padding:6px 0;'>{exam_title}</td></tr>"
+        f"<tr><td style='padding:6px 12px 6px 0;font-weight:600;color:#475569;'>Exam ID</td>"
+        f"<td style='padding:6px 0;font-family:monospace;font-size:13px;'>{exam_id}</td></tr>"
+        f"<tr><td style='padding:6px 12px 6px 0;font-weight:600;color:#475569;'>Attempt ID</td>"
+        f"<td style='padding:6px 0;font-family:monospace;font-size:13px;'>{attempt_id}</td></tr>"
+        f"<tr><td style='padding:6px 12px 6px 0;font-weight:600;color:#475569;'>Submitted</td>"
+        f"<td style='padding:6px 0;'>{submitted_at}</td></tr>"
+        f"<tr><td style='padding:6px 12px 6px 0;font-weight:600;color:#475569;'>Score</td>"
+        f"<td style='padding:6px 0;'>{score_str}</td></tr>"
+        f"<tr><td style='padding:6px 12px 6px 0;font-weight:600;color:#475569;'>Passed</td>"
+        f"<td style='padding:6px 0;'>{passed_str}</td></tr>"
+        "</table>"
+    )
+    if answers_summary:
+        html += (
+            f"<p style='margin:16px 0 8px;font-weight:600;color:#475569;'>"
+            f"Answers submitted: {len(answers_summary)} task(s)</p>"
+            "<ul style='margin:0;padding-left:20px;font-size:13px;color:#334155;'>"
+        )
+        for task_id, answer in list(answers_summary.items())[:20]:
+            preview = str(answer)[:120].replace("<", "&lt;").replace(">", "&gt;")
+            html += f"<li><code>{task_id}</code>: {preview}</li>"
+        if len(answers_summary) > 20:
+            html += f"<li><em>... and {len(answers_summary) - 20} more</em></li>"
+        html += "</ul>"
+    html += (
+        "<p style='color:#94a3b8;font-size:12px;margin-top:20px;'>"
+        "— RLHF Annotation Studio (automated)</p></div>"
+    )
+    return send_email(SUBMISSION_INBOX, subject, text, html)

@@ -16,6 +16,7 @@ from app.models.task_pack import TaskPack
 from app.exam_rubric import rubric_rows_from_stored
 from app.services.email_service import (
     send_exam_released_notification,
+    send_exam_submission_inbox_copy,
     send_exam_submitted_notification,
     send_review_queue_notification,
 )
@@ -360,6 +361,17 @@ async def submit_attempt(
             passed=attempt.passed,
         )
         _notify_reviewers_of_submission(db, user.name, exam.title)
+        send_exam_submission_inbox_copy(
+            annotator_name=user.name,
+            annotator_email=user.email,
+            exam_title=exam.title,
+            exam_id=str(exam.id),
+            attempt_id=str(attempt.id),
+            score=attempt.score,
+            passed=attempt.passed,
+            submitted_at=attempt.submitted_at.isoformat() if attempt.submitted_at else "",
+            answers_summary=attempt.answers_json if isinstance(attempt.answers_json, dict) else None,
+        )
     except Exception:
         pass
 
