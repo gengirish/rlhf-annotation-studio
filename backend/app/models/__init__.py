@@ -1,6 +1,7 @@
 from app.models.annotator import Annotator
 from app.models.api_key import APIKey
 from app.models.audit_log import AuditLog
+from app.models.certificate import Certificate
 from app.models.consensus import ConsensusConfig, ConsensusTask
 from app.models.course import CourseModule, CourseSession
 from app.models.dataset import Dataset, DatasetVersion
@@ -20,6 +21,7 @@ __all__ = [
     "APIKey",
     "AuditLog",
     "AnnotatorQualityScore",
+    "Certificate",
     "CalibrationAttempt",
     "CalibrationTest",
     "ConsensusConfig",

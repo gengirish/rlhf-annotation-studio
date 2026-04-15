@@ -15,6 +15,7 @@ const PROTECTED_PREFIXES = [
   "/webhooks",
   "/task",
   "/exams",
+  "/certificates",
 ];
 
 function isProtectedPath(pathname: string): boolean {
@@ -52,6 +53,7 @@ export const config = {
     "/webhooks",
     "/task",
     "/exams",
+    "/certificates",
     "/dashboard/:path*",
     "/analytics/:path*",
     "/auto-reviews/:path*",
@@ -65,5 +67,6 @@ export const config = {
     "/webhooks/:path*",
     "/task/:path*",
     "/exams/:path*",
+    "/certificates/:path*",
   ],
 };

@@ -10,6 +10,7 @@ from app.routers import (
     api_keys,
     audit,
     auth,
+    certificates,
     consensus,
     course,
     datasets,
@@ -79,6 +80,7 @@ def create_app() -> FastAPI:
     app.include_router(quality.router, prefix="/api/v1")
     app.include_router(webhooks.router, prefix="/api/v1")
     app.include_router(course.router, prefix="/api/v1")
+    app.include_router(certificates.router, prefix="/api/v1")
     return app
 
 

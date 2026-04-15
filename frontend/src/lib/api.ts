@@ -407,7 +407,19 @@ export const api = {
     const hit = packs.find((p) => p.id === taskPackId);
     if (!hit) return null;
     return api.getTaskPack(hit.slug);
-  }
+  },
+
+  getMyCertificates: () =>
+    request<CertificateRead[]>("/api/v1/certificates/mine"),
+  getAllCertificates: () =>
+    request<CertificateRead[]>("/api/v1/certificates"),
+  issueCertificate: (body: CertificateCreateBody) =>
+    request<CertificateRead>("/api/v1/certificates", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getCertificatePublic: (id: string) =>
+    request<CertificatePublic>(`/api/v1/certificates/${encodeURIComponent(id)}/public`),
 };
 
 export interface TaskPackSummary {
@@ -568,4 +580,33 @@ export interface ExamJudgeResponse {
   total_latency_ms: number;
   judge_model: string;
   auto_released: boolean;
+}
+
+export interface CertificateRead {
+  id: string;
+  annotator_id: string;
+  title: string;
+  description: string;
+  certificate_type: string;
+  source_id: string | null;
+  recipient_name: string;
+  issued_at: string;
+  issued_by: string | null;
+}
+
+export interface CertificatePublic {
+  id: string;
+  title: string;
+  description: string;
+  certificate_type: string;
+  recipient_name: string;
+  issued_at: string;
+}
+
+export interface CertificateCreateBody {
+  annotator_id: string;
+  title: string;
+  description?: string;
+  certificate_type?: string;
+  source_id?: string | null;
 }

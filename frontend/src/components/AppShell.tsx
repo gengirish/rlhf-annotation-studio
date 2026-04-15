@@ -20,6 +20,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { href: "/dashboard", label: "Dashboard", icon: "⌂" },
       { href: "/exams", label: "Exams", icon: "▣" },
+      { href: "/certificates", label: "Certificates", icon: "📜" },
       { href: "/task/0", label: "Current Task", icon: "✎" }
     ]
   },
