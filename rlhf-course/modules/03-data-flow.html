@@ -1,0 +1,259 @@
+<section class="module" id="module-3" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">How Your Click Becomes Data</h1>
+      <p class="module-subtitle">Auth, state management, and the request lifecycle — traced from browser to database</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: Auth — the concert wristband -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Authentication: the concert wristband model</h2>
+        <p>
+          At a concert, the bouncer checks your ID once at the door and gives you a wristband. After that, you can move anywhere in the venue without showing ID again — everyone just checks your wrist.
+        </p>
+        <p>
+          This app works exactly the same way. You show your password once (<span class="term" data-definition="Authentication is the process of proving who you are — typically with a username and password. Authorization is what you're allowed to do once you're in. They're different things.">authentication</span>). The server issues a <span class="term" data-definition="A JWT (JSON Web Token) is a cryptographically signed string that contains your user ID, role, and expiration time. The server signs it with a secret key — nobody can fake one without knowing that key.">JWT token</span> (your wristband). Every subsequent request carries that token — the server just checks the wrist.
+        </p>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">🔑</div>
+          <div class="callout-content">
+            <strong class="callout-title">Two tokens, one identity</strong>
+            <p>This app stores the JWT in two places: <code>localStorage</code> (for API calls) and an <code>rlhf_session</code> cookie (for page route protection). The cookie tells Next.js middleware "this person is logged in." The JWT tells FastAPI "this person is <em>this specific user</em> with <em>this role</em>."</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Code translation — middleware.ts -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The code that guards every page</h2>
+        <p>
+          This file runs <em>before</em> every page load. If you don't have the session cookie, you get bounced to the login page — you never even see the page content.
+        </p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — frontend/src/middleware.ts</span>
+            <pre><code><span class="code-keyword">const</span> <span class="code-property">PROTECTED_PREFIXES</span> = [
+  <span class="code-string">"/dashboard"</span>,
+  <span class="code-string">"/analytics"</span>,
+  <span class="code-string">"/reviews"</span>,
+  <span class="code-string">"/task"</span>,
+  <span class="code-string">"/exams"</span>,
+  <span class="code-comment">// ... 10 more routes</span>
+];
+
+<span class="code-keyword">const</span> <span class="code-property">hasSessionCookie</span> =
+  <span class="code-function">Boolean</span>(request.cookies
+    .<span class="code-function">get</span>(<span class="code-string">"rlhf_session"</span>)?.<span class="code-property">value</span>);
+
+<span class="code-keyword">if</span> (hasSessionCookie) {
+  <span class="code-keyword">return</span> NextResponse.<span class="code-function">next</span>();
+}
+url.<span class="code-property">pathname</span> = <span class="code-string">"/auth"</span>;
+<span class="code-keyword">return</span> NextResponse.<span class="code-function">redirect</span>(url);</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Here's a list of pages that require login. If you try to visit any of these without being logged in, you get redirected.</p>
+              <p class="tl">&nbsp;</p>
+              <p class="tl">Check if the browser is carrying the session cookie. The <code>?.value</code> safely handles the case where the cookie doesn't exist at all.</p>
+              <p class="tl">&nbsp;</p>
+              <p class="tl">If the cookie exists: let them through. Show the page normally.</p>
+              <p class="tl">If not: change the destination URL to the login page and redirect. They never see the protected content.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">🗺️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why is this in middleware, not in each page?</strong>
+            <p>If you checked for login inside each individual page, you'd have to copy that code 15+ times. Middleware runs once for all routes — it's a single chokepoint. Engineers call this the "single responsibility" principle: one place handles one job.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Zustand state — the annotation whiteboard -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Your workspace in memory: Zustand state</h2>
+        <p>
+          Think of <span class="term" data-definition="Zustand (German for 'state') is a lightweight React state management library. It creates a shared data store that all components can read from and write to, with optional persistence to localStorage.">Zustand</span> like a shared whiteboard in a conference room. Every component in the app can look at it, write on it, and erase from it. Crucially, this whiteboard has a <em>memory</em> — it survives page refreshes by saving itself to <span class="term" data-definition="localStorage is a browser feature that stores key-value pairs permanently on your device. Unlike cookies, it stays until you clear your browser data or the app deletes it.">localStorage</span>.
+        </p>
+        <p>Here's what the annotation workspace stores at any given moment:</p>
+
+        <div class="badge-list animate-in">
+          <div class="badge-item">
+            <code class="badge-code">user + token</code>
+            <span class="badge-desc">Who you are and your JWT — sent with every API request</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">tasks[]</code>
+            <span class="badge-desc">Your loaded task pack — the AI responses waiting to be judged</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">annotations{}</code>
+            <span class="badge-desc">Your choices so far, keyed by task ID — won't disappear on refresh</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">taskTimes{}</code>
+            <span class="badge-desc">How long you spent on each task — used for quality metrics</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">currentTaskIndex</code>
+            <span class="badge-desc">Which task you're on right now — so "back" always works</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Code translation — Zustand store -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The whiteboard setup — line by line</h2>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — frontend/src/lib/state/store.ts</span>
+            <pre><code><span class="code-keyword">export const</span> <span class="code-property">useAppStore</span> =
+  <span class="code-function">create</span>&lt;<span class="code-property">AppState</span>&gt;()(
+  <span class="code-function">persist</span>(
+    (set, get) =&gt; ({
+      user: <span class="code-keyword">null</span>,
+      token: <span class="code-keyword">null</span>,
+      tasks: [],
+      annotations: {},
+
+      <span class="code-function">setAuth</span>: ({ user, token }) =&gt; {
+        localStorage.<span class="code-function">setItem</span>(
+          <span class="code-string">"rlhf_authToken"</span>, token);
+        document.cookie =
+          <span class="code-string">"rlhf_session=1; Path=/;"</span>;
+        <span class="code-function">set</span>({ user, token });
+      },
+    })
+  )
+);</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Create a shared data store using Zustand. <code>persist</code> wraps it so it automatically saves to localStorage.</p>
+              <p class="tl">&nbsp;</p>
+              <p class="tl">Starting values: no user logged in, empty task list, no annotations yet.</p>
+              <p class="tl">&nbsp;</p>
+              <p class="tl"><code>setAuth</code> is called after login succeeds. It does three things at once:</p>
+              <p class="tl">① Saves the JWT to localStorage so future API calls can include it.</p>
+              <p class="tl">② Sets the session cookie so the middleware knows you're logged in.</p>
+              <p class="tl">③ Updates the store's user and token values so every component knows who's logged in.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Full request lifecycle data flow animation -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The complete annotation submission — step by step</h2>
+        <p>From click to database. Every hop in the chain:</p>
+
+        <div class="flow-animation animate-in" data-steps='[
+          {"highlight":"flow-actor-1","label":"You select an answer in the browser. Zustand immediately records it in memory (no network call yet)."},
+          {"highlight":"flow-actor-1","label":"You click Submit. Zustand marks this task done and packages your choice + timing as JSON.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"Next.js sends POST /api/v1/tasks/{id}/annotate with the JWT token in the Authorization header.","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"FastAPI verifies the JWT. Extracts your user ID and role. Validates the request body using Pydantic."},
+          {"highlight":"flow-actor-3","label":"Passes to the annotation service, which calls async SQLAlchemy to write to PostgreSQL.","packet":true,"from":"actor-3","to":"actor-4"},
+          {"highlight":"flow-actor-4","label":"PostgreSQL writes the annotation row. Returns the new record with its database ID.","packet":true,"from":"actor-4","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"FastAPI returns 200 OK with the saved annotation object.","packet":true,"from":"actor-3","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"Next.js receives success. Updates Zustand to advance to the next task.","packet":true,"from":"actor-2","to":"actor-1"},
+          {"highlight":"flow-actor-1","label":"The UI transitions to the next task. Your annotation is permanently saved."}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🖥️</div>
+              <span>Browser + Zustand</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">⚛️</div>
+              <span>Next.js</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">⚡</div>
+              <span>FastAPI</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🗄️</div>
+              <span>PostgreSQL</span>
+            </div>
+          </div>
+
+          <div class="flow-packet"></div>
+          <div class="flow-step-label">Click "Next Step" to begin</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step →</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Apply what you learned</h2>
+
+        <div class="quiz-container" id="quiz-module3">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Exactly. Zustand + localStorage act as a buffer. Your choices exist in the browser before they reach the server. If the network drops mid-session, your local work is still safe in localStorage."
+               data-explanation-wrong="Think about the order of events. The annotation is captured locally first, then submitted. What happens if submission fails?">
+            <h3 class="quiz-question">An annotator loses their internet connection halfway through a session. They have rated 20 tasks. When they reconnect, what happens to their work?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>All 20 ratings are lost — they need to start over</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Ratings saved before disconnect are still in localStorage — only unsent ones need resubmitting</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>PostgreSQL kept all ratings because they were sent to the server automatically</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Correct — a 403 Forbidden means you're authenticated (the JWT is valid) but not authorized to do that action. Roles control what you can do, not just whether you can log in."
+               data-explanation-wrong="A 401 means unauthenticated (no valid token). A 500 is a server crash. A 403 Forbidden is specifically about authorization — your identity is known, but your role doesn't permit the action.">
+            <h3 class="quiz-question">An annotator tries to approve another annotator's review. The server returns HTTP 403. What does this tell you?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Their JWT token has expired — they need to log in again</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The server crashed — a 500 error would be the same thing</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Their role (annotator) doesn't have permission to approve reviews — that requires reviewer or admin</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module3')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module3')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

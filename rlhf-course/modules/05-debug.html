@@ -1,0 +1,263 @@
+<section class="module" id="module-5" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">Debug Like an Engineer</h1>
+      <p class="module-subtitle">The most common failure modes, how to find them, and how to steer AI out of stuck loops</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The most common things that break -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The usual suspects: what breaks most often</h2>
+        <p>
+          Every full-stack app has a predictable set of failure modes. Knowing these by name lets you tell AI exactly where to look — instead of watching it spin in circles for 10 minutes.
+        </p>
+
+        <div class="icon-rows stagger-children animate-in">
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">🚫</div>
+            <div>
+              <strong>CORS errors</strong>
+              <p><span class="term" data-definition="CORS (Cross-Origin Resource Sharing) is a browser security rule that blocks requests from one domain (like vercel.app) to a different domain (like fly.dev) unless the server explicitly allows it.">CORS</span> fires when the frontend domain isn't in FastAPI's allowed origins list. Symptom: "Network Error" in browser console, request never reaches the backend. Fix: add your Vercel URL to <code>allow_origins</code> in <code>backend/app/main.py</code>.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">🔐</div>
+            <div>
+              <strong>JWT expiry — "suddenly logged out"</strong>
+              <p>JWTs expire after 30 days. When they do, every API call returns 401. Symptom: user seems logged in (cookie exists) but all data requests fail. Fix: implement token refresh logic, or increase the expiry window for development.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">🔌</div>
+            <div>
+              <strong>Database connection pool exhausted</strong>
+              <p>Under load, if too many <span class="term" data-definition="A database connection is an open channel between your app and PostgreSQL. Opening connections is expensive, so a 'pool' pre-opens a set of connections and reuses them. If all are in use, new requests queue up.">async connections</span> are held open, new requests time out. Symptom: 503 errors during traffic spikes. Fix: tune <code>pool_size</code> and <code>max_overflow</code> in the SQLAlchemy engine config.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">📦</div>
+            <div>
+              <strong>Stale Zustand state</strong>
+              <p>Sometimes old annotation data persists in localStorage across sessions. Symptom: user sees tasks from a previous session, or their old answers auto-fill new tasks. Fix: call <code>clearAnnotations()</code> on new session start, or add a version key to the persist config.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">🔄</div>
+            <div>
+              <strong>Missing Alembic migration</strong>
+              <p>AI adds a column to the model but forgets to migrate. Symptom: 500 errors when saving, with "column does not exist" in server logs. Fix: <code>alembic revision --autogenerate -m "fix"</code> then <code>alembic upgrade head</code>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Spot the bug challenge -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Spot the bug: something is wrong in this route</h2>
+        <p>
+          This FastAPI route is supposed to save an annotation and return the saved record. One line contains a critical mistake. Click the line you think is wrong:
+        </p>
+
+        <div class="bug-challenge animate-in">
+          <h3>Find the bug in this annotation endpoint:</h3>
+          <div class="bug-code">
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="This line is fine — it correctly defines the async route handler.">
+              <span class="line-num">1</span>
+              <code>@router.post("/tasks/{task_id}/annotate")</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="Async def is correct here — this function needs to await database calls.">
+              <span class="line-num">2</span>
+              <code>async def submit_annotation(task_id: int, body: AnnotationCreate,</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="Getting the current user via Depends is the correct pattern for JWT verification.">
+              <span class="line-num">3</span>
+              <code>    current_user = Depends(get_current_user), db = Depends(get_db)):</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="Creating the annotation object is fine. No bug here.">
+              <span class="line-num">4</span>
+              <code>    annotation = Annotation(task_id=task_id, **body.dict())</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, true)"
+                 data-explanation="db.add(annotation) queues the write, but without 'await db.commit()' it never actually saves to the database! The function returns the annotation object, but nothing was persisted. Add 'await db.commit()' and 'await db.refresh(annotation)' before the return.">
+              <span class="line-num">5</span>
+              <code>    db.add(annotation)</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="Returning the annotation is correct — but it won't have a database ID if we never committed.">
+              <span class="line-num">6</span>
+              <code>    return annotation</code>
+            </div>
+          </div>
+          <div class="bug-feedback"></div>
+        </div>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">The Async DB Gotcha</strong>
+            <p>With async SQLAlchemy, you must <code>await db.commit()</code> to actually save to the database, and <code>await db.refresh(annotation)</code> to reload the record (with its database-assigned ID) from the DB. AI frequently writes the <code>db.add()</code> but forgets the commit. This is the #1 "data is not saving" bug in async FastAPI code.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: How to get unstuck from AI bug loops -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Getting unstuck: break AI out of bug loops</h2>
+        <p>
+          AI gets into "debug loops" — trying the same fix 3 different ways when it doesn't understand the root cause. Here's how to break the loop using what you now know:
+        </p>
+
+        <div class="step-cards animate-in">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Name the layer, not just the symptom</strong>
+              <p>Instead of "annotations aren't saving," say "the FastAPI route returns 200 but PostgreSQL never gets the write. I think the Alembic migration is missing or the await db.commit() is absent." This tells AI exactly where to look.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Read the server logs, not just the browser</strong>
+              <p>The browser shows you the <span class="term" data-definition="An HTTP status code is a 3-digit number indicating the result of a request. 200 = success, 401 = unauthorized, 403 = forbidden, 422 = validation error, 500 = server crash.">HTTP status code</span>. The real error is in the FastAPI server logs (or Fly.io logs). Give AI the actual Python stack trace — it narrows the problem from 10 possibilities to 1.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Check Zustand state in browser devtools</strong>
+              <p>Open browser devtools → Application → Local Storage → look for the Zustand key. If the annotation data is there, the problem is in submission (network/backend). If it's not there, the problem is in the UI (state management).</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Isolate with a direct API call</strong>
+              <p>Use the FastAPI automatic docs at <code>/docs</code> (built-in Swagger UI) to call the endpoint directly without the frontend. If it works there, the bug is in Next.js. If it fails there, the bug is in FastAPI or the database.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Where to take this next -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What to build next: the feature map</h2>
+        <p>
+          Now that you understand the architecture, here's how to think about extending it. Each feature lives in a predictable place:
+        </p>
+
+        <div class="pattern-cards stagger-children animate-in">
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">📊</div>
+            <h4 class="pattern-title">New annotation type</h4>
+            <p class="pattern-desc">New Pydantic schema → new SQLAlchemy model → Alembic migration → new router endpoint → new React component. AI needs all 5 steps.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">📤</div>
+            <h4 class="pattern-title">New export format</h4>
+            <p class="pattern-desc">Add a service in <code>backend/app/services/</code> that queries PostgreSQL and transforms the data. Wire it to a new router endpoint. The SDK CLI can then call it.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">👥</div>
+            <h4 class="pattern-title">New role / permission</h4>
+            <p class="pattern-desc">Add the role string to the auth system in <code>routers/auth.py</code>, then add <code>require_role("new_role")</code> as a Depends on the endpoints it should protect.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">🔔</div>
+            <h4 class="pattern-title">New webhook event</h4>
+            <p class="pattern-desc">Add to <code>routers/webhooks.py</code>. The webhook system already handles delivery, retries, and signature verification — you just define the event payload shape.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Final drag-and-drop quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Final check: match the problem to the fix</h2>
+
+        <div class="dnd-container" id="dnd-final">
+          <p style="font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-4)">Drag each symptom to the correct diagnosis:</p>
+          <div class="dnd-chips">
+            <div class="dnd-chip" draggable="true" data-answer="cors">CORS error in browser console</div>
+            <div class="dnd-chip" draggable="true" data-answer="migration">Column does not exist in DB</div>
+            <div class="dnd-chip" draggable="true" data-answer="jwt">All API calls return 401</div>
+            <div class="dnd-chip" draggable="true" data-answer="commit">Data shows 200 OK but never saves</div>
+          </div>
+          <div class="dnd-zones">
+            <div class="dnd-zone" data-correct="cors">
+              <p class="dnd-zone-label">Frontend and backend are on different domains — the server hasn't whitelisted the frontend URL in allow_origins</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="migration">
+              <p class="dnd-zone-label">SQLAlchemy model was updated but alembic upgrade head was never run</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="jwt">
+              <p class="dnd-zone-label">JWT token has expired — the 30-day window has passed and the user needs to re-authenticate</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="commit">
+              <p class="dnd-zone-label">db.add() was called but await db.commit() is missing from the async route handler</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: var(--space-3); margin-top: var(--space-6)">
+            <button class="btn btn-primary" onclick="checkDnD('dnd-final')">Check Matches</button>
+            <button class="btn" onclick="resetDnD('dnd-final')">Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Closing quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">One last scenario</h2>
+
+        <div class="quiz-container" id="quiz-module5">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Perfect diagnosis. The FastAPI /docs Swagger UI lets you call any endpoint with any payload — bypassing the frontend entirely. If it works there, the frontend is the problem. If it fails there too, the backend is the problem. This isolation technique is the fastest way to find the bug layer."
+               data-explanation-wrong="Think about isolating the problem. If you can't tell whether the bug is in the frontend or the backend, what could you use to call the backend directly — without the frontend involved at all?">
+            <h3 class="quiz-question">
+              <div class="scenario-block">
+                <div class="scenario-context">
+                  <span class="scenario-label">Scenario</span>
+                  <p>Annotators report that clicking "Submit" does nothing — no error, no next task. You don't know if the problem is in Next.js (frontend not sending the request) or in FastAPI (request arriving but failing silently). How do you find out in 2 minutes?</p>
+                </div>
+              </div>
+              What's the fastest way to isolate whether this is a frontend or backend problem?
+            </h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Check the Zustand state in localStorage to see if annotations are being stored locally</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Open FastAPI's /docs Swagger UI and call the annotation endpoint directly — if it works there, the bug is in Next.js; if it fails, the bug is in FastAPI</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Ask AI to rewrite the entire submit flow from scratch</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module5')">Check Answer</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module5')">Try Again</button>
+        </div>
+
+        <div class="callout callout-accent animate-in" style="margin-top: var(--space-10)">
+          <div class="callout-icon">🎓</div>
+          <div class="callout-content">
+            <strong class="callout-title">You now speak this codebase fluently</strong>
+            <p>You know the 5 characters, the data flow, the auth model, the 4 key engineering patterns, and the common failure modes. Use this knowledge to give AI precise, targeted instructions — and to know when AI is steering you wrong.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

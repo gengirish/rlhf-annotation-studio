@@ -1,0 +1,1393 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RLHF Annotation Studio — How It Works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root {
+      --color-accent: #2A7B9B;
+      --color-accent-hover: #1E6A87;
+      --color-accent-light: #E0F0F7;
+      --color-accent-muted: #6AAEC8;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuenow="0"></div>
+    <div class="nav-inner">
+      <span class="nav-title">RLHF Annotation Studio</span>
+      <div class="nav-dots">
+        <button class="nav-dot" data-target="module-1" data-tooltip="What This Does" role="tab" aria-label="Module 1: What This Does"></button>
+        <button class="nav-dot" data-target="module-2" data-tooltip="Meet the Cast" role="tab" aria-label="Module 2: Meet the Cast"></button>
+        <button class="nav-dot" data-target="module-3" data-tooltip="Data Flow" role="tab" aria-label="Module 3: Data Flow"></button>
+        <button class="nav-dot" data-target="module-4" data-tooltip="Clever Engineering" role="tab" aria-label="Module 4: Clever Engineering"></button>
+        <button class="nav-dot" data-target="module-5" data-tooltip="Debug &amp; Grow" role="tab" aria-label="Module 5: Debug &amp; Grow"></button>
+      </div>
+    </div>
+  </nav>
+
+<section class="module" id="module-1" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">What is RLHF Annotation Studio?</h1>
+      <p class="module-subtitle">How human opinions teach AI to be better — and what this platform does to collect them</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The big hook -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">AI doesn't learn from rules — it learns from votes</h2>
+        <p>
+          Imagine you're training a dog. You don't hand it a rulebook. You reward the right behavior and ignore the wrong ones. Over thousands of small moments, the dog figures out what "good" looks like — from your feedback.
+        </p>
+        <p>
+          The world's most powerful <span class="term" data-definition="AI models are software systems trained on massive amounts of data to understand and generate human language, images, or code. ChatGPT, Claude, and Gemini are all AI models.">AI models</span> are trained the same way — except instead of treats, they get human preference data. Millions of tiny votes: "This response was better than that one." This process is called <span class="term" data-definition="RLHF stands for Reinforcement Learning from Human Feedback. It's the technique used to align AI models with human preferences by training them on thousands of human comparisons and ratings.">RLHF</span> — Reinforcement Learning from Human Feedback.
+        </p>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">The Core Insight</strong>
+            <p>Every time you pick "Response A is better than Response B," you're casting a vote that shapes how the next version of that AI thinks and talks. Annotation is how human judgment gets baked into machine intelligence.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: What this app does -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">This app is the factory floor for RLHF data</h2>
+        <p>
+          RLHF Annotation Studio is a <span class="term" data-definition="A full-stack application has both a frontend (what users see in the browser) and a backend (the server-side logic and database). This app has both, plus a Python SDK for programmatic access.">full-stack platform</span> where human annotators review AI outputs, rate them, compare them, and flag problems — all in a structured, trackable way that can be exported as training data.
+        </p>
+
+        <div class="pattern-cards stagger-children animate-in">
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">⚖️</div>
+            <h4 class="pattern-title">Comparison Tasks</h4>
+            <p class="pattern-desc">Show two AI responses side-by-side. Pick which one is better. This creates preference pairs used directly in RLHF training.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">⭐</div>
+            <h4 class="pattern-title">Rating Tasks</h4>
+            <p class="pattern-desc">Score a single AI response on quality, safety, helpfulness, or any custom dimension. Like giving a restaurant 4 out of 5 stars.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">🏆</div>
+            <h4 class="pattern-title">Ranking Tasks</h4>
+            <p class="pattern-desc">Drag-and-drop multiple AI responses into order from best to worst. More nuanced than binary comparisons.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">📦</div>
+            <h4 class="pattern-title">Task Packs</h4>
+            <p class="pattern-desc">Bundle annotation tasks into shareable packs. Assign them to teams, track completion, export results as training data.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Core user journey — step cards -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Your journey: from login to annotation in 4 steps</h2>
+        <p>Here's exactly what happens when you use this app — end to end:</p>
+
+        <div class="step-cards animate-in">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Sign in with your credentials</strong>
+              <p>The app creates a <span class="term" data-definition="A JWT (JSON Web Token) is a small encrypted package that proves who you are. It's like a signed hall pass — the server issues it once, and you carry it with you on every request.">JWT token</span> and stores it in a secure cookie. Every action you take is now tied to your identity and <span class="term" data-definition="A role is a named permission level. In this app, roles include annotator (can submit annotations), reviewer (can approve them), and admin (can manage everything).">role</span>.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Load a task pack</strong>
+              <p>The frontend fetches your assigned tasks from the <span class="term" data-definition="An API (Application Programming Interface) is a set of rules for how software talks to other software. Here, the frontend calls the backend's API to get your task list.">API</span> and stores them in local state. You see a list of AI responses waiting to be judged.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Annotate: pick, rate, or rank</strong>
+              <p>You make your judgment. The frontend tracks your decision in <span class="term" data-definition="Zustand is a lightweight state management library for React. Think of it as a shared whiteboard that all components can read from and write to — and it remembers its contents even if you refresh the page.">Zustand state</span> (your browser's memory) and records how long you took.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Submit — data flows to the database</strong>
+              <p>Your annotation travels from browser → <span class="term" data-definition="FastAPI is a modern Python web framework for building APIs. It's fast because it uses async/await (non-blocking code) and automatic validation.">FastAPI</span> backend → <span class="term" data-definition="PostgreSQL is a powerful open-source relational database. It stores your data in tables with rows and columns, like an extremely powerful spreadsheet that never loses data.">PostgreSQL</span> database. It becomes a permanent record, ready for quality review and export.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Flow animation of annotation submission -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Watch it happen: your click becomes training data</h2>
+        <p>Click "Next Step" to trace what happens the moment you submit an annotation:</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"You click the Submit button — your choice is captured in the browser"},
+          {"highlight":"flow-actor-1","label":"Zustand records your annotation + timing in memory","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"Next.js sends a POST request to the FastAPI backend with your JWT token","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"FastAPI validates your token, checks your role, accepts the annotation","packet":true,"from":"actor-3","to":"actor-4"},
+          {"highlight":"flow-actor-4","label":"PostgreSQL saves the annotation — it is now permanent training data"},
+          {"highlight":"flow-actor-3","label":"Backend responds: success! Your workspace updates to the next task","packet":true,"from":"actor-4","to":"actor-3"},
+          {"highlight":"flow-actor-1","label":"The frontend shows you the next task. The cycle continues.","packet":true,"from":"actor-3","to":"actor-1"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🖥️</div>
+              <span>Your Browser</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">⚛️</div>
+              <span>Next.js</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">⚡</div>
+              <span>FastAPI</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🗄️</div>
+              <span>PostgreSQL</span>
+            </div>
+          </div>
+
+          <div class="flow-packet"></div>
+          <div class="flow-step-label">Click "Next Step" to begin</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step →</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="quiz-container" id="quiz-module1">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Exactly — human preference votes are what make RLHF work. The model learns which outputs humans prefer, not just which are technically correct."
+               data-explanation-wrong="Not quite. RLHF isn't about syntax rules or code reviews — it's about teaching models what humans actually prefer through direct feedback.">
+            <h3 class="quiz-question">A company wants their AI assistant to give warmer, more empathetic answers. Which approach uses RLHF correctly?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Write a list of rules like "always start responses with 'I understand'"</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Have annotators compare pairs of responses and pick the warmer one — thousands of times</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Ask the AI to review its own responses for empathy</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Right — the JWT acts as proof of identity on every request. Without it, the backend has no way to know who is submitting the annotation."
+               data-explanation-wrong="Think about what the backend needs to verify. It can't trust the browser blindly — it needs something the server itself issued to confirm your identity.">
+            <h3 class="quiz-question">An annotator submits a rating, but the backend rejects it with a 401 error. What is most likely missing?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The annotation data — they forgot to include the rating value</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The database is down — PostgreSQL is not responding</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The JWT token is missing or expired — the backend cannot verify who is making the request</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module1')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module1')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<section class="module" id="module-2" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">Meet the Cast</h1>
+      <p class="module-subtitle">The five main characters in this codebase — what each one does, and why it exists</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The five actors -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Five characters. One platform.</h2>
+        <p>
+          Think of this codebase like a film crew. Everyone has a specialized job. No one does everything. When you ask AI to "add a feature," knowing <em>which character</em> to give that job to is what separates a vibe coder from a great director.
+        </p>
+
+        <div class="icon-rows stagger-children animate-in">
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-1)">⚛️</div>
+            <div>
+              <strong>Next.js Frontend</strong>
+              <p>The face of the app — everything in your browser. Built with React 18 + Zustand. Lives in <code>frontend/</code>. Handles all UI, navigation, and local state.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-2)">⚡</div>
+            <div>
+              <strong>FastAPI Backend</strong>
+              <p>The brain. A Python <span class="term" data-definition="An API server receives requests from clients (like your browser), processes them, and sends back responses. It's the middleman between your UI and your database.">API server</span> that handles authentication, data validation, and all business logic. Lives in <code>backend/</code>.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🗄️</div>
+            <div>
+              <strong>PostgreSQL Database</strong>
+              <p>The long-term memory. Every annotation, user, task, and export lives here permanently. FastAPI reads and writes to it using <span class="term" data-definition="SQLAlchemy is a Python library that lets you talk to a database using Python objects instead of raw SQL queries. It translates between your code and the database.">SQLAlchemy</span>.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-4)">🔴</div>
+            <div>
+              <strong>Redis</strong>
+              <p>The speed cache. Some data (like session info) needs to be accessed in milliseconds, not seconds. Redis keeps hot data in memory for near-instant reads.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-5)">🐍</div>
+            <div>
+              <strong>Python SDK + CLI</strong>
+              <p>The power tools for technical users. The <code>rlhf</code> <span class="term" data-definition="A CLI (Command Line Interface) is a text-based way to control a program by typing commands, instead of clicking buttons. Power users prefer CLIs because they can be scripted and automated.">CLI</span> lets you upload task packs, download datasets, and run evaluations from your terminal — no browser needed.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Codebase structure -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Where each character lives in the code</h2>
+        <p>The project is a <span class="term" data-definition="A monorepo is a single Git repository that contains multiple distinct projects — like a frontend, backend, and SDK — all managed together. The alternative is separate repos for each.">monorepo</span>: one repository, multiple services. Here's the map:</p>
+
+        <div class="file-tree animate-in">
+          <div class="ft-folder">
+            <span class="ft-name">frontend/</span>
+            <span class="ft-desc">Next.js 14 app — everything users see</span>
+            <div class="ft-children">
+              <div class="ft-folder">
+                <span class="ft-name">src/app/</span>
+                <span class="ft-desc">Pages and routes (App Router)</span>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">src/lib/state/</span>
+                <span class="ft-desc">Zustand store — your annotation workspace in memory</span>
+              </div>
+              <div class="ft-file">
+                <span class="ft-name">src/middleware.ts</span>
+                <span class="ft-desc">Guards protected pages — redirects if not logged in</span>
+              </div>
+            </div>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">backend/</span>
+            <span class="ft-desc">FastAPI Python server</span>
+            <div class="ft-children">
+              <div class="ft-folder">
+                <span class="ft-name">app/routers/</span>
+                <span class="ft-desc">One file per feature: auth, tasks, reviews, datasets...</span>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">app/models/</span>
+                <span class="ft-desc">SQLAlchemy database table definitions</span>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">app/services/</span>
+                <span class="ft-desc">Business logic: LLM judge, certificates, exams, email</span>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">alembic/</span>
+                <span class="ft-desc">Database migration scripts — how the schema evolves</span>
+              </div>
+            </div>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">sdk/</span>
+            <span class="ft-desc">Python package — the rlhf CLI and HTTP client</span>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">docker/</span>
+            <span class="ft-desc">Docker Compose — spins up Postgres + Redis locally</span>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">guidelines/</span>
+            <span class="ft-desc">Human annotation rubrics (Markdown)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Where they live in the cloud -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">In production: two clouds, one app</h2>
+        <p>When this app is deployed, it splits across two hosting providers — each playing to their strengths:</p>
+
+        <div class="pattern-cards animate-in">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">▲</div>
+            <h4 class="pattern-title">Vercel — Frontend</h4>
+            <p class="pattern-desc">Next.js pages are deployed to Vercel's global <span class="term" data-definition="A CDN (Content Delivery Network) is a worldwide network of servers. When you load a page, it comes from the server nearest to you — making it faster.">CDN</span>. Users get fast page loads from a server near them, anywhere in the world.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">🪰</div>
+            <h4 class="pattern-title">Fly.io — Backend + Database</h4>
+            <p class="pattern-desc">The FastAPI server and PostgreSQL database run on Fly.io, a platform that runs <span class="term" data-definition="A Docker container is a lightweight, self-contained package that includes your app and everything it needs to run. Like a shipping container — standardized, portable, runs the same everywhere.">Docker containers</span> close to users. The backend config lives in <code>backend/fly.toml</code>.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">🔗</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why Split Them?</strong>
+            <p>Vercel is unbeatable for static pages and <span class="term" data-definition="SSR (Server-Side Rendering) means the HTML is built on the server before being sent to the browser. The page loads with content already in it, making it fast to display and good for SEO.">SSR</span>. Fly.io is better for long-running Python servers. Using the right tool for each job is a common production pattern — you'll hear engineers call this "separation of concerns."</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Interactive Architecture Diagram -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The full system — click any component</h2>
+        <p>Click any box to learn what it does:</p>
+
+        <div class="arch-diagram animate-in">
+          <div class="arch-zone" style="border-color: var(--color-actor-1); margin-bottom: var(--space-4)">
+            <h4 class="arch-zone-label">☁️ Vercel — Browser Layer</h4>
+            <div class="arch-component"
+                 data-desc="Next.js 14 with App Router. All user-facing pages live here. Zustand persists annotation state to localStorage so you don't lose work on refresh."
+                 onclick="">
+              <div class="arch-icon">⚛️</div>
+              <span>Next.js UI</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="middleware.ts — runs before every page load. Checks for the rlhf_session cookie. If missing, redirects you to /auth. Protects 15+ route prefixes."
+                 onclick="">
+              <div class="arch-icon">🔒</div>
+              <span>Route Guard</span>
+            </div>
+          </div>
+
+          <div class="arch-zone" style="border-color: var(--color-actor-2); margin-bottom: var(--space-4)">
+            <h4 class="arch-zone-label">🪰 Fly.io — Backend Layer</h4>
+            <div class="arch-component"
+                 data-desc="FastAPI handles 18+ router groups: auth, tasks, reviews, datasets, judge, IAA, quality, exams, certificates, webhooks, and more. All mounted at /api/v1."
+                 onclick="">
+              <div class="arch-icon">⚡</div>
+              <span>FastAPI Routers</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="Services layer: LLM Judge (compares annotations against AI), Certificate generator, Exam grader, Email sender via AgentMail, HuggingFace inference proxy."
+                 onclick="">
+              <div class="arch-icon">🧠</div>
+              <span>Services</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="Alembic manages database schema changes. Each migration is a Python script that modifies the PostgreSQL table structure. Run 'alembic upgrade head' to apply."
+                 onclick="">
+              <div class="arch-icon">🔄</div>
+              <span>Alembic Migrations</span>
+            </div>
+          </div>
+
+          <div class="arch-zone" style="border-color: var(--color-actor-3)">
+            <h4 class="arch-zone-label">💾 Data Layer</h4>
+            <div class="arch-component"
+                 data-desc="PostgreSQL 16 stores everything permanently: users, organizations, tasks, annotations, reviews, datasets, exam attempts, certificates, audit logs."
+                 onclick="">
+              <div class="arch-icon">🗄️</div>
+              <span>PostgreSQL</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="Redis 7 stores fast-access session data. Used for caching and rate limiting. Much faster than PostgreSQL for temporary, frequently-read data."
+                 onclick="">
+              <div class="arch-icon">🔴</div>
+              <span>Redis</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="The rlhf Python package provides a CLI and HTTP client. Teams use it to upload task packs, download datasets in DPO format, and run batch evaluations."
+                 onclick="">
+              <div class="arch-icon">🐍</div>
+              <span>Python SDK</span>
+            </div>
+          </div>
+
+          <div class="arch-description">Click any component above to learn what it does</div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Group Chat — components talking -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A group chat: what happens when you log in</h2>
+        <p>Here's what the components "say" to each other when you hit the login page:</p>
+
+        <div class="chat-window" id="chat-login">
+          <div class="chat-messages">
+            <div class="chat-message" data-sender="browser" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">🖥</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Browser</span>
+                <p>User just typed their email + password and clicked Login.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="nextjs" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">⚛</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Next.js</span>
+                <p>Got it. I'll POST those credentials to /api/v1/auth/login on the FastAPI server.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="fastapi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">FastAPI</span>
+                <p>Request received. Let me check this password against the database...</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="postgres" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">🗄</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">PostgreSQL</span>
+                <p>Found the user. Their hashed password matches. Role is "annotator". Returning user record.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="fastapi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">FastAPI</span>
+                <p>Password verified ✓. Generating a JWT token signed with the secret key. Valid for 30 days. Sending it back.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="nextjs" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">⚛</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Next.js</span>
+                <p>Got the JWT. Storing it in localStorage AND setting an rlhf_session cookie. Redirecting to /dashboard.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="browser" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">🖥</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Browser</span>
+                <p>Dashboard loaded! Every future request will include the JWT in the Authorization header.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" style="display:none">
+            <div class="chat-avatar" style="background: var(--color-text-muted)">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="quiz-container" id="quiz-module2">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Correct — the services layer in backend/app/services/ is exactly where business logic like LLM judge evaluation lives. Routers are just HTTP handlers; they delegate the real work to services."
+               data-explanation-wrong="Routers handle HTTP routes, but they shouldn't contain complex logic. Models define database tables. Services is where non-trivial business logic like LLM evaluation belongs.">
+            <h3 class="quiz-question">You want to add logic that automatically evaluates annotation quality using an AI model. Where in the backend should this code live?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>backend/app/routers/ — since it's triggered by an API endpoint</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>backend/app/services/ — business logic that doesn't belong in the HTTP layer</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>backend/app/models/ — since it processes data from the database</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Right — the SDK is designed for programmatic, automated access. A researcher running batch evaluations overnight doesn't want to click through a browser UI."
+               data-explanation-wrong="The SDK exists specifically for automation and scripting use cases. The web UI is for human annotators who need a visual interface — not for batch processing 10,000 records.">
+            <h3 class="quiz-question">A research team wants to automatically upload 10,000 task packs every night from their data pipeline. What should they use?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The Python SDK / rlhf CLI — it's built for scripted, automated workflows</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The web UI — they could write a browser script to click the upload button</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Redis — store the tasks there since it's faster than PostgreSQL</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module2')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module2')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<section class="module" id="module-3" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">How Your Click Becomes Data</h1>
+      <p class="module-subtitle">Auth, state management, and the request lifecycle — traced from browser to database</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: Auth — the concert wristband -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Authentication: the concert wristband model</h2>
+        <p>
+          At a concert, the bouncer checks your ID once at the door and gives you a wristband. After that, you can move anywhere in the venue without showing ID again — everyone just checks your wrist.
+        </p>
+        <p>
+          This app works exactly the same way. You show your password once (<span class="term" data-definition="Authentication is the process of proving who you are — typically with a username and password. Authorization is what you're allowed to do once you're in. They're different things.">authentication</span>). The server issues a <span class="term" data-definition="A JWT (JSON Web Token) is a cryptographically signed string that contains your user ID, role, and expiration time. The server signs it with a secret key — nobody can fake one without knowing that key.">JWT token</span> (your wristband). Every subsequent request carries that token — the server just checks the wrist.
+        </p>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">🔑</div>
+          <div class="callout-content">
+            <strong class="callout-title">Two tokens, one identity</strong>
+            <p>This app stores the JWT in two places: <code>localStorage</code> (for API calls) and an <code>rlhf_session</code> cookie (for page route protection). The cookie tells Next.js middleware "this person is logged in." The JWT tells FastAPI "this person is <em>this specific user</em> with <em>this role</em>."</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Code translation — middleware.ts -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The code that guards every page</h2>
+        <p>
+          This file runs <em>before</em> every page load. If you don't have the session cookie, you get bounced to the login page — you never even see the page content.
+        </p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — frontend/src/middleware.ts</span>
+            <pre><code><span class="code-keyword">const</span> <span class="code-property">PROTECTED_PREFIXES</span> = [
+  <span class="code-string">"/dashboard"</span>,
+  <span class="code-string">"/analytics"</span>,
+  <span class="code-string">"/reviews"</span>,
+  <span class="code-string">"/task"</span>,
+  <span class="code-string">"/exams"</span>,
+  <span class="code-comment">// ... 10 more routes</span>
+];
+
+<span class="code-keyword">const</span> <span class="code-property">hasSessionCookie</span> =
+  <span class="code-function">Boolean</span>(request.cookies
+    .<span class="code-function">get</span>(<span class="code-string">"rlhf_session"</span>)?.<span class="code-property">value</span>);
+
+<span class="code-keyword">if</span> (hasSessionCookie) {
+  <span class="code-keyword">return</span> NextResponse.<span class="code-function">next</span>();
+}
+url.<span class="code-property">pathname</span> = <span class="code-string">"/auth"</span>;
+<span class="code-keyword">return</span> NextResponse.<span class="code-function">redirect</span>(url);</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Here's a list of pages that require login. If you try to visit any of these without being logged in, you get redirected.</p>
+              <p class="tl">&nbsp;</p>
+              <p class="tl">Check if the browser is carrying the session cookie. The <code>?.value</code> safely handles the case where the cookie doesn't exist at all.</p>
+              <p class="tl">&nbsp;</p>
+              <p class="tl">If the cookie exists: let them through. Show the page normally.</p>
+              <p class="tl">If not: change the destination URL to the login page and redirect. They never see the protected content.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">🗺️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why is this in middleware, not in each page?</strong>
+            <p>If you checked for login inside each individual page, you'd have to copy that code 15+ times. Middleware runs once for all routes — it's a single chokepoint. Engineers call this the "single responsibility" principle: one place handles one job.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Zustand state — the annotation whiteboard -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Your workspace in memory: Zustand state</h2>
+        <p>
+          Think of <span class="term" data-definition="Zustand (German for 'state') is a lightweight React state management library. It creates a shared data store that all components can read from and write to, with optional persistence to localStorage.">Zustand</span> like a shared whiteboard in a conference room. Every component in the app can look at it, write on it, and erase from it. Crucially, this whiteboard has a <em>memory</em> — it survives page refreshes by saving itself to <span class="term" data-definition="localStorage is a browser feature that stores key-value pairs permanently on your device. Unlike cookies, it stays until you clear your browser data or the app deletes it.">localStorage</span>.
+        </p>
+        <p>Here's what the annotation workspace stores at any given moment:</p>
+
+        <div class="badge-list animate-in">
+          <div class="badge-item">
+            <code class="badge-code">user + token</code>
+            <span class="badge-desc">Who you are and your JWT — sent with every API request</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">tasks[]</code>
+            <span class="badge-desc">Your loaded task pack — the AI responses waiting to be judged</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">annotations{}</code>
+            <span class="badge-desc">Your choices so far, keyed by task ID — won't disappear on refresh</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">taskTimes{}</code>
+            <span class="badge-desc">How long you spent on each task — used for quality metrics</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">currentTaskIndex</code>
+            <span class="badge-desc">Which task you're on right now — so "back" always works</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Code translation — Zustand store -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The whiteboard setup — line by line</h2>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — frontend/src/lib/state/store.ts</span>
+            <pre><code><span class="code-keyword">export const</span> <span class="code-property">useAppStore</span> =
+  <span class="code-function">create</span>&lt;<span class="code-property">AppState</span>&gt;()(
+  <span class="code-function">persist</span>(
+    (set, get) =&gt; ({
+      user: <span class="code-keyword">null</span>,
+      token: <span class="code-keyword">null</span>,
+      tasks: [],
+      annotations: {},
+
+      <span class="code-function">setAuth</span>: ({ user, token }) =&gt; {
+        localStorage.<span class="code-function">setItem</span>(
+          <span class="code-string">"rlhf_authToken"</span>, token);
+        document.cookie =
+          <span class="code-string">"rlhf_session=1; Path=/;"</span>;
+        <span class="code-function">set</span>({ user, token });
+      },
+    })
+  )
+);</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Create a shared data store using Zustand. <code>persist</code> wraps it so it automatically saves to localStorage.</p>
+              <p class="tl">&nbsp;</p>
+              <p class="tl">Starting values: no user logged in, empty task list, no annotations yet.</p>
+              <p class="tl">&nbsp;</p>
+              <p class="tl"><code>setAuth</code> is called after login succeeds. It does three things at once:</p>
+              <p class="tl">① Saves the JWT to localStorage so future API calls can include it.</p>
+              <p class="tl">② Sets the session cookie so the middleware knows you're logged in.</p>
+              <p class="tl">③ Updates the store's user and token values so every component knows who's logged in.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Full request lifecycle data flow animation -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The complete annotation submission — step by step</h2>
+        <p>From click to database. Every hop in the chain:</p>
+
+        <div class="flow-animation animate-in" data-steps='[
+          {"highlight":"flow-actor-1","label":"You select an answer in the browser. Zustand immediately records it in memory (no network call yet)."},
+          {"highlight":"flow-actor-1","label":"You click Submit. Zustand marks this task done and packages your choice + timing as JSON.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"Next.js sends POST /api/v1/tasks/{id}/annotate with the JWT token in the Authorization header.","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"FastAPI verifies the JWT. Extracts your user ID and role. Validates the request body using Pydantic."},
+          {"highlight":"flow-actor-3","label":"Passes to the annotation service, which calls async SQLAlchemy to write to PostgreSQL.","packet":true,"from":"actor-3","to":"actor-4"},
+          {"highlight":"flow-actor-4","label":"PostgreSQL writes the annotation row. Returns the new record with its database ID.","packet":true,"from":"actor-4","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"FastAPI returns 200 OK with the saved annotation object.","packet":true,"from":"actor-3","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"Next.js receives success. Updates Zustand to advance to the next task.","packet":true,"from":"actor-2","to":"actor-1"},
+          {"highlight":"flow-actor-1","label":"The UI transitions to the next task. Your annotation is permanently saved."}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🖥️</div>
+              <span>Browser + Zustand</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">⚛️</div>
+              <span>Next.js</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">⚡</div>
+              <span>FastAPI</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🗄️</div>
+              <span>PostgreSQL</span>
+            </div>
+          </div>
+
+          <div class="flow-packet"></div>
+          <div class="flow-step-label">Click "Next Step" to begin</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step →</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Apply what you learned</h2>
+
+        <div class="quiz-container" id="quiz-module3">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Exactly. Zustand + localStorage act as a buffer. Your choices exist in the browser before they reach the server. If the network drops mid-session, your local work is still safe in localStorage."
+               data-explanation-wrong="Think about the order of events. The annotation is captured locally first, then submitted. What happens if submission fails?">
+            <h3 class="quiz-question">An annotator loses their internet connection halfway through a session. They have rated 20 tasks. When they reconnect, what happens to their work?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>All 20 ratings are lost — they need to start over</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Ratings saved before disconnect are still in localStorage — only unsent ones need resubmitting</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>PostgreSQL kept all ratings because they were sent to the server automatically</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Correct — a 403 Forbidden means you're authenticated (the JWT is valid) but not authorized to do that action. Roles control what you can do, not just whether you can log in."
+               data-explanation-wrong="A 401 means unauthenticated (no valid token). A 500 is a server crash. A 403 Forbidden is specifically about authorization — your identity is known, but your role doesn't permit the action.">
+            <h3 class="quiz-question">An annotator tries to approve another annotator's review. The server returns HTTP 403. What does this tell you?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Their JWT token has expired — they need to log in again</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The server crashed — a 500 error would be the same thing</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Their role (annotator) doesn't have permission to approve reviews — that requires reviewer or admin</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module3')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module3')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<section class="module" id="module-4" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">The Clever Engineering</h1>
+      <p class="module-subtitle">Four patterns that make this codebase production-grade — and how to request them from AI</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: Async FastAPI — air traffic controller -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pattern 1 — Async: the air traffic controller model</h2>
+        <p>
+          A traditional web server is like a pharmacist who can only help one customer at a time. While they're filling one prescription, everyone else waits in line. For a few users, fine. For hundreds? Disaster.
+        </p>
+        <p>
+          FastAPI uses <span class="term" data-definition="Async (asynchronous) programming lets a program start a task, then move on to other work while waiting for it to finish. It's like placing a food order, doing other things, then picking it up when it's ready — instead of standing at the counter the whole time.">async/await</span> — more like an air traffic controller. They can manage dozens of planes simultaneously: "Runway 1, hold. Runway 2, cleared to land. Runway 3, begin approach." No plane waits for another to land before getting instructions.
+        </p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — backend/app/routers/tasks.py (pattern)</span>
+            <pre><code><span class="code-decorator">@router.post</span>(<span class="code-string">"/tasks/{task_id}/annotate"</span>)
+<span class="code-keyword">async def</span> <span class="code-function">submit_annotation</span>(
+    task_id: <span class="code-function">int</span>,
+    body: <span class="code-property">AnnotationCreate</span>,
+    db: <span class="code-property">AsyncSession</span> = <span class="code-function">Depends</span>(get_db),
+    current_user: <span class="code-property">User</span> = <span class="code-function">Depends</span>(get_current_user),
+):
+    <span class="code-keyword">return await</span> <span class="code-function">save_annotation</span>(
+        db, task_id, body, current_user
+    )</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">When a POST request arrives at /tasks/123/annotate, run this function.</p>
+              <p class="tl"><code>async def</code> — this function can pause while waiting for the database, handling other requests in the meantime.</p>
+              <p class="tl"><code>body: AnnotationCreate</code> — FastAPI automatically validates the request body matches this shape. If it doesn't, it returns a 422 error before the function even runs.</p>
+              <p class="tl"><code>Depends(get_db)</code> — automatically inject a database connection. <code>Depends(get_current_user)</code> — automatically verify the JWT and inject the logged-in user. Both are "middleware injected" into the function.</p>
+              <p class="tl"><code>await</code> — pause here while the database does its work. Other requests run during this wait.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Pydantic validation -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pattern 2 — Pydantic: the shape police</h2>
+        <p>
+          Imagine ordering from a form where every field is validated before you can submit. Pydantic is FastAPI's built-in form validator — but for <span class="term" data-definition="JSON (JavaScript Object Notation) is a lightweight data format for sending structured data between systems. It looks like: {&quot;name&quot;: &quot;Alice&quot;, &quot;score&quot;: 4}. Almost every API uses JSON.">JSON</span> data coming into the API.
+        </p>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">🛡️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why This Matters for You as a Vibe Coder</strong>
+            <p>When you tell AI "add a new field to the annotation form," you also need to say "add it to the Pydantic schema in backend/app/schemas/." If you don't, FastAPI will silently drop that field — or crash with a validation error. This is the #1 "why isn't my new field saving?" gotcha.</p>
+          </div>
+        </div>
+
+        <div class="badge-list animate-in">
+          <div class="badge-item">
+            <code class="badge-code">schemas/</code>
+            <span class="badge-desc">Pydantic models that define what data can enter and exit each API endpoint</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">models/</code>
+            <span class="badge-desc">SQLAlchemy models that define how data is stored in PostgreSQL tables</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">422 error</code>
+            <span class="badge-desc">Validation failed — the request body didn't match the Pydantic schema</span>
+          </div>
+        </div>
+
+        <p>A new field needs to be added in <em>both</em> places: the schema (for validation) and the model (for storage). AI sometimes forgets one.</p>
+      </section>
+
+      <!-- Screen 3: The LLM Judge -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pattern 3 — The LLM Judge: AI evaluating AI</h2>
+        <p>
+          One of the most powerful features: the platform can run an <span class="term" data-definition="An LLM (Large Language Model) is the technology behind ChatGPT, Claude, and similar AI tools. It's a neural network trained on vast amounts of text that can understand and generate language.">LLM</span> to automatically evaluate annotation quality — comparing what a human annotator chose against what the AI model thinks is correct. This is called "LLM-as-a-judge."
+        </p>
+
+        <div class="flow-steps animate-in">
+          <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <p>Annotator submits a rating for an AI response</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <p>Judge service sends the response + annotation to an LLM with a rubric prompt</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <p>LLM returns its own score and reasoning</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <p>Platform compares: human vs LLM. Flags large disagreements for review.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">⚖️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Override, Accept, Reject</strong>
+            <p>When the LLM judge disagrees with an annotator, a reviewer can accept the LLM's assessment, reject it, or override it with a manual decision. The platform tracks all three paths — giving you a complete audit trail of every quality decision.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Alembic — versioning your database -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pattern 4 — Alembic: version control for your database</h2>
+        <p>
+          Your code lives in Git — every change is tracked and reversible. But databases are different. If you add a column to a table, how do you make sure every deployment gets that column? That's what <span class="term" data-definition="Alembic is a database migration tool for Python/SQLAlchemy. It generates versioned scripts that describe how to change your database schema — add columns, create tables, drop indexes — and can apply or reverse them in order.">Alembic</span> does.
+        </p>
+        <p>
+          Think of it like sheet music for an orchestra. Every instrument player (every server running your code) follows the same score. If you add a new note, everyone gets the updated score.
+        </p>
+
+        <div class="pattern-cards stagger-children animate-in">
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">✍️</div>
+            <h4 class="pattern-title">Generate migration</h4>
+            <p class="pattern-desc"><code>alembic revision --autogenerate -m "add_score_column"</code> — Alembic inspects your models and writes the migration script automatically.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">▶️</div>
+            <h4 class="pattern-title">Apply to database</h4>
+            <p class="pattern-desc"><code>alembic upgrade head</code> — runs all pending migrations in order. Safe to run multiple times — already-applied migrations are skipped.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">⏪</div>
+            <h4 class="pattern-title">Roll back</h4>
+            <p class="pattern-desc"><code>alembic downgrade -1</code> — undo the last migration. Like Ctrl+Z for your database schema. Critical when a deployment goes wrong.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warning animate-in">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The AI Gotcha</strong>
+            <p>When you ask AI to "add a new field to the database," it will update the SQLAlchemy model — but may forget to generate the Alembic migration. Always follow up with: "now generate the Alembic migration for this change." Without it, the column exists in code but not in the actual database.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Group chat — LLM judge in action -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The judge at work: a group conversation</h2>
+        <p>Here's what happens behind the scenes when the LLM judge evaluates an annotation:</p>
+
+        <div class="chat-window" id="chat-judge">
+          <div class="chat-messages">
+            <div class="chat-message" data-sender="reviewer" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">👤</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">Reviewer</span>
+                <p>I triggered a judge evaluation on the last 100 annotations in this pack.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="fastapi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">FastAPI / Judge Service</span>
+                <p>Got it. Fetching the 100 annotation records from PostgreSQL...</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="hf" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">🤗</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">HuggingFace Inference API</span>
+                <p>Received 100 prompts (each includes the AI response + the human rating + the rubric). Processing...</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="hf" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">🤗</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">HuggingFace</span>
+                <p>Done. Returning 100 judge scores with reasoning. I disagreed with the human on 7 annotations.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="fastapi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">FastAPI / Judge Service</span>
+                <p>Saving all 100 judge results to PostgreSQL. Flagging 7 disagreements in the review queue.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="reviewer" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">👤</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">Reviewer</span>
+                <p>I can now see the 7 flagged items in the review queue with side-by-side human vs AI scores. I'll accept, reject, or override each one.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" style="display:none">
+            <div class="chat-avatar" style="background: var(--color-text-muted)">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Apply the patterns</h2>
+
+        <div class="quiz-container" id="quiz-module4">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Right — async def lets FastAPI handle hundreds of concurrent requests without blocking. If your endpoint is sync (blocking), one slow database call makes everyone wait. This is the single most impactful architectural choice for throughput."
+               data-explanation-wrong="Think about what async actually does. It's not about security or error handling — it's about being able to serve multiple users at once without making them wait for each other.">
+            <h3 class="quiz-question">Your annotation platform is getting 500 simultaneous users and the server is struggling. What's the single biggest architectural fix?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Add more Pydantic validation to catch bad requests earlier</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Make sure all route handlers use async def with async database calls — so one slow query doesn't block 499 others</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Move all the logic from services/ into the routers/ to reduce function call overhead</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly — you need both the Pydantic schema update (to allow the new field in API requests) AND the Alembic migration (to add the column to the actual database table). Missing either one breaks the feature."
+               data-explanation-wrong="Think about the two separate places data has to be defined in this architecture: where it enters (schema validation) and where it's stored (database table).">
+            <h3 class="quiz-question">You ask AI to add a "confidence_score" field to annotation submissions. The code compiles fine, but the field never saves to the database. What did AI probably miss?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It forgot to add the field to the Pydantic schema in schemas/</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It forgot to add the field to the SQLAlchemy model in models/</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It added the field to the model but forgot to generate and run the Alembic migration — so the actual database table doesn't have the column yet</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module4')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module4')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<section class="module" id="module-5" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">Debug Like an Engineer</h1>
+      <p class="module-subtitle">The most common failure modes, how to find them, and how to steer AI out of stuck loops</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The most common things that break -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The usual suspects: what breaks most often</h2>
+        <p>
+          Every full-stack app has a predictable set of failure modes. Knowing these by name lets you tell AI exactly where to look — instead of watching it spin in circles for 10 minutes.
+        </p>
+
+        <div class="icon-rows stagger-children animate-in">
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">🚫</div>
+            <div>
+              <strong>CORS errors</strong>
+              <p><span class="term" data-definition="CORS (Cross-Origin Resource Sharing) is a browser security rule that blocks requests from one domain (like vercel.app) to a different domain (like fly.dev) unless the server explicitly allows it.">CORS</span> fires when the frontend domain isn't in FastAPI's allowed origins list. Symptom: "Network Error" in browser console, request never reaches the backend. Fix: add your Vercel URL to <code>allow_origins</code> in <code>backend/app/main.py</code>.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">🔐</div>
+            <div>
+              <strong>JWT expiry — "suddenly logged out"</strong>
+              <p>JWTs expire after 30 days. When they do, every API call returns 401. Symptom: user seems logged in (cookie exists) but all data requests fail. Fix: implement token refresh logic, or increase the expiry window for development.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">🔌</div>
+            <div>
+              <strong>Database connection pool exhausted</strong>
+              <p>Under load, if too many <span class="term" data-definition="A database connection is an open channel between your app and PostgreSQL. Opening connections is expensive, so a 'pool' pre-opens a set of connections and reuses them. If all are in use, new requests queue up.">async connections</span> are held open, new requests time out. Symptom: 503 errors during traffic spikes. Fix: tune <code>pool_size</code> and <code>max_overflow</code> in the SQLAlchemy engine config.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">📦</div>
+            <div>
+              <strong>Stale Zustand state</strong>
+              <p>Sometimes old annotation data persists in localStorage across sessions. Symptom: user sees tasks from a previous session, or their old answers auto-fill new tasks. Fix: call <code>clearAnnotations()</code> on new session start, or add a version key to the persist config.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-error); opacity: 0.85">🔄</div>
+            <div>
+              <strong>Missing Alembic migration</strong>
+              <p>AI adds a column to the model but forgets to migrate. Symptom: 500 errors when saving, with "column does not exist" in server logs. Fix: <code>alembic revision --autogenerate -m "fix"</code> then <code>alembic upgrade head</code>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Spot the bug challenge -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Spot the bug: something is wrong in this route</h2>
+        <p>
+          This FastAPI route is supposed to save an annotation and return the saved record. One line contains a critical mistake. Click the line you think is wrong:
+        </p>
+
+        <div class="bug-challenge animate-in">
+          <h3>Find the bug in this annotation endpoint:</h3>
+          <div class="bug-code">
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="This line is fine — it correctly defines the async route handler.">
+              <span class="line-num">1</span>
+              <code>@router.post("/tasks/{task_id}/annotate")</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="Async def is correct here — this function needs to await database calls.">
+              <span class="line-num">2</span>
+              <code>async def submit_annotation(task_id: int, body: AnnotationCreate,</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="Getting the current user via Depends is the correct pattern for JWT verification.">
+              <span class="line-num">3</span>
+              <code>    current_user = Depends(get_current_user), db = Depends(get_db)):</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="Creating the annotation object is fine. No bug here.">
+              <span class="line-num">4</span>
+              <code>    annotation = Annotation(task_id=task_id, **body.dict())</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, true)"
+                 data-explanation="db.add(annotation) queues the write, but without 'await db.commit()' it never actually saves to the database! The function returns the annotation object, but nothing was persisted. Add 'await db.commit()' and 'await db.refresh(annotation)' before the return.">
+              <span class="line-num">5</span>
+              <code>    db.add(annotation)</code>
+            </div>
+            <div class="bug-line" onclick="checkBugLine(this, false)" data-hint="Returning the annotation is correct — but it won't have a database ID if we never committed.">
+              <span class="line-num">6</span>
+              <code>    return annotation</code>
+            </div>
+          </div>
+          <div class="bug-feedback"></div>
+        </div>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">The Async DB Gotcha</strong>
+            <p>With async SQLAlchemy, you must <code>await db.commit()</code> to actually save to the database, and <code>await db.refresh(annotation)</code> to reload the record (with its database-assigned ID) from the DB. AI frequently writes the <code>db.add()</code> but forgets the commit. This is the #1 "data is not saving" bug in async FastAPI code.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: How to get unstuck from AI bug loops -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Getting unstuck: break AI out of bug loops</h2>
+        <p>
+          AI gets into "debug loops" — trying the same fix 3 different ways when it doesn't understand the root cause. Here's how to break the loop using what you now know:
+        </p>
+
+        <div class="step-cards animate-in">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Name the layer, not just the symptom</strong>
+              <p>Instead of "annotations aren't saving," say "the FastAPI route returns 200 but PostgreSQL never gets the write. I think the Alembic migration is missing or the await db.commit() is absent." This tells AI exactly where to look.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Read the server logs, not just the browser</strong>
+              <p>The browser shows you the <span class="term" data-definition="An HTTP status code is a 3-digit number indicating the result of a request. 200 = success, 401 = unauthorized, 403 = forbidden, 422 = validation error, 500 = server crash.">HTTP status code</span>. The real error is in the FastAPI server logs (or Fly.io logs). Give AI the actual Python stack trace — it narrows the problem from 10 possibilities to 1.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Check Zustand state in browser devtools</strong>
+              <p>Open browser devtools → Application → Local Storage → look for the Zustand key. If the annotation data is there, the problem is in submission (network/backend). If it's not there, the problem is in the UI (state management).</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Isolate with a direct API call</strong>
+              <p>Use the FastAPI automatic docs at <code>/docs</code> (built-in Swagger UI) to call the endpoint directly without the frontend. If it works there, the bug is in Next.js. If it fails there, the bug is in FastAPI or the database.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Where to take this next -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What to build next: the feature map</h2>
+        <p>
+          Now that you understand the architecture, here's how to think about extending it. Each feature lives in a predictable place:
+        </p>
+
+        <div class="pattern-cards stagger-children animate-in">
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">📊</div>
+            <h4 class="pattern-title">New annotation type</h4>
+            <p class="pattern-desc">New Pydantic schema → new SQLAlchemy model → Alembic migration → new router endpoint → new React component. AI needs all 5 steps.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">📤</div>
+            <h4 class="pattern-title">New export format</h4>
+            <p class="pattern-desc">Add a service in <code>backend/app/services/</code> that queries PostgreSQL and transforms the data. Wire it to a new router endpoint. The SDK CLI can then call it.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">👥</div>
+            <h4 class="pattern-title">New role / permission</h4>
+            <p class="pattern-desc">Add the role string to the auth system in <code>routers/auth.py</code>, then add <code>require_role("new_role")</code> as a Depends on the endpoints it should protect.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">🔔</div>
+            <h4 class="pattern-title">New webhook event</h4>
+            <p class="pattern-desc">Add to <code>routers/webhooks.py</code>. The webhook system already handles delivery, retries, and signature verification — you just define the event payload shape.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Final drag-and-drop quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Final check: match the problem to the fix</h2>
+
+        <div class="dnd-container" id="dnd-final">
+          <p style="font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-4)">Drag each symptom to the correct diagnosis:</p>
+          <div class="dnd-chips">
+            <div class="dnd-chip" draggable="true" data-answer="cors">CORS error in browser console</div>
+            <div class="dnd-chip" draggable="true" data-answer="migration">Column does not exist in DB</div>
+            <div class="dnd-chip" draggable="true" data-answer="jwt">All API calls return 401</div>
+            <div class="dnd-chip" draggable="true" data-answer="commit">Data shows 200 OK but never saves</div>
+          </div>
+          <div class="dnd-zones">
+            <div class="dnd-zone" data-correct="cors">
+              <p class="dnd-zone-label">Frontend and backend are on different domains — the server hasn't whitelisted the frontend URL in allow_origins</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="migration">
+              <p class="dnd-zone-label">SQLAlchemy model was updated but alembic upgrade head was never run</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="jwt">
+              <p class="dnd-zone-label">JWT token has expired — the 30-day window has passed and the user needs to re-authenticate</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="commit">
+              <p class="dnd-zone-label">db.add() was called but await db.commit() is missing from the async route handler</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: var(--space-3); margin-top: var(--space-6)">
+            <button class="btn btn-primary" onclick="checkDnD('dnd-final')">Check Matches</button>
+            <button class="btn" onclick="resetDnD('dnd-final')">Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Closing quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">One last scenario</h2>
+
+        <div class="quiz-container" id="quiz-module5">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Perfect diagnosis. The FastAPI /docs Swagger UI lets you call any endpoint with any payload — bypassing the frontend entirely. If it works there, the frontend is the problem. If it fails there too, the backend is the problem. This isolation technique is the fastest way to find the bug layer."
+               data-explanation-wrong="Think about isolating the problem. If you can't tell whether the bug is in the frontend or the backend, what could you use to call the backend directly — without the frontend involved at all?">
+            <h3 class="quiz-question">
+              <div class="scenario-block">
+                <div class="scenario-context">
+                  <span class="scenario-label">Scenario</span>
+                  <p>Annotators report that clicking "Submit" does nothing — no error, no next task. You don't know if the problem is in Next.js (frontend not sending the request) or in FastAPI (request arriving but failing silently). How do you find out in 2 minutes?</p>
+                </div>
+              </div>
+              What's the fastest way to isolate whether this is a frontend or backend problem?
+            </h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Check the Zustand state in localStorage to see if annotations are being stored locally</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Open FastAPI's /docs Swagger UI and call the annotation endpoint directly — if it works there, the bug is in Next.js; if it fails, the bug is in FastAPI</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Ask AI to rewrite the entire submit flow from scratch</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module5')">Check Answer</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module5')">Try Again</button>
+        </div>
+
+        <div class="callout callout-accent animate-in" style="margin-top: var(--space-10)">
+          <div class="callout-icon">🎓</div>
+          <div class="callout-content">
+            <strong class="callout-title">You now speak this codebase fluently</strong>
+            <p>You know the 5 characters, the data flow, the auth model, the 4 key engineering patterns, and the common failure modes. Use this knowledge to give AI precise, targeted instructions — and to know when AI is steering you wrong.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+  <script src="main.js"></script>
+</body>
+</html>

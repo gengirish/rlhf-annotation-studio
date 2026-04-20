@@ -1,0 +1,199 @@
+<section class="module" id="module-1" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">What is RLHF Annotation Studio?</h1>
+      <p class="module-subtitle">How human opinions teach AI to be better — and what this platform does to collect them</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The big hook -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">AI doesn't learn from rules — it learns from votes</h2>
+        <p>
+          Imagine you're training a dog. You don't hand it a rulebook. You reward the right behavior and ignore the wrong ones. Over thousands of small moments, the dog figures out what "good" looks like — from your feedback.
+        </p>
+        <p>
+          The world's most powerful <span class="term" data-definition="AI models are software systems trained on massive amounts of data to understand and generate human language, images, or code. ChatGPT, Claude, and Gemini are all AI models.">AI models</span> are trained the same way — except instead of treats, they get human preference data. Millions of tiny votes: "This response was better than that one." This process is called <span class="term" data-definition="RLHF stands for Reinforcement Learning from Human Feedback. It's the technique used to align AI models with human preferences by training them on thousands of human comparisons and ratings.">RLHF</span> — Reinforcement Learning from Human Feedback.
+        </p>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">The Core Insight</strong>
+            <p>Every time you pick "Response A is better than Response B," you're casting a vote that shapes how the next version of that AI thinks and talks. Annotation is how human judgment gets baked into machine intelligence.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: What this app does -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">This app is the factory floor for RLHF data</h2>
+        <p>
+          RLHF Annotation Studio is a <span class="term" data-definition="A full-stack application has both a frontend (what users see in the browser) and a backend (the server-side logic and database). This app has both, plus a Python SDK for programmatic access.">full-stack platform</span> where human annotators review AI outputs, rate them, compare them, and flag problems — all in a structured, trackable way that can be exported as training data.
+        </p>
+
+        <div class="pattern-cards stagger-children animate-in">
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">⚖️</div>
+            <h4 class="pattern-title">Comparison Tasks</h4>
+            <p class="pattern-desc">Show two AI responses side-by-side. Pick which one is better. This creates preference pairs used directly in RLHF training.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">⭐</div>
+            <h4 class="pattern-title">Rating Tasks</h4>
+            <p class="pattern-desc">Score a single AI response on quality, safety, helpfulness, or any custom dimension. Like giving a restaurant 4 out of 5 stars.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">🏆</div>
+            <h4 class="pattern-title">Ranking Tasks</h4>
+            <p class="pattern-desc">Drag-and-drop multiple AI responses into order from best to worst. More nuanced than binary comparisons.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">📦</div>
+            <h4 class="pattern-title">Task Packs</h4>
+            <p class="pattern-desc">Bundle annotation tasks into shareable packs. Assign them to teams, track completion, export results as training data.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Core user journey — step cards -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Your journey: from login to annotation in 4 steps</h2>
+        <p>Here's exactly what happens when you use this app — end to end:</p>
+
+        <div class="step-cards animate-in">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Sign in with your credentials</strong>
+              <p>The app creates a <span class="term" data-definition="A JWT (JSON Web Token) is a small encrypted package that proves who you are. It's like a signed hall pass — the server issues it once, and you carry it with you on every request.">JWT token</span> and stores it in a secure cookie. Every action you take is now tied to your identity and <span class="term" data-definition="A role is a named permission level. In this app, roles include annotator (can submit annotations), reviewer (can approve them), and admin (can manage everything).">role</span>.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Load a task pack</strong>
+              <p>The frontend fetches your assigned tasks from the <span class="term" data-definition="An API (Application Programming Interface) is a set of rules for how software talks to other software. Here, the frontend calls the backend's API to get your task list.">API</span> and stores them in local state. You see a list of AI responses waiting to be judged.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Annotate: pick, rate, or rank</strong>
+              <p>You make your judgment. The frontend tracks your decision in <span class="term" data-definition="Zustand is a lightweight state management library for React. Think of it as a shared whiteboard that all components can read from and write to — and it remembers its contents even if you refresh the page.">Zustand state</span> (your browser's memory) and records how long you took.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Submit — data flows to the database</strong>
+              <p>Your annotation travels from browser → <span class="term" data-definition="FastAPI is a modern Python web framework for building APIs. It's fast because it uses async/await (non-blocking code) and automatic validation.">FastAPI</span> backend → <span class="term" data-definition="PostgreSQL is a powerful open-source relational database. It stores your data in tables with rows and columns, like an extremely powerful spreadsheet that never loses data.">PostgreSQL</span> database. It becomes a permanent record, ready for quality review and export.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Flow animation of annotation submission -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Watch it happen: your click becomes training data</h2>
+        <p>Click "Next Step" to trace what happens the moment you submit an annotation:</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"You click the Submit button — your choice is captured in the browser"},
+          {"highlight":"flow-actor-1","label":"Zustand records your annotation + timing in memory","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"Next.js sends a POST request to the FastAPI backend with your JWT token","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"FastAPI validates your token, checks your role, accepts the annotation","packet":true,"from":"actor-3","to":"actor-4"},
+          {"highlight":"flow-actor-4","label":"PostgreSQL saves the annotation — it is now permanent training data"},
+          {"highlight":"flow-actor-3","label":"Backend responds: success! Your workspace updates to the next task","packet":true,"from":"actor-4","to":"actor-3"},
+          {"highlight":"flow-actor-1","label":"The frontend shows you the next task. The cycle continues.","packet":true,"from":"actor-3","to":"actor-1"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🖥️</div>
+              <span>Your Browser</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">⚛️</div>
+              <span>Next.js</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">⚡</div>
+              <span>FastAPI</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🗄️</div>
+              <span>PostgreSQL</span>
+            </div>
+          </div>
+
+          <div class="flow-packet"></div>
+          <div class="flow-step-label">Click "Next Step" to begin</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step →</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="quiz-container" id="quiz-module1">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Exactly — human preference votes are what make RLHF work. The model learns which outputs humans prefer, not just which are technically correct."
+               data-explanation-wrong="Not quite. RLHF isn't about syntax rules or code reviews — it's about teaching models what humans actually prefer through direct feedback.">
+            <h3 class="quiz-question">A company wants their AI assistant to give warmer, more empathetic answers. Which approach uses RLHF correctly?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Write a list of rules like "always start responses with 'I understand'"</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Have annotators compare pairs of responses and pick the warmer one — thousands of times</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Ask the AI to review its own responses for empathy</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Right — the JWT acts as proof of identity on every request. Without it, the backend has no way to know who is submitting the annotation."
+               data-explanation-wrong="Think about what the backend needs to verify. It can't trust the browser blindly — it needs something the server itself issued to confirm your identity.">
+            <h3 class="quiz-question">An annotator submits a rating, but the backend rejects it with a 401 error. What is most likely missing?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The annotation data — they forgot to include the rating value</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The database is down — PostgreSQL is not responding</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The JWT token is missing or expired — the backend cannot verify who is making the request</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module1')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module1')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

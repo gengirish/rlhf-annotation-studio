@@ -1,0 +1,348 @@
+<section class="module" id="module-2" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">Meet the Cast</h1>
+      <p class="module-subtitle">The five main characters in this codebase — what each one does, and why it exists</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The five actors -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Five characters. One platform.</h2>
+        <p>
+          Think of this codebase like a film crew. Everyone has a specialized job. No one does everything. When you ask AI to "add a feature," knowing <em>which character</em> to give that job to is what separates a vibe coder from a great director.
+        </p>
+
+        <div class="icon-rows stagger-children animate-in">
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-1)">⚛️</div>
+            <div>
+              <strong>Next.js Frontend</strong>
+              <p>The face of the app — everything in your browser. Built with React 18 + Zustand. Lives in <code>frontend/</code>. Handles all UI, navigation, and local state.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-2)">⚡</div>
+            <div>
+              <strong>FastAPI Backend</strong>
+              <p>The brain. A Python <span class="term" data-definition="An API server receives requests from clients (like your browser), processes them, and sends back responses. It's the middleman between your UI and your database.">API server</span> that handles authentication, data validation, and all business logic. Lives in <code>backend/</code>.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🗄️</div>
+            <div>
+              <strong>PostgreSQL Database</strong>
+              <p>The long-term memory. Every annotation, user, task, and export lives here permanently. FastAPI reads and writes to it using <span class="term" data-definition="SQLAlchemy is a Python library that lets you talk to a database using Python objects instead of raw SQL queries. It translates between your code and the database.">SQLAlchemy</span>.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-4)">🔴</div>
+            <div>
+              <strong>Redis</strong>
+              <p>The speed cache. Some data (like session info) needs to be accessed in milliseconds, not seconds. Redis keeps hot data in memory for near-instant reads.</p>
+            </div>
+          </div>
+          <div class="icon-row animate-in">
+            <div class="icon-circle" style="background: var(--color-actor-5)">🐍</div>
+            <div>
+              <strong>Python SDK + CLI</strong>
+              <p>The power tools for technical users. The <code>rlhf</code> <span class="term" data-definition="A CLI (Command Line Interface) is a text-based way to control a program by typing commands, instead of clicking buttons. Power users prefer CLIs because they can be scripted and automated.">CLI</span> lets you upload task packs, download datasets, and run evaluations from your terminal — no browser needed.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Codebase structure -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Where each character lives in the code</h2>
+        <p>The project is a <span class="term" data-definition="A monorepo is a single Git repository that contains multiple distinct projects — like a frontend, backend, and SDK — all managed together. The alternative is separate repos for each.">monorepo</span>: one repository, multiple services. Here's the map:</p>
+
+        <div class="file-tree animate-in">
+          <div class="ft-folder">
+            <span class="ft-name">frontend/</span>
+            <span class="ft-desc">Next.js 14 app — everything users see</span>
+            <div class="ft-children">
+              <div class="ft-folder">
+                <span class="ft-name">src/app/</span>
+                <span class="ft-desc">Pages and routes (App Router)</span>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">src/lib/state/</span>
+                <span class="ft-desc">Zustand store — your annotation workspace in memory</span>
+              </div>
+              <div class="ft-file">
+                <span class="ft-name">src/middleware.ts</span>
+                <span class="ft-desc">Guards protected pages — redirects if not logged in</span>
+              </div>
+            </div>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">backend/</span>
+            <span class="ft-desc">FastAPI Python server</span>
+            <div class="ft-children">
+              <div class="ft-folder">
+                <span class="ft-name">app/routers/</span>
+                <span class="ft-desc">One file per feature: auth, tasks, reviews, datasets...</span>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">app/models/</span>
+                <span class="ft-desc">SQLAlchemy database table definitions</span>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">app/services/</span>
+                <span class="ft-desc">Business logic: LLM judge, certificates, exams, email</span>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">alembic/</span>
+                <span class="ft-desc">Database migration scripts — how the schema evolves</span>
+              </div>
+            </div>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">sdk/</span>
+            <span class="ft-desc">Python package — the rlhf CLI and HTTP client</span>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">docker/</span>
+            <span class="ft-desc">Docker Compose — spins up Postgres + Redis locally</span>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">guidelines/</span>
+            <span class="ft-desc">Human annotation rubrics (Markdown)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Where they live in the cloud -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">In production: two clouds, one app</h2>
+        <p>When this app is deployed, it splits across two hosting providers — each playing to their strengths:</p>
+
+        <div class="pattern-cards animate-in">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">▲</div>
+            <h4 class="pattern-title">Vercel — Frontend</h4>
+            <p class="pattern-desc">Next.js pages are deployed to Vercel's global <span class="term" data-definition="A CDN (Content Delivery Network) is a worldwide network of servers. When you load a page, it comes from the server nearest to you — making it faster.">CDN</span>. Users get fast page loads from a server near them, anywhere in the world.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.5rem;">🪰</div>
+            <h4 class="pattern-title">Fly.io — Backend + Database</h4>
+            <p class="pattern-desc">The FastAPI server and PostgreSQL database run on Fly.io, a platform that runs <span class="term" data-definition="A Docker container is a lightweight, self-contained package that includes your app and everything it needs to run. Like a shipping container — standardized, portable, runs the same everywhere.">Docker containers</span> close to users. The backend config lives in <code>backend/fly.toml</code>.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">🔗</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why Split Them?</strong>
+            <p>Vercel is unbeatable for static pages and <span class="term" data-definition="SSR (Server-Side Rendering) means the HTML is built on the server before being sent to the browser. The page loads with content already in it, making it fast to display and good for SEO.">SSR</span>. Fly.io is better for long-running Python servers. Using the right tool for each job is a common production pattern — you'll hear engineers call this "separation of concerns."</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Interactive Architecture Diagram -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The full system — click any component</h2>
+        <p>Click any box to learn what it does:</p>
+
+        <div class="arch-diagram animate-in">
+          <div class="arch-zone" style="border-color: var(--color-actor-1); margin-bottom: var(--space-4)">
+            <h4 class="arch-zone-label">☁️ Vercel — Browser Layer</h4>
+            <div class="arch-component"
+                 data-desc="Next.js 14 with App Router. All user-facing pages live here. Zustand persists annotation state to localStorage so you don't lose work on refresh."
+                 onclick="">
+              <div class="arch-icon">⚛️</div>
+              <span>Next.js UI</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="middleware.ts — runs before every page load. Checks for the rlhf_session cookie. If missing, redirects you to /auth. Protects 15+ route prefixes."
+                 onclick="">
+              <div class="arch-icon">🔒</div>
+              <span>Route Guard</span>
+            </div>
+          </div>
+
+          <div class="arch-zone" style="border-color: var(--color-actor-2); margin-bottom: var(--space-4)">
+            <h4 class="arch-zone-label">🪰 Fly.io — Backend Layer</h4>
+            <div class="arch-component"
+                 data-desc="FastAPI handles 18+ router groups: auth, tasks, reviews, datasets, judge, IAA, quality, exams, certificates, webhooks, and more. All mounted at /api/v1."
+                 onclick="">
+              <div class="arch-icon">⚡</div>
+              <span>FastAPI Routers</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="Services layer: LLM Judge (compares annotations against AI), Certificate generator, Exam grader, Email sender via AgentMail, HuggingFace inference proxy."
+                 onclick="">
+              <div class="arch-icon">🧠</div>
+              <span>Services</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="Alembic manages database schema changes. Each migration is a Python script that modifies the PostgreSQL table structure. Run 'alembic upgrade head' to apply."
+                 onclick="">
+              <div class="arch-icon">🔄</div>
+              <span>Alembic Migrations</span>
+            </div>
+          </div>
+
+          <div class="arch-zone" style="border-color: var(--color-actor-3)">
+            <h4 class="arch-zone-label">💾 Data Layer</h4>
+            <div class="arch-component"
+                 data-desc="PostgreSQL 16 stores everything permanently: users, organizations, tasks, annotations, reviews, datasets, exam attempts, certificates, audit logs."
+                 onclick="">
+              <div class="arch-icon">🗄️</div>
+              <span>PostgreSQL</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="Redis 7 stores fast-access session data. Used for caching and rate limiting. Much faster than PostgreSQL for temporary, frequently-read data."
+                 onclick="">
+              <div class="arch-icon">🔴</div>
+              <span>Redis</span>
+            </div>
+            <div class="arch-component"
+                 data-desc="The rlhf Python package provides a CLI and HTTP client. Teams use it to upload task packs, download datasets in DPO format, and run batch evaluations."
+                 onclick="">
+              <div class="arch-icon">🐍</div>
+              <span>Python SDK</span>
+            </div>
+          </div>
+
+          <div class="arch-description">Click any component above to learn what it does</div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Group Chat — components talking -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A group chat: what happens when you log in</h2>
+        <p>Here's what the components "say" to each other when you hit the login page:</p>
+
+        <div class="chat-window" id="chat-login">
+          <div class="chat-messages">
+            <div class="chat-message" data-sender="browser" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">🖥</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Browser</span>
+                <p>User just typed their email + password and clicked Login.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="nextjs" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">⚛</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Next.js</span>
+                <p>Got it. I'll POST those credentials to /api/v1/auth/login on the FastAPI server.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="fastapi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">FastAPI</span>
+                <p>Request received. Let me check this password against the database...</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="postgres" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">🗄</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">PostgreSQL</span>
+                <p>Found the user. Their hashed password matches. Role is "annotator". Returning user record.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="fastapi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">FastAPI</span>
+                <p>Password verified ✓. Generating a JWT token signed with the secret key. Valid for 30 days. Sending it back.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="nextjs" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">⚛</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Next.js</span>
+                <p>Got the JWT. Storing it in localStorage AND setting an rlhf_session cookie. Redirecting to /dashboard.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="browser" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">🖥</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">Browser</span>
+                <p>Dashboard loaded! Every future request will include the JWT in the Authorization header.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" style="display:none">
+            <div class="chat-avatar" style="background: var(--color-text-muted)">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="quiz-container" id="quiz-module2">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Correct — the services layer in backend/app/services/ is exactly where business logic like LLM judge evaluation lives. Routers are just HTTP handlers; they delegate the real work to services."
+               data-explanation-wrong="Routers handle HTTP routes, but they shouldn't contain complex logic. Models define database tables. Services is where non-trivial business logic like LLM evaluation belongs.">
+            <h3 class="quiz-question">You want to add logic that automatically evaluates annotation quality using an AI model. Where in the backend should this code live?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>backend/app/routers/ — since it's triggered by an API endpoint</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>backend/app/services/ — business logic that doesn't belong in the HTTP layer</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>backend/app/models/ — since it processes data from the database</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Right — the SDK is designed for programmatic, automated access. A researcher running batch evaluations overnight doesn't want to click through a browser UI."
+               data-explanation-wrong="The SDK exists specifically for automation and scripting use cases. The web UI is for human annotators who need a visual interface — not for batch processing 10,000 records.">
+            <h3 class="quiz-question">A research team wants to automatically upload 10,000 task packs every night from their data pipeline. What should they use?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The Python SDK / rlhf CLI — it's built for scripted, automated workflows</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The web UI — they could write a browser script to click the upload button</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Redis — store the tasks there since it's faster than PostgreSQL</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module2')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module2')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

@@ -1,0 +1,282 @@
+<section class="module" id="module-4" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">The Clever Engineering</h1>
+      <p class="module-subtitle">Four patterns that make this codebase production-grade — and how to request them from AI</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: Async FastAPI — air traffic controller -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pattern 1 — Async: the air traffic controller model</h2>
+        <p>
+          A traditional web server is like a pharmacist who can only help one customer at a time. While they're filling one prescription, everyone else waits in line. For a few users, fine. For hundreds? Disaster.
+        </p>
+        <p>
+          FastAPI uses <span class="term" data-definition="Async (asynchronous) programming lets a program start a task, then move on to other work while waiting for it to finish. It's like placing a food order, doing other things, then picking it up when it's ready — instead of standing at the counter the whole time.">async/await</span> — more like an air traffic controller. They can manage dozens of planes simultaneously: "Runway 1, hold. Runway 2, cleared to land. Runway 3, begin approach." No plane waits for another to land before getting instructions.
+        </p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — backend/app/routers/tasks.py (pattern)</span>
+            <pre><code><span class="code-decorator">@router.post</span>(<span class="code-string">"/tasks/{task_id}/annotate"</span>)
+<span class="code-keyword">async def</span> <span class="code-function">submit_annotation</span>(
+    task_id: <span class="code-function">int</span>,
+    body: <span class="code-property">AnnotationCreate</span>,
+    db: <span class="code-property">AsyncSession</span> = <span class="code-function">Depends</span>(get_db),
+    current_user: <span class="code-property">User</span> = <span class="code-function">Depends</span>(get_current_user),
+):
+    <span class="code-keyword">return await</span> <span class="code-function">save_annotation</span>(
+        db, task_id, body, current_user
+    )</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">When a POST request arrives at /tasks/123/annotate, run this function.</p>
+              <p class="tl"><code>async def</code> — this function can pause while waiting for the database, handling other requests in the meantime.</p>
+              <p class="tl"><code>body: AnnotationCreate</code> — FastAPI automatically validates the request body matches this shape. If it doesn't, it returns a 422 error before the function even runs.</p>
+              <p class="tl"><code>Depends(get_db)</code> — automatically inject a database connection. <code>Depends(get_current_user)</code> — automatically verify the JWT and inject the logged-in user. Both are "middleware injected" into the function.</p>
+              <p class="tl"><code>await</code> — pause here while the database does its work. Other requests run during this wait.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Pydantic validation -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pattern 2 — Pydantic: the shape police</h2>
+        <p>
+          Imagine ordering from a form where every field is validated before you can submit. Pydantic is FastAPI's built-in form validator — but for <span class="term" data-definition="JSON (JavaScript Object Notation) is a lightweight data format for sending structured data between systems. It looks like: {&quot;name&quot;: &quot;Alice&quot;, &quot;score&quot;: 4}. Almost every API uses JSON.">JSON</span> data coming into the API.
+        </p>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">🛡️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why This Matters for You as a Vibe Coder</strong>
+            <p>When you tell AI "add a new field to the annotation form," you also need to say "add it to the Pydantic schema in backend/app/schemas/." If you don't, FastAPI will silently drop that field — or crash with a validation error. This is the #1 "why isn't my new field saving?" gotcha.</p>
+          </div>
+        </div>
+
+        <div class="badge-list animate-in">
+          <div class="badge-item">
+            <code class="badge-code">schemas/</code>
+            <span class="badge-desc">Pydantic models that define what data can enter and exit each API endpoint</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">models/</code>
+            <span class="badge-desc">SQLAlchemy models that define how data is stored in PostgreSQL tables</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">422 error</code>
+            <span class="badge-desc">Validation failed — the request body didn't match the Pydantic schema</span>
+          </div>
+        </div>
+
+        <p>A new field needs to be added in <em>both</em> places: the schema (for validation) and the model (for storage). AI sometimes forgets one.</p>
+      </section>
+
+      <!-- Screen 3: The LLM Judge -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pattern 3 — The LLM Judge: AI evaluating AI</h2>
+        <p>
+          One of the most powerful features: the platform can run an <span class="term" data-definition="An LLM (Large Language Model) is the technology behind ChatGPT, Claude, and similar AI tools. It's a neural network trained on vast amounts of text that can understand and generate language.">LLM</span> to automatically evaluate annotation quality — comparing what a human annotator chose against what the AI model thinks is correct. This is called "LLM-as-a-judge."
+        </p>
+
+        <div class="flow-steps animate-in">
+          <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <p>Annotator submits a rating for an AI response</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <p>Judge service sends the response + annotation to an LLM with a rubric prompt</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <p>LLM returns its own score and reasoning</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <p>Platform compares: human vs LLM. Flags large disagreements for review.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">⚖️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Override, Accept, Reject</strong>
+            <p>When the LLM judge disagrees with an annotator, a reviewer can accept the LLM's assessment, reject it, or override it with a manual decision. The platform tracks all three paths — giving you a complete audit trail of every quality decision.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Alembic — versioning your database -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pattern 4 — Alembic: version control for your database</h2>
+        <p>
+          Your code lives in Git — every change is tracked and reversible. But databases are different. If you add a column to a table, how do you make sure every deployment gets that column? That's what <span class="term" data-definition="Alembic is a database migration tool for Python/SQLAlchemy. It generates versioned scripts that describe how to change your database schema — add columns, create tables, drop indexes — and can apply or reverse them in order.">Alembic</span> does.
+        </p>
+        <p>
+          Think of it like sheet music for an orchestra. Every instrument player (every server running your code) follows the same score. If you add a new note, everyone gets the updated score.
+        </p>
+
+        <div class="pattern-cards stagger-children animate-in">
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">✍️</div>
+            <h4 class="pattern-title">Generate migration</h4>
+            <p class="pattern-desc"><code>alembic revision --autogenerate -m "add_score_column"</code> — Alembic inspects your models and writes the migration script automatically.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">▶️</div>
+            <h4 class="pattern-title">Apply to database</h4>
+            <p class="pattern-desc"><code>alembic upgrade head</code> — runs all pending migrations in order. Safe to run multiple times — already-applied migrations are skipped.</p>
+          </div>
+          <div class="pattern-card animate-in">
+            <div class="pattern-icon" style="background: var(--color-accent-light); font-size: 1.4rem;">⏪</div>
+            <h4 class="pattern-title">Roll back</h4>
+            <p class="pattern-desc"><code>alembic downgrade -1</code> — undo the last migration. Like Ctrl+Z for your database schema. Critical when a deployment goes wrong.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warning animate-in">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The AI Gotcha</strong>
+            <p>When you ask AI to "add a new field to the database," it will update the SQLAlchemy model — but may forget to generate the Alembic migration. Always follow up with: "now generate the Alembic migration for this change." Without it, the column exists in code but not in the actual database.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Group chat — LLM judge in action -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The judge at work: a group conversation</h2>
+        <p>Here's what happens behind the scenes when the LLM judge evaluates an annotation:</p>
+
+        <div class="chat-window" id="chat-judge">
+          <div class="chat-messages">
+            <div class="chat-message" data-sender="reviewer" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">👤</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">Reviewer</span>
+                <p>I triggered a judge evaluation on the last 100 annotations in this pack.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="fastapi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">FastAPI / Judge Service</span>
+                <p>Got it. Fetching the 100 annotation records from PostgreSQL...</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="hf" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">🤗</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">HuggingFace Inference API</span>
+                <p>Received 100 prompts (each includes the AI response + the human rating + the rubric). Processing...</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="hf" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">🤗</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">HuggingFace</span>
+                <p>Done. Returning 100 judge scores with reasoning. I disagreed with the human on 7 annotations.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="fastapi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">FastAPI / Judge Service</span>
+                <p>Saving all 100 judge results to PostgreSQL. Flagging 7 disagreements in the review queue.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="reviewer" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">👤</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">Reviewer</span>
+                <p>I can now see the 7 flagged items in the review queue with side-by-side human vs AI scores. I'll accept, reject, or override each one.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" style="display:none">
+            <div class="chat-avatar" style="background: var(--color-text-muted)">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Apply the patterns</h2>
+
+        <div class="quiz-container" id="quiz-module4">
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Right — async def lets FastAPI handle hundreds of concurrent requests without blocking. If your endpoint is sync (blocking), one slow database call makes everyone wait. This is the single most impactful architectural choice for throughput."
+               data-explanation-wrong="Think about what async actually does. It's not about security or error handling — it's about being able to serve multiple users at once without making them wait for each other.">
+            <h3 class="quiz-question">Your annotation platform is getting 500 simultaneous users and the server is struggling. What's the single biggest architectural fix?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Add more Pydantic validation to catch bad requests earlier</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Make sure all route handlers use async def with async database calls — so one slow query doesn't block 499 others</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Move all the logic from services/ into the routers/ to reduce function call overhead</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly — you need both the Pydantic schema update (to allow the new field in API requests) AND the Alembic migration (to add the column to the actual database table). Missing either one breaks the feature."
+               data-explanation-wrong="Think about the two separate places data has to be defined in this architecture: where it enters (schema validation) and where it's stored (database table).">
+            <h3 class="quiz-question">You ask AI to add a "confidence_score" field to annotation submissions. The code compiles fine, but the field never saves to the database. What did AI probably miss?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It forgot to add the field to the Pydantic schema in schemas/</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It forgot to add the field to the SQLAlchemy model in models/</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It added the field to the model but forgot to generate and run the Alembic migration — so the actual database table doesn't have the column yet</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module4')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module4')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
