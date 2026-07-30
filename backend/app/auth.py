@@ -32,7 +32,17 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
-async def get_annotator_from_bearer_token(token: str, db: AsyncSession) -> Annotator:
+def _ensure_active(user: Annotator) -> Annotator:
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account has been deactivated",
+        )
+    return user
+
+
+async def _annotator_from_legacy_token(token: str, db: AsyncSession) -> Annotator:
+    """Verify a locally-issued HS256 token whose `sub` is the annotator UUID."""
     settings = get_settings()
     try:
         payload = jwt.decode(
@@ -60,12 +70,102 @@ async def get_annotator_from_bearer_token(token: str, db: AsyncSession) -> Annot
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
-    if not user.is_active:
+    return _ensure_active(user)
+
+
+async def _annotator_from_clerk_token(token: str, db: AsyncSession) -> Annotator:
+    """Verify a Clerk session token and resolve it to a local annotator.
+
+    Resolution order:
+      1. `clerk_user_id` — the normal path once a user has been imported.
+      2. email — links a pre-existing account to Clerk on first sign-in, so the
+         79 migrated users keep their annotations, roles and work sessions.
+      3. just-in-time creation — a genuinely new signup.
+    """
+    from app.services.clerk_auth import ClerkAuthError, verify_clerk_token
+
+    try:
+        claims = await verify_clerk_token(token)
+    except ClerkAuthError as exc:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account has been deactivated",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        ) from None
+
+    result = await db.execute(
+        select(Annotator).where(Annotator.clerk_user_id == claims.user_id)
+    )
+    user = result.scalar_one_or_none()
+    if user is not None:
+        return _ensure_active(user)
+
+    if claims.email:
+        result = await db.execute(select(Annotator).where(Annotator.email == claims.email))
+        user = result.scalar_one_or_none()
+        if user is not None:
+            # Claim the existing account. Roles, org and history are preserved.
+            user.clerk_user_id = claims.user_id
+            await db.commit()
+            await db.refresh(user)
+            return _ensure_active(user)
+
+    if not claims.email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=(
+                "Clerk token carries no email claim; cannot provision an account. "
+                "Add email to the session token in the Clerk JWT template."
+            ),
         )
+
+    user = Annotator(
+        name=claims.name or claims.email.split("@")[0],
+        email=claims.email,
+        clerk_user_id=claims.user_id,
+        password_hash=None,
+        role=ROLE_ANNOTATOR,
+    )
+    db.add(user)
+    await db.flush()
+
+    # /dashboard expects a work session to exist, which register() used to create.
+    from app.models.work_session import WorkSession
+
+    db.add(
+        WorkSession(
+            annotator_id=user.id,
+            tasks_json=None,
+            annotations_json={},
+            task_times_json={},
+            active_pack_file=None,
+        )
+    )
+    await db.commit()
+    await db.refresh(user)
     return user
+
+
+async def get_annotator_from_bearer_token(token: str, db: AsyncSession) -> Annotator:
+    """Resolve a bearer token to an annotator, accepting Clerk or legacy tokens.
+
+    Clerk signs RS256, the legacy issuer HS256, so the header picks the path.
+    Both paths verify signatures; during the migration window either is accepted.
+    """
+    settings = get_settings()
+    from app.services.clerk_auth import looks_like_clerk_token
+
+    is_clerk = settings.clerk_enabled and looks_like_clerk_token(token)
+
+    if is_clerk:
+        return await _annotator_from_clerk_token(token, db)
+
+    if not settings.legacy_jwt_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Legacy authentication is disabled. Sign in again.",
+        )
+
+    return await _annotator_from_legacy_token(token, db)
 
 
 async def get_current_user(

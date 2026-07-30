@@ -1,75 +1,40 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const PROTECTED_PREFIXES = [
-  "/dashboard",
-  "/analytics",
-  "/auto-reviews",
-  "/reviews",
-  "/settings",
-  "/author",
-  "/team",
-  "/quality",
-  "/datasets",
-  "/audit",
-  "/webhooks",
-  "/task",
-  "/exams",
-  "/certificates",
-  "/course",
-];
+// NOTE: this file must stay named `middleware.ts`. Next.js only renamed the
+// convention to `proxy.ts` in v16; this app is on 15.x, where a `proxy.ts`
+// would be silently ignored and every route below would be left unprotected.
 
-function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-}
+// Mirrors the disallow list in src/app/robots.ts — update both together.
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/analytics(.*)",
+  "/auto-reviews(.*)",
+  "/reviews(.*)",
+  "/settings(.*)",
+  "/author(.*)",
+  "/team(.*)",
+  "/quality(.*)",
+  "/datasets(.*)",
+  "/audit(.*)",
+  "/webhooks(.*)",
+  "/task(.*)",
+  "/exams(.*)",
+  "/certificates(.*)",
+  "/course(.*)"
+]);
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  if (!isProtectedPath(pathname)) {
-    return NextResponse.next();
+export default clerkMiddleware(async (auth, request) => {
+  if (isProtectedRoute(request)) {
+    await auth.protect();
   }
-
-  const hasSessionCookie = Boolean(request.cookies.get("rlhf_session")?.value);
-  if (hasSessionCookie) {
-    return NextResponse.next();
-  }
-
-  const url = request.nextUrl.clone();
-  url.pathname = "/auth";
-  return NextResponse.redirect(url);
-}
+});
 
 export const config = {
   matcher: [
-    "/dashboard",
-    "/analytics",
-    "/auto-reviews",
-    "/reviews",
-    "/settings",
-    "/author",
-    "/team",
-    "/quality",
-    "/datasets",
-    "/audit",
-    "/webhooks",
-    "/task",
-    "/exams",
-    "/certificates",
-    "/course",
-    "/course/:path*",
-    "/dashboard/:path*",
-    "/analytics/:path*",
-    "/auto-reviews/:path*",
-    "/reviews/:path*",
-    "/settings/:path*",
-    "/author/:path*",
-    "/team/:path*",
-    "/quality/:path*",
-    "/datasets/:path*",
-    "/audit/:path*",
-    "/webhooks/:path*",
-    "/task/:path*",
-    "/exams/:path*",
-    "/certificates/:path*",
-  ],
+    // Skip Next.js internals and static assets, but run on everything else.
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Clerk's auto-proxy path.
+    "/__clerk/:path*",
+    "/(api|trpc)(.*)"
+  ]
 };

@@ -8,8 +8,36 @@ export class ApiError extends Error {
   }
 }
 
+/** Clerk attaches itself to `window`; typed loosely to avoid importing the SDK here. */
+type ClerkGlobal = {
+  session?: { getToken: () => Promise<string | null> } | null;
+};
+
+/**
+ * Resolve the bearer token for an API call.
+ *
+ * Prefers the Clerk session token. Falls back to the legacy `rlhf_authToken`
+ * so anyone still holding one keeps working during the migration window — the
+ * API accepts both. Remove the fallback once LEGACY_JWT_ENABLED is off.
+ */
+async function getAuthToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+
+  const clerk = (window as unknown as { Clerk?: ClerkGlobal }).Clerk;
+  if (clerk?.session) {
+    try {
+      const token = await clerk.session.getToken();
+      if (token) return token;
+    } catch {
+      // Offline or a transient Clerk error — fall through to the legacy token.
+    }
+  }
+
+  return localStorage.getItem("rlhf_authToken");
+}
+
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("rlhf_authToken") : null;
+  const token = await getAuthToken();
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
@@ -23,7 +51,7 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
     if (res.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem("rlhf_authToken");
       document.cookie = "rlhf_session=; Max-Age=0; path=/";
-      window.location.href = "/auth";
+      window.location.href = "/sign-in";
     }
     const body = (await res.json().catch(() => ({}))) as { detail?: string };
     throw new ApiError(res.status, body.detail || "Request failed");

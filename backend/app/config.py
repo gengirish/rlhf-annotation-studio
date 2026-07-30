@@ -26,6 +26,29 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
 
+    # --- Clerk ---------------------------------------------------------------
+    # Session tokens are RS256 and verified against Clerk's published JWKS; the
+    # secret key is only needed for Backend API calls (e.g. the user import).
+    clerk_secret_key: str | None = None
+    clerk_publishable_key: str | None = None
+    # e.g. https://your-app.clerk.accounts.dev — JWKS is fetched from
+    # {issuer}/.well-known/jwks.json and the `iss` claim is checked against it.
+    clerk_issuer: str = ""
+    clerk_jwks_cache_seconds: int = 3600
+
+    # Accept legacy HS256 tokens issued by /auth/login alongside Clerk tokens.
+    # Keep true during the migration window so signed-in users aren't dropped;
+    # set false once every account has a clerk_user_id.
+    legacy_jwt_enabled: bool = True
+
+    @property
+    def clerk_enabled(self) -> bool:
+        return bool(self.clerk_issuer.strip())
+
+    @property
+    def clerk_jwks_url(self) -> str:
+        return f"{self.clerk_issuer.rstrip('/')}/.well-known/jwks.json"
+
     # Inference provider: "openrouter", "huggingface", "nvidia", or "custom"
     inference_provider: str = "openrouter"
     inference_enabled: bool = True

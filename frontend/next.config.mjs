@@ -3,9 +3,8 @@ const nextConfig = {
   output: "standalone",
   // Don't advertise the framework/version to attackers scanning for known CVEs.
   poweredByHeader: false,
-  experimental: {
-    typedRoutes: true
-  },
+  // Promoted out of `experimental` in Next 15.
+  typedRoutes: true,
   async headers() {
     return [
       {

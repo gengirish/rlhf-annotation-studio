@@ -29,6 +29,12 @@ class Annotator(Base):
         index=True,
     )
     role: Mapped[str] = mapped_column(String(32), default="annotator", server_default="annotator")
+    # Clerk's user id (`user_...`), set by the import script or on first Clerk
+    # sign-in. Nullable so pre-migration accounts remain valid during the
+    # dual-auth window; role stays authoritative here, not in Clerk.
+    clerk_user_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True, nullable=True
+    )
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")

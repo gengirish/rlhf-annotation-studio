@@ -60,6 +60,48 @@ Other production behaviour:
 - **`robots.ts`** keeps authenticated routes out of search indexes. Its path list mirrors
   the protected prefixes in `frontend/src/middleware.ts` — update both together.
 
+#### Authentication (Clerk)
+
+Sign-in is handled by [Clerk](https://clerk.com). The API verifies Clerk session
+tokens (RS256) against the instance's public JWKS — no secret is needed on the
+request path.
+
+| Piece | Where |
+|-------|-------|
+| Sign-in / sign-up UI | `frontend/src/app/sign-in`, `.../sign-up` (Clerk components) |
+| Route protection | `frontend/src/middleware.ts` — **`middleware.ts`, not `proxy.ts`**; the rename only landed in Next 16 and this app is on 15.x, where a `proxy.ts` is silently ignored |
+| Token verification | `backend/app/services/clerk_auth.py` |
+| Identity mapping | `annotators.clerk_user_id` (migration `022`) |
+
+**Roles stay in the database, not in Clerk.** `require_role` and 125 call sites
+read `Annotator.role`; Clerk only proves *who* the user is.
+
+On first Clerk sign-in the API links the session to an existing annotator by
+email, so migrated users keep their annotations, role, org and work session. A
+genuinely new user is provisioned just-in-time along with a `WorkSession`.
+
+##### Migration window
+
+`LEGACY_JWT_ENABLED=true` makes the API accept **both** Clerk tokens and the old
+HS256 tokens, so nobody is signed out mid-session. Turn it off once everyone has
+migrated:
+
+```sql
+SELECT count(*) FROM annotators WHERE clerk_user_id IS NULL;
+```
+
+Import existing users (preserves their bcrypt passwords — no reset emails):
+
+```bash
+cd backend
+python scripts/import_users_to_clerk.py --dry-run --skip-test-accounts   # preview
+python scripts/import_users_to_clerk.py --skip-test-accounts             # run
+```
+
+`--skip-test-accounts` omits `e2e-*` / `bench-*` addresses left by the test
+suites; Clerk bills per user, so importing those is wasted spend. The script is
+idempotent and safe to re-run.
+
 #### Live Deployment URLs
 
 | Service | URL |
