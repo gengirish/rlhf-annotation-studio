@@ -35,7 +35,7 @@ First API start runs `alembic upgrade head` against Neon.
 ## 3. Test in the browser
 
 1. Open **http://localhost:8080/** (or `http://SERVER_IP:8080/` on a VPS).
-2. Register/login and open dashboard — workspace sync should work if the API is up.
+2. Sign in via Clerk at `/sign-in` and open dashboard — workspace sync should work if the API is up.
 3. Load a task pack from the library; annotate; refresh — data should still be in localStorage; server copy updates on save (debounced).
 
 ### Quick API checks (optional)

@@ -51,18 +51,35 @@ FastAPI + **async SQLAlchemy** + **Neon PostgreSQL** backend for the RLHF Annota
 
 2. Open:
    ```
-   http://127.0.0.1:3000/auth
+   http://127.0.0.1:3000/sign-in
    ```
 
-3. Register once — the app creates a **work session** in Neon and syncs workspace JSON on each save.
+3. Sign up through Clerk once — the app creates a **work session** in Neon on first
+   authenticated request and syncs workspace JSON on each save.
 
 ## API (v1)
 
 ### Auth
+
+Sign-in is handled by **Clerk**. The frontend sends the Clerk session token as
+`Authorization: Bearer <token>`; the API verifies it (RS256) against the
+instance's public JWKS and maps it to an `Annotator` via `clerk_user_id`,
+falling back to email so migrated accounts keep their history.
+
+**Roles live in this database, not in Clerk.** `require_role` reads
+`Annotator.role`; Clerk only establishes identity.
+
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/v1/auth/register` | Create account → `{ token, annotator, session_id }` |
-| POST | `/api/v1/auth/login` | Login → `{ token, annotator, session_id }` (annotator includes `role` and `org_id`) |
+| POST | `/api/v1/auth/register` | **Legacy.** Superseded by Clerk sign-up; retained for the migration window |
+| POST | `/api/v1/auth/login` | **Legacy.** Superseded by Clerk sign-in; retained for the migration window |
+
+While `LEGACY_JWT_ENABLED=true`, the API accepts both Clerk (RS256) and legacy
+(HS256) tokens, so no one is signed out mid-migration. Both are rate limited —
+see [Rate limiting](#rate-limiting).
+
+Move existing accounts across with `scripts/import_users_to_clerk.py`; it sends
+the stored bcrypt digest to Clerk so passwords keep working.
 
 ### Sessions & Workspace
 | Method | Path | Description |
@@ -134,7 +151,7 @@ Every annotator has a `role` column: `admin`, `reviewer`, or `annotator` (defaul
 2. In `.env`: `HF_API_TOKEN=hf_...` (or `HF_TOKEN`).
 3. Optional: `HF_DEFAULT_MODEL`, `HF_ROUTER_BASE_URL` (default `https://router.huggingface.co/v1`).
 4. In the UI, sign in and use the dashboard task flow. The frontend calls `/api/v1/inference/*` directly via `NEXT_PUBLIC_API_URL`.
-5. Set `INFERENCE_REQUIRE_AUTH=true` if the API is public and you want to require a JWT from `/api/v1/auth/login`.
+5. Set `INFERENCE_REQUIRE_AUTH=true` if the API is public and you want to require a bearer token (Clerk or legacy) on inference routes.
 
 ## Environment
 
@@ -142,14 +159,42 @@ Every annotator has a `role` column: `admin`, `reviewer`, or `annotator` (defaul
 |----------|-------------|
 | `DATABASE_URL` | Async URL (`postgresql+asyncpg://...`) |
 | `DATABASE_URL_SYNC` | Optional sync URL for Alembic (`postgresql+psycopg://...`). If omitted, `+asyncpg` is swapped to `+psycopg`. |
+| `APP_ENV` | `production` enables fail-fast startup checks (see below) |
 | `CORS_ORIGINS` | Comma-separated origins allowed for the browser UI |
 | `ROOT_PATH` | Optional reverse-proxy subpath |
 | `DEBUG` | `true` to echo SQL |
 | `HF_API_TOKEN` / `HF_TOKEN` | Hugging Face token for Inference Providers router |
 | `HF_DEFAULT_MODEL` | Default Hub model id for `/inference/complete` |
-| `JWT_SECRET` | Secret key for signing JWT tokens |
-| `JWT_EXPIRE_MINUTES` | Token expiration (default `1440` = 24h) |
-| `JWT_ALGORITHM` | JWT algorithm (default `HS256`) |
-| `INFERENCE_REQUIRE_AUTH` | `true` to require `Authorization: Bearer` (JWT) on inference routes |
+| `CLERK_ISSUER` | Clerk Frontend API origin; JWKS is read from `{issuer}/.well-known/jwks.json`. Empty disables the Clerk path |
+| `CLERK_SECRET_KEY` | Backend API key — used **only** by the import script, never on the request path |
+| `CLERK_PUBLISHABLE_KEY` | Public key, mirrors the frontend's `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` |
+| `LEGACY_JWT_ENABLED` | `true` to keep accepting old HS256 tokens during the migration |
+| `JWT_SECRET` | Secret for signing **legacy** tokens |
+| `JWT_EXPIRE_MINUTES` | Legacy token expiration (default `1440` = 24h) |
+| `JWT_ALGORITHM` | Legacy JWT algorithm (default `HS256`) |
+| `INFERENCE_REQUIRE_AUTH` | `true` to require `Authorization: Bearer` on inference routes |
 | `INFERENCE_MAX_TOKENS` | Max new tokens per completion (default `1024`) |
 | `INFERENCE_TIMEOUT_SECONDS` | HTTP timeout to HF router (default `120`) |
+
+### Startup guards
+
+With `APP_ENV=production` the app refuses to boot rather than fail open:
+
+- `JWT_SECRET` left at its default → abort (the default is public, so legacy
+  tokens would be forgeable)
+- `CORS_ORIGINS` empty or `*` → abort (any site could otherwise drive the API)
+
+### Rate limiting
+
+In-process sliding windows, keyed on the real client IP taken from
+`Fly-Client-IP` / `X-Forwarded-For` — which requires uvicorn to run with
+`--proxy-headers` (set in the `Dockerfile`). Without it every caller shares the
+proxy's address and the limit becomes global.
+
+| Scope | Limit |
+|-------|-------|
+| `POST /api/v1/inference/*` | 30 per 60s per client |
+| `POST /api/v1/auth/login`, `/register` | 10 per 300s per client |
+
+State is **per process**. Running more than one machine multiplies the effective
+limit; move to a shared store (e.g. Redis) before scaling out.

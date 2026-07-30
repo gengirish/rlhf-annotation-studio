@@ -64,11 +64,25 @@ fly apps create rlhf-annotation-api --org personal
 fly secrets set DATABASE_URL="postgresql+asyncpg://USER:PASSWORD@HOST/DB?sslmode=require"
 ```
 
+Clerk (required for sign-in; `CLERK_ISSUER` is your Clerk Frontend API origin):
+
+```bash
+fly secrets set CLERK_ISSUER="https://YOUR-INSTANCE.clerk.accounts.dev" \
+                CLERK_SECRET_KEY="sk_live_..." \
+                LEGACY_JWT_ENABLED=true
+```
+
+`LEGACY_JWT_ENABLED=true` keeps old HS256 tokens working during the migration.
+Set it to `false` once every annotator has a `clerk_user_id`.
+
 Optional:
 
 ```bash
 fly secrets set APP_ENV=production DEBUG=false
 ```
+
+`APP_ENV=production` makes the API refuse to boot on a default `JWT_SECRET` or a
+wildcard `CORS_ORIGINS`, rather than failing open. Set both before enabling it.
 
 **PowerShell tip:** If the URL has `&` or other special characters, use single quotes for the outer string or escape carefully.
 
@@ -140,7 +154,19 @@ vercel link --cwd frontend
 
 Answer prompts: scope (team/account), project name (e.g. `rlhf-annotation-studio`), link to existing project or create new.
 
-### 3. Preview deploy (optional)
+### 3. Set the Clerk environment variable
+
+The frontend needs Clerk's publishable key at build time. It is public by
+design, so it is safe in the Vercel dashboard and in `.env.local`.
+
+```bash
+vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY production --cwd frontend
+```
+
+Only the publishable key belongs here — `CLERK_SECRET_KEY` is a backend secret
+and lives on Fly.
+
+### 4. Preview deploy (optional)
 
 ```bash
 vercel deploy --cwd frontend
@@ -148,7 +174,7 @@ vercel deploy --cwd frontend
 
 Opens a preview URL; good for testing before production.
 
-### 4. Production deploy
+### 5. Production deploy
 
 ```bash
 vercel deploy --prod --cwd frontend
@@ -173,20 +199,25 @@ only the `/api/:path*` rewrite to Fly and the `Cache-Control` header.
 
 | Service | URL |
 |---------|-----|
-| Frontend | https://rlhf-studio.intelliforge.tech |
-| Auth page | https://rlhf-studio.intelliforge.tech/auth |
-| Dashboard | https://rlhf-studio.intelliforge.tech/dashboard |
+| Frontend | https://rlhf-annotation-studio.vercel.app |
+| Sign in (Clerk) | https://rlhf-annotation-studio.vercel.app/sign-in |
+| Dashboard | https://rlhf-annotation-studio.vercel.app/dashboard |
 | API (Fly, direct) | https://rlhf-annotation-api.fly.dev |
-| API health (via Vercel rewrite) | https://rlhf-studio.intelliforge.tech/api/v1/health |
-| Task packs catalog | https://rlhf-studio.intelliforge.tech/api/v1/tasks/packs |
+| API health (via Vercel rewrite) | https://rlhf-annotation-studio.vercel.app/api/v1/health |
+| Task packs catalog | https://rlhf-annotation-studio.vercel.app/api/v1/tasks/packs |
 | API interactive docs | https://rlhf-annotation-api.fly.dev/api/docs |
+
+> `rlhf-studio.intelliforge.tech` currently 404s — the apex `intelliforge.tech`
+> sits under a different Vercel scope, so `vercel domains add` returns
+> `domain_not_owned`. DNS already CNAMEs to Vercel; attach the subdomain from the
+> owning account and it goes live with no DNS change.
 
 ## Smoke test
 
 1. Open the **Frontend** URL above (or copy from `vercel --prod` output).
-2. Register or log in at `/auth`.
+2. Sign in through Clerk at `/sign-in`.
 3. Dashboard should load task packs from the API — traffic goes to `/api/v1/tasks/packs` and is rewritten to Fly.
-4. Verify API health: `curl https://rlhf-studio.intelliforge.tech/api/v1/health` should return `{"status":"ok"}`.
+4. Verify API health: `curl https://rlhf-annotation-studio.vercel.app/api/v1/health` should return `{"status":"ok"}`.
 
 ---
 
@@ -203,5 +234,5 @@ only the `/api/:path*` rewrite to Fly and the `Cache-Control` header.
 
 ## Cost notes
 
-- Fly `min_machines_running = 0` in `fly.toml` allows scale-to-zero (cold starts).
+- Fly `min_machines_running = 1` in `fly.toml` keeps one machine warm (no cold starts, small always-on cost). Set it to `0` to allow scale-to-zero.
 - Neon free tier limits apply.

@@ -4,8 +4,8 @@ This document is for beta testers validating the production exam workflow, RBAC 
 
 ## Environment
 
-- Frontend: `https://rlhf-studio.intelliforge.tech`
-- Exams page: `https://rlhf-studio.intelliforge.tech/exams`
+- Frontend: `https://rlhf-annotation-studio.vercel.app`
+- Exams page: `https://rlhf-annotation-studio.vercel.app/exams`
 
 ## Test Accounts (Production)
 
@@ -33,9 +33,9 @@ Review queue contains seeded attempts including:
 
 ### 1) Authentication + Navigation
 
-- Open `/auth`, login with each role account.
+- Open `/sign-in`, sign in through Clerk with each role account.
 - Verify `/exams` loads and shows published exams.
-- Verify unauthenticated access to `/exams` redirects to `/auth`.
+- Verify unauthenticated access to `/exams` redirects to `/sign-in`.
 
 ### 2) Annotator Flow
 
@@ -92,3 +92,4 @@ When reporting a beta issue, include:
   - logout/login
   - hard refresh (Ctrl+F5)
 - Rotate or remove demo credentials after beta ends.
+

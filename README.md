@@ -11,7 +11,7 @@ A lightweight annotation platform for practicing Reinforcement Learning from Hum
 ## Quick Start
 
 1. Start backend API (`backend/`) and frontend (`frontend/`)
-2. Open `http://localhost:3000/auth`
+2. Open `http://localhost:3000/sign-in`
 3. Sign in / register, load a task pack from dashboard, and annotate tasks
 4. Use in-app export actions (Markdown / JSONL)
 
@@ -23,7 +23,7 @@ Choose the mode that matches your class/lab setup:
 
 ### 1) Local + API (development/full-stack)
 - Run FastAPI from `backend/` and Next.js from `frontend/`.
-- Open `http://127.0.0.1:3000/auth`.
+- Open `http://127.0.0.1:3000/sign-in`.
 - Uses `/api/v1/auth/register` and `/api/v1/auth/login` for JWT + `session_id`.
 - Workspace autosaves through `/api/v1/sessions/{session_id}/workspace`.
 
@@ -106,13 +106,19 @@ idempotent and safe to re-run.
 
 | Service | URL |
 |---------|-----|
-| Frontend | https://rlhf-studio.intelliforge.tech |
-| Auth | https://rlhf-studio.intelliforge.tech/auth |
-| Dashboard | https://rlhf-studio.intelliforge.tech/dashboard |
+| Frontend | https://rlhf-annotation-studio.vercel.app |
+| Sign in (Clerk) | https://rlhf-annotation-studio.vercel.app/sign-in |
+| Dashboard | https://rlhf-annotation-studio.vercel.app/dashboard |
 | API (direct) | https://rlhf-annotation-api.fly.dev |
-| API health | https://rlhf-studio.intelliforge.tech/api/v1/health |
-| Task packs | https://rlhf-studio.intelliforge.tech/api/v1/tasks/packs |
+| API health | https://rlhf-annotation-studio.vercel.app/api/v1/health |
+| Task packs | https://rlhf-annotation-studio.vercel.app/api/v1/tasks/packs |
 | API docs | https://rlhf-annotation-api.fly.dev/api/docs |
+
+> **`rlhf-studio.intelliforge.tech` is not currently attached** and returns 404.
+> DNS already points at Vercel, but the apex `intelliforge.tech` is registered
+> under a different Vercel scope than this project's team, so adding the
+> subdomain returns `domain_not_owned`. Attach it from the account that owns the
+> apex; no DNS change is needed.
 
 ---
 
@@ -546,7 +552,7 @@ Before annotating, read the relevant rubric in the `guidelines/` folder:
 
 1. Create task files targeting your learning objectives
 2. Distribute this folder to students (zip, git, or LMS upload)
-3. Students open the app at `/auth`, load the task file, and annotate
+3. Students open the app at `/sign-in`, load the task file, and annotate
 4. Students export their annotations as Markdown and submit
 5. Review submissions — the structured Markdown format makes comparison easy
 

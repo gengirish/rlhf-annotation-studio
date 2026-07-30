@@ -60,6 +60,15 @@ Deploys the Next.js frontend to **Vercel** when frontend files change on master.
 
 **Required secrets:** `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
 
+The Vercel steps run with `working-directory: frontend`, because the project's
+Root Directory is `frontend/`. `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` must be
+present as env vars: `.vercel/` is gitignored, so without them `vercel pull`
+cannot tell which project to resolve and fails with *"Could not retrieve Project
+Settings"*.
+
+A `VERCEL_TOKEN` scoped to a personal account cannot see a team project and
+produces the same error — scope the token to the team that owns the project.
+
 ### 4. Docker Publish (`docker-publish.yml`) — master push & tags
 
 Builds and pushes container images to **GitHub Container Registry (GHCR)**.
@@ -98,12 +107,28 @@ Configure these in **Settings → Secrets and variables → Actions**:
 
 | Secret | Used by | How to get |
 |--------|---------|-----------|
-| `FLY_API_TOKEN` | `deploy-backend.yml` | `flyctl tokens create deploy` |
-| `VERCEL_TOKEN` | `deploy-frontend.yml`, `pr-preview.yml` | Vercel dashboard → Settings → Tokens |
-| `VERCEL_ORG_ID` | Vercel CLI (auto) | `vercel link` creates `.vercel/project.json` |
-| `VERCEL_PROJECT_ID` | Vercel CLI (auto) | Same as above |
+| `FLY_API_TOKEN` | `deploy-backend.yml` | `fly tokens create deploy -a rlhf-annotation-api` |
+| `VERCEL_TOKEN` | `deploy-frontend.yml`, `pr-preview.yml` | Vercel dashboard → Account Settings → Tokens. **Scope it to the team**, not your personal account |
+| `VERCEL_ORG_ID` | both Vercel workflows | `frontend/.vercel/project.json` → `orgId` (written by `vercel link`) |
+| `VERCEL_PROJECT_ID` | both Vercel workflows | `frontend/.vercel/project.json` → `projectId` |
 
 `GITHUB_TOKEN` is provided automatically and used by Docker publish (GHCR).
+
+Set them without echoing values into shell history:
+
+```bash
+fly tokens create deploy -a rlhf-annotation-api | gh secret set FLY_API_TOKEN
+gh secret set VERCEL_TOKEN                      # prompts on stdin
+```
+
+## Known state
+
+`Deploy Backend (Fly.io)` has failed on every run since April. Its preflight runs
+`ruff check .` across `backend/`, which reports ~218 pre-existing errors (mostly
+`E501` in `alembic/versions/`), so the job exits before reaching `flyctl deploy`
+and `FLY_API_TOKEN` is never exercised. Backend releases are currently done
+manually with `fly deploy` from `backend/`. The same lint debt fails the CI
+`backend` job.
 
 ## Environments
 
