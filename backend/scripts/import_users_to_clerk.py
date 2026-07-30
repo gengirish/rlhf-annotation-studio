@@ -24,13 +24,19 @@ import argparse
 import asyncio
 import re
 import sys
+from pathlib import Path
 
-import httpx
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+# Running this file directly puts `scripts/` on sys.path, not `backend/`, so the
+# `app` package would not resolve unless it happens to be pip-installed. Add the
+# backend root explicitly so `python scripts/import_users_to_clerk.py` works.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.config import get_settings
-from app.models.annotator import Annotator
+import httpx  # noqa: E402
+from sqlalchemy import select  # noqa: E402
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # noqa: E402
+
+from app.config import get_settings  # noqa: E402
+from app.models.annotator import Annotator  # noqa: E402
 
 CLERK_API = "https://api.clerk.com/v1"
 
