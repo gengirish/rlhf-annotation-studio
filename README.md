@@ -37,6 +37,29 @@ See `backend/README.md` for setup and env vars.
 
 See `deploy/DEPLOY-VERCEL-FLY.md` for the exact CLI workflow.
 
+#### Production hardening
+
+Set `APP_ENV=production` on the API (already set in `backend/fly.toml`). This turns two
+silent misconfigurations into startup failures rather than live security holes:
+
+| Guard | Behaviour with `APP_ENV=production` |
+|-------|--------------------------------------|
+| `JWT_SECRET` still at its default | Startup aborts — the default is public, so tokens would be forgeable |
+| `CORS_ORIGINS` empty or `*` | Startup aborts — any site could otherwise drive the API as a logged-in user |
+
+Other production behaviour:
+
+- **Rate limiting** is per-client and in-process: 30 requests/60s on `/api/v1/inference/*`,
+  and 10 attempts/300s on `/api/v1/auth/login` and `/register`. Clients are identified from
+  `Fly-Client-IP` / `X-Forwarded-For`, so uvicorn must run with `--proxy-headers`
+  (set in `backend/Dockerfile`). **State is per-process** — move to a shared store such as
+  Redis before running more than one machine.
+- **Security headers** (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`,
+  `Permissions-Policy`) are set in `frontend/next.config.mjs`, so they apply to both the
+  Vercel deployment and the standalone Docker build.
+- **`robots.ts`** keeps authenticated routes out of search indexes. Its path list mirrors
+  the protected prefixes in `frontend/src/middleware.ts` — update both together.
+
 #### Live Deployment URLs
 
 | Service | URL |
@@ -448,7 +471,7 @@ Notes:
 | Inference status says unavailable/configured false | Missing/invalid HF token or inference disabled | `HF_API_TOKEN`/`HF_TOKEN`; `INFERENCE_ENABLED`; API logs | Set valid HF token, enable inference, restart API |
 | Register/login fails (`401`/`409`) | Bad credentials or existing email | `/api/v1/auth/login` and `/auth/register` responses | Use correct password; for `409`, log in instead of registering |
 | Sync silently stops or workspace not restored | Bad `API_BASE`, missing `session_id`, network/API failure | Browser Network tab for `/sessions/{id}/workspace`; localStorage keys | Re-login to refresh token/session, verify `?api=` URL, confirm API health |
-| Vercel app cannot reach API (`404`/`502`) | Missing rewrite or Fly app down | `vercel.json` rewrite target; `fly status`; `/api/v1/health` on Fly | Re-run rewrite sync script, redeploy Vercel/Fly, verify Fly hostname |
+| Vercel app cannot reach API (`404`/`502`) | Missing rewrite or Fly app down | `frontend/vercel.json` rewrite target; `fly status`; `/api/v1/health` on Fly | Re-run rewrite sync script, redeploy Vercel/Fly, verify Fly hostname |
 
 ---
 

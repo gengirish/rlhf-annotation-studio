@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     agentmail_enabled: bool = True
 
     @property
+    def is_production(self) -> bool:
+        return self.app_env.strip().lower() in {"prod", "production"}
+
+    @property
     def active_api_token(self) -> str | None:
         if self.inference_provider == "openrouter":
             return self.openrouter_api_key
@@ -111,6 +115,14 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def warn_default_jwt_secret(self) -> "Settings":
         if self.jwt_secret == "change-me-in-production":
+            if self.is_production:
+                # The default secret is public knowledge, so anyone could mint a
+                # valid token. Refuse to boot rather than serve forgeable auth.
+                raise ValueError(
+                    "JWT_SECRET is still the default value. Set a strong secret "
+                    "before running with APP_ENV=production.",
+                )
+
             import logging
 
             logging.getLogger("app.config").warning(

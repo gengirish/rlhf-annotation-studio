@@ -125,6 +125,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+    # Vercel project is linked at `frontend/`; `.vercel/` is gitignored, so
+    # `vercel pull` needs these IDs to resolve the project.
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
 

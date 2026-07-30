@@ -1,7 +1,6 @@
 import logging
 import time as _time
 import uuid
-from collections import defaultdict
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -10,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.db import warm_pool
+from app.middleware.rate_limit import SlidingWindowLimiter, client_ip
 from app.routers import (
     api_keys,
     audit,
@@ -39,9 +39,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger("app")
 
-_rate_limit_store: dict[str, list[float]] = defaultdict(list)
 _RATE_LIMIT_WINDOW = 60  # seconds
-_RATE_LIMIT_MAX = 30  # requests per window
+_RATE_LIMIT_MAX = 30  # inference requests per window, per client
+
+# Credential endpoints get a much tighter budget: they are the brute-force
+# surface, and legitimate users hit them a handful of times at most.
+_AUTH_RATE_LIMIT_WINDOW = 300  # seconds
+_AUTH_RATE_LIMIT_MAX = 10  # attempts per window, per client
+
+_inference_limiter = SlidingWindowLimiter(_RATE_LIMIT_MAX, _RATE_LIMIT_WINDOW)
+_auth_limiter = SlidingWindowLimiter(_AUTH_RATE_LIMIT_MAX, _AUTH_RATE_LIMIT_WINDOW)
+
+_THROTTLED_AUTH_PATHS = ("/api/v1/auth/login", "/api/v1/auth/register")
 
 
 @asynccontextmanager
@@ -77,6 +86,13 @@ def create_app() -> FastAPI:
 
     origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
     use_star = not origins or origins == ["*"]
+    if use_star and settings.is_production:
+        # A wildcard origin in production would let any site drive the API on a
+        # user's behalf. Fail loudly rather than silently opening it up.
+        raise RuntimeError(
+            "CORS_ORIGINS must list explicit origins when APP_ENV=production "
+            "(got empty or '*').",
+        )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"] if use_star else origins,
@@ -86,18 +102,19 @@ def create_app() -> FastAPI:
     )
 
     @app.middleware("http")
-    async def rate_limit_inference(request: Request, call_next):
-        if request.url.path.startswith("/api/v1/inference/") and request.method == "POST":
-            client_ip = request.client.host if request.client else "unknown"
-            now = _time.time()
-            window = _rate_limit_store[client_ip]
-            window[:] = [t for t in window if now - t < _RATE_LIMIT_WINDOW]
-            if len(window) >= _RATE_LIMIT_MAX:
-                return JSONResponse(
-                    status_code=429,
-                    content={"detail": "Rate limit exceeded. Try again later."},
-                )
-            window.append(now)
+    async def rate_limit(request: Request, call_next):
+        path = request.url.path
+        limiter = None
+        if path.startswith("/api/v1/inference/") and request.method == "POST":
+            limiter = _inference_limiter
+        elif path in _THROTTLED_AUTH_PATHS and request.method == "POST":
+            limiter = _auth_limiter
+
+        if limiter is not None and not limiter.allow(client_ip(request)):
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Rate limit exceeded. Try again later."},
+            )
         return await call_next(request)
 
     @app.exception_handler(Exception)

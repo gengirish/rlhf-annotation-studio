@@ -110,19 +110,21 @@ Note your **HTTPS origin**, e.g. `https://rlhf-annotation-api.fly.dev` — you n
 
 Vercel must proxy `/api/*` to `https://<your-app>.fly.dev/api/*`.
 
-From the **repository root** (same folder as `vercel.json`). If you’re still inside `backend/`, run `cd ..` first.
+From the **repository root**. If you’re still inside `backend/`, run `cd ..` first.
 
 ```bash
 node scripts/sync-vercel-fly-rewrite.mjs https://YOUR-APP.fly.dev
 ```
 
-Commit `vercel.json` if you want this rewrite in git for future deploys.
+This rewrites the `/api/:path*` rule in **`frontend/vercel.json`**. Commit that file if you
+want the rewrite in git for future deploys.
 
 ---
 
 ## Part C — Vercel CLI (UI)
 
-Run from the **repository root** (where `vercel.json` and `package.json` are).
+The Vercel project's **Root Directory is `frontend/`**, so the CLI is linked there. Either
+`cd frontend` first, or pass `--cwd frontend` to each command as shown below.
 
 ### 1. Log in
 
@@ -133,7 +135,7 @@ vercel login
 ### 2. Link this folder to a Vercel project (first time)
 
 ```bash
-vercel link
+vercel link --cwd frontend
 ```
 
 Answer prompts: scope (team/account), project name (e.g. `rlhf-annotation-studio`), link to existing project or create new.
@@ -141,7 +143,7 @@ Answer prompts: scope (team/account), project name (e.g. `rlhf-annotation-studio
 ### 3. Preview deploy (optional)
 
 ```bash
-vercel
+vercel deploy --cwd frontend
 ```
 
 Opens a preview URL; good for testing before production.
@@ -149,10 +151,11 @@ Opens a preview URL; good for testing before production.
 ### 4. Production deploy
 
 ```bash
-vercel --prod
+vercel deploy --prod --cwd frontend
 ```
 
-The CLI uses **`vercel.json`**: `buildCommand` (`npm run vercel-build`), `outputDirectory` (`out`), rewrites.
+Next.js is auto-detected, so no build overrides are needed. **`frontend/vercel.json`** supplies
+only the `/api/:path*` rewrite to Fly and the `Cache-Control` header.
 
 ### Useful Vercel CLI commands
 

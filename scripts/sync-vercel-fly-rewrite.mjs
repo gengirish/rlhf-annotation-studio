@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const vercelPath = path.join(root, "vercel.json");
+const vercelPath = path.join(root, "frontend", "vercel.json");
 
 let base = process.argv[2] || process.env.RLHF_API_ORIGIN;
 if (!base) {

@@ -1,0 +1,9 @@
+# Keep test tooling and local artifacts out of the deployment upload.
+# The Vercel project's Root Directory is `frontend`, so paths are relative to it.
+tests/
+playwright.config.ts
+playwright-report/
+test-results/
+vitest.config.ts
+Dockerfile
+.env*
