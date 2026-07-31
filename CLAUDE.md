@@ -95,6 +95,10 @@ silently ignored — it does not error, it just leaves every protected route ope
 in 15). It makes `redirect("/some-route")` a type error for catch-all segments;
 cast with `as Route` from `next`.
 
+**Vercel needs `CLERK_SECRET_KEY`, not just the publishable key.**
+`clerkMiddleware()` runs in the Next.js server runtime, so omitting it builds
+fine and then 500s on every route with `@clerk/nextjs: Missing secretKey`.
+
 `next lint` is deprecated and removed in Next 16 — a future upgrade needs
 `npx @next/codemod@canary next-lint-to-eslint-cli .`.
 

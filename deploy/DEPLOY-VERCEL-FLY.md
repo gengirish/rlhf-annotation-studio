@@ -154,17 +154,25 @@ vercel link --cwd frontend
 
 Answer prompts: scope (team/account), project name (e.g. `rlhf-annotation-studio`), link to existing project or create new.
 
-### 3. Set the Clerk environment variable
+### 3. Set the Clerk environment variables
 
-The frontend needs Clerk's publishable key at build time. It is public by
-design, so it is safe in the Vercel dashboard and in `.env.local`.
+Vercel needs **both** keys, for each environment you deploy to:
 
 ```bash
 vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY production --cwd frontend
+vercel env add CLERK_SECRET_KEY production --cwd frontend
 ```
 
-Only the publishable key belongs here — `CLERK_SECRET_KEY` is a backend secret
-and lives on Fly.
+`CLERK_SECRET_KEY` is easy to omit here on the assumption that it is "backend
+only" — but `clerkMiddleware()` runs in the Next.js **server** runtime, not the
+browser. Without it every route fails at runtime with:
+
+```
+Error: @clerk/nextjs: Missing secretKey
+```
+
+The build still succeeds, so this only surfaces after deploy, as a 500 on every
+page. The same secret is also set on Fly, where the API uses it independently.
 
 ### 4. Preview deploy (optional)
 

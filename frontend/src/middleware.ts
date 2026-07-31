@@ -24,8 +24,14 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-  if (isProtectedRoute(request)) {
-    await auth.protect();
+  if (!isProtectedRoute(request)) return;
+
+  // `auth.protect()` renders a 404 for signed-out users, which reads as a broken
+  // link rather than "please sign in". Redirect instead, and send them back to
+  // the page they asked for once authenticated.
+  const { userId, redirectToSignIn } = await auth();
+  if (!userId) {
+    return redirectToSignIn({ returnBackUrl: request.url });
   }
 });
 
