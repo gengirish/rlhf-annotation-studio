@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import create_access_token, hash_password, verify_password
+from app.auth import create_access_token, get_current_user, hash_password, verify_password
 from app.db import get_db
 from app.models.annotator import Annotator
 from app.models.work_session import WorkSession
@@ -42,6 +42,47 @@ class AuthResponse(BaseModel):
     token: str
     annotator: AnnotatorRead
     session_id: uuid.UUID
+
+
+class MeResponse(BaseModel):
+    annotator: AnnotatorRead
+    session_id: uuid.UUID
+
+
+@router.get("/me", response_model=MeResponse)
+async def me(
+    current_user: Annotator = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> MeResponse:
+    """Return the signed-in annotator and their work session.
+
+    With Clerk there is no login response to carry `session_id`, so the client
+    calls this after sign-in to populate its store. Creates the work session if
+    the account somehow lacks one, so the dashboard always has one to sync to.
+    """
+    result = await db.execute(
+        select(WorkSession)
+        .where(WorkSession.annotator_id == current_user.id)
+        .order_by(WorkSession.updated_at.desc())
+        .limit(1)
+    )
+    work_session = result.scalar_one_or_none()
+    if work_session is None:
+        work_session = WorkSession(
+            annotator_id=current_user.id,
+            tasks_json=None,
+            annotations_json={},
+            task_times_json={},
+            active_pack_file=None,
+        )
+        db.add(work_session)
+        await db.commit()
+        await db.refresh(work_session)
+
+    return MeResponse(
+        annotator=AnnotatorRead.model_validate(current_user),
+        session_id=work_session.id,
+    )
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)

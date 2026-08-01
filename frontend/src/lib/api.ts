@@ -79,6 +79,11 @@ export interface AuthResponse {
   session_id: string;
 }
 
+export interface MeResponse {
+  annotator: AuthResponse["annotator"];
+  session_id: string;
+}
+
 export interface InferenceModelOption {
   id: string;
   name: string;
@@ -199,6 +204,8 @@ export const api = {
     request<AuthResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify(body) }),
   login: (body: { email: string; password: string }) =>
     request<AuthResponse>("/api/v1/auth/login", { method: "POST", body: JSON.stringify(body) }),
+  /** Current annotator + work session, resolved from the Clerk session token. */
+  me: () => request<MeResponse>("/api/v1/auth/me"),
   health: () => request<{ status: string }>("/api/v1/health"),
   inferenceStatus: () =>
     request<{ enabled: boolean; configured: boolean; require_auth: boolean }>("/api/v1/inference/status"),

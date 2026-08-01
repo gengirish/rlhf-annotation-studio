@@ -1,4 +1,12 @@
+// Clerk v7 removed the SignedIn / SignedOut components in favour of <Show when="...">.
+import { Show } from "@clerk/nextjs";
+import type { Route } from "next";
 import Link from "next/link";
+
+// typedRoutes cannot infer these from the optional catch-all segments
+// (`/sign-in/[[...sign-in]]`), so the literals are asserted.
+const SIGN_IN = "/sign-in" as Route;
+const SIGN_UP = "/sign-up" as Route;
 
 const FEATURES = [
   {
@@ -42,12 +50,19 @@ export default function LandingPage() {
           <span>RLHF Studio</span>
         </span>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Link href="/auth" className="btn" style={{ fontSize: 14 }}>
-            Login
-          </Link>
-          <Link href="/auth" className="btn btn-primary" style={{ fontSize: 14 }}>
-            Get Started
-          </Link>
+          <Show when="signed-out">
+            <Link href={SIGN_IN} className="btn" style={{ fontSize: 14 }}>
+              Login
+            </Link>
+            <Link href={SIGN_UP} className="btn btn-primary" style={{ fontSize: 14 }}>
+              Get Started
+            </Link>
+          </Show>
+          <Show when="signed-in">
+            <Link href="/dashboard" className="btn btn-primary" style={{ fontSize: 14 }}>
+              Go to Dashboard
+            </Link>
+          </Show>
         </div>
       </nav>
 
@@ -61,9 +76,16 @@ export default function LandingPage() {
           with gold scoring and IAA, and automate with LLM-as-judge — all in one tool.
         </p>
         <div className="landing-cta-row">
-          <Link href="/auth" className="btn btn-primary landing-cta">
-            Start Annotating
-          </Link>
+          <Show when="signed-out">
+            <Link href={SIGN_UP} className="btn btn-primary landing-cta">
+              Start Annotating
+            </Link>
+          </Show>
+          <Show when="signed-in">
+            <Link href="/dashboard" className="btn btn-primary landing-cta">
+              Start Annotating
+            </Link>
+          </Show>
           <a
             href="https://github.com/gengirish/rlhf-annotation-studio"
             target="_blank"
