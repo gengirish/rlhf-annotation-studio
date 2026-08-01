@@ -153,6 +153,51 @@ def _first_str(claims: dict, *names: str) -> str | None:
     return None
 
 
+CLERK_API = "https://api.clerk.com/v1"
+
+
+async def fetch_clerk_user(user_id: str) -> tuple[str | None, str | None]:
+    """Look up a Clerk user's primary email and name via the Backend API.
+
+    Clerk's default session token carries only `sub`, `iss`, `sid` and friends —
+    **no email** unless a custom JWT template adds one. Provisioning a local
+    annotator needs an email, so fall back to asking Clerk directly rather than
+    requiring every deployment to configure a JWT template correctly.
+
+    Returns ``(email, name)``; either may be None if Clerk is unreachable.
+    """
+    settings = get_settings()
+    if not settings.clerk_secret_key:
+        logger.warning("CLERK_SECRET_KEY is unset; cannot resolve user %s", user_id)
+        return (None, None)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{CLERK_API}/users/{user_id}",
+                headers={"Authorization": f"Bearer {settings.clerk_secret_key}"},
+            )
+            response.raise_for_status()
+            data = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        logger.warning("Clerk user lookup failed for %s: %s", user_id, exc)
+        return (None, None)
+
+    # Prefer the address flagged primary; fall back to the first verified one.
+    primary_id = data.get("primary_email_address_id")
+    addresses = data.get("email_addresses") or []
+    email = None
+    for entry in addresses:
+        if entry.get("id") == primary_id:
+            email = entry.get("email_address")
+            break
+    if not email and addresses:
+        email = addresses[0].get("email_address")
+
+    name = " ".join(p for p in (data.get("first_name"), data.get("last_name")) if p) or None
+    return (email, name)
+
+
 def looks_like_clerk_token(token: str) -> bool:
     """Cheap RS256-header check used to pick a verification path.
 

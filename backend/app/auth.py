@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import UUID
@@ -12,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.db import get_db
 from app.models.annotator import Annotator
+
+logger = logging.getLogger("app.auth")
 
 security = HTTPBearer(auto_error=False)
 inference_security = HTTPBearer(auto_error=False)
@@ -82,7 +85,7 @@ async def _annotator_from_clerk_token(token: str, db: AsyncSession) -> Annotator
          79 migrated users keep their annotations, roles and work sessions.
       3. just-in-time creation — a genuinely new signup.
     """
-    from app.services.clerk_auth import ClerkAuthError, verify_clerk_token
+    from app.services.clerk_auth import ClerkAuthError, fetch_clerk_user, verify_clerk_token
 
     try:
         claims = await verify_clerk_token(token)
@@ -99,8 +102,15 @@ async def _annotator_from_clerk_token(token: str, db: AsyncSession) -> Annotator
     if user is not None:
         return _ensure_active(user)
 
-    if claims.email:
-        result = await db.execute(select(Annotator).where(Annotator.email == claims.email))
+    # Clerk's default session token has no email claim, so ask the Backend API.
+    # Only reached for accounts not yet linked by clerk_user_id.
+    email, name = claims.email, claims.name
+    if not email:
+        email, api_name = await fetch_clerk_user(claims.user_id)
+        name = name or api_name
+
+    if email:
+        result = await db.execute(select(Annotator).where(Annotator.email == email))
         user = result.scalar_one_or_none()
         if user is not None:
             # Claim the existing account. Roles, org and history are preserved.
@@ -109,22 +119,23 @@ async def _annotator_from_clerk_token(token: str, db: AsyncSession) -> Annotator
             await db.refresh(user)
             return _ensure_active(user)
 
-    if not claims.email:
+    if not email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=(
-                "Clerk token carries no email claim; cannot provision an account. "
-                "Add email to the session token in the Clerk JWT template."
+                "Could not determine an email for this Clerk user, so no account "
+                "could be provisioned. Check CLERK_SECRET_KEY on the API."
             ),
         )
 
     user = Annotator(
-        name=claims.name or claims.email.split("@")[0],
-        email=claims.email,
+        name=name or email.split("@")[0],
+        email=email,
         clerk_user_id=claims.user_id,
         password_hash=None,
         role=ROLE_ANNOTATOR,
     )
+    logger.info("Provisioning new annotator from Clerk user %s (%s)", claims.user_id, email)
     db.add(user)
     await db.flush()
 
