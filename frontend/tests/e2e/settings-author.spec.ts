@@ -286,7 +286,10 @@ test.describe("Author page — layout", () => {
   test("has tasks section with default empty task", async ({ page }) => {
     await loginAndGoToDashboard(page);
     await page.getByRole("link", { name: "Author Tasks" }).click();
-    await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible({ timeout: 15000 });
+    // Substring matching also hits "Search Tasks" and "Tasks Loaded", so anchor it.
+    await expect(page.getByRole("heading", { name: "Tasks", exact: true })).toBeVisible({
+      timeout: 15000
+    });
     await expect(page.getByText("Task 1")).toBeVisible();
     await expect(page.getByRole("button", { name: "Add task" })).toBeVisible();
   });

@@ -285,39 +285,21 @@ test.describe("Responsive — desktop viewport (1200px+)", () => {
    ═════════════════════════════════════════════ */
 
 test.describe("Accessibility basics", () => {
-  test("form inputs on auth page have associated labels or placeholders", async ({ page }) => {
-    await page.goto("/auth");
-    const email = page.getByPlaceholder("Email");
-    const password = page.getByPlaceholder(/Password/);
-    await expect(email).toBeVisible();
-    await expect(password).toBeVisible();
+  /*
+   * The sign-in and register form-accessibility tests are gone: those forms are
+   * now Clerk-hosted components, so their markup is not ours to assert on.
+   * Accessibility of app-owned forms is covered below and elsewhere.
+   */
 
-    for (const loc of [email, password]) {
-      const ph = await loc.getAttribute("placeholder");
-      const aria = await loc.getAttribute("aria-label");
-      const id = await loc.getAttribute("id");
-      const hasLabel = id ? (await page.locator(`label[for="${id}"]`).count()) > 0 : false;
-      expect(Boolean((ph && ph.trim()) || (aria && aria.trim()) || hasLabel)).toBe(true);
-    }
-  });
+  test("dashboard controls expose accessible names", async ({ page }) => {
+    await mockAllRoutes(page);
+    await enterApp(page, MOCK_AUTH);
 
-  test("form inputs on register page have labels", async ({ page }) => {
-    await page.goto("/auth");
-    await page.getByRole("button", { name: "Register" }).click();
-
-    const nameInput = page.getByPlaceholder("Full name");
-    const email = page.getByPlaceholder("Email");
-    const password = page.getByPlaceholder(/Password/);
-    await expect(nameInput).toBeVisible();
-    await expect(email).toBeVisible();
-    await expect(password).toBeVisible();
-
-    for (const loc of [nameInput, email, password]) {
-      const ph = await loc.getAttribute("placeholder");
-      const aria = await loc.getAttribute("aria-label");
-      const id = await loc.getAttribute("id");
-      const hasLabel = id ? (await page.locator(`label[for="${id}"]`).count()) > 0 : false;
-      expect(Boolean((ph && ph.trim()) || (aria && aria.trim()) || hasLabel)).toBe(true);
+    // "Log out" not "Logout": the button's aria-label overrides its text content
+    // when computing the accessible name.
+    for (const name of ["Restore from server", "Choose JSON File", "Log out"]) {
+      const control = page.getByRole("button", { name });
+      await expect(control, `"${name}" should be reachable by accessible name`).toBeVisible();
     }
   });
 
@@ -349,9 +331,6 @@ test.describe("Accessibility basics", () => {
   });
 
   test("page has heading hierarchy", async ({ page }) => {
-    await page.goto("/auth");
-    await expect(page.getByRole("heading", { name: "RLHF Annotation Studio" })).toBeVisible();
-
     await mockAllRoutes(page);
     await enterApp(page, MOCK_AUTH);
     await expect(page.getByRole("heading", { name: /Dashboard/ })).toBeVisible();

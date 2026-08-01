@@ -42,7 +42,9 @@ export async function mockMe(page: Page, auth: MockAuth) {
  */
 export async function enterApp(page: Page, auth: MockAuth, target = "/dashboard") {
   await mockMe(page, auth);
-  await page.goto(target);
+  // "load" can abort when Clerk's handshake redirects mid-navigation
+  // (net::ERR_ABORTED, frame detached); domcontentloaded is not affected.
+  await page.goto(target, { waitUntil: "domcontentloaded" });
   await expect(page).not.toHaveURL(/sign-in/, { timeout: 20_000 });
   await waitForSession(page);
 }

@@ -91,7 +91,8 @@ test.describe("Signed out — public routes stay reachable", () => {
 
 test.describe("Signed out — security headers", () => {
   test("responses carry the hardening headers", async ({ page }) => {
-    const response = await page.goto("/");
+    // "load" can abort when Clerk's dev handshake redirects mid-navigation.
+    const response = await page.goto("/", { waitUntil: "domcontentloaded" });
     const headers = response!.headers();
     expect(headers["x-frame-options"]).toBe("DENY");
     expect(headers["x-content-type-options"]).toBe("nosniff");

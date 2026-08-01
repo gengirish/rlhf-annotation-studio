@@ -328,13 +328,29 @@ test.describe("Dashboard", () => {
   test("has restore button and sidebar logout", async ({ page }) => {
     await loginAndGoToDashboard(page);
     await expect(page.getByRole("button", { name: "Restore from server" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
+    // aria-label="Log out" is the accessible name, not the "Logout" text.
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
   });
 
-  test("logout redirects to auth", async ({ page }) => {
+  test("logout ends the Clerk session and returns to the landing page", async ({ page }) => {
     await loginAndGoToDashboard(page);
-    await page.getByRole("button", { name: "Logout" }).click();
-    await expect(page).toHaveURL(/\/auth/, { timeout: 15000 });
+    await page.getByRole("button", { name: "Log out" }).click();
+
+    // signOut() redirects home rather than to the retired /auth page.
+    await expect(page).toHaveURL(/\/$/, { timeout: 20000 });
+
+    // Regression guard: logout used to clear only local state, leaving the Clerk
+    // session alive so ClerkSessionBridge immediately restored it from /auth/me.
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            const c = (window as unknown as { Clerk?: { user?: unknown } }).Clerk;
+            return Boolean(c?.user);
+          }),
+        { timeout: 20000, message: "Clerk session survived logout" }
+      )
+      .toBe(false);
   });
 
   test("JSON upload section is visible", async ({ page }) => {
