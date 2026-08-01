@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { enterApp } from "./helpers/auth";
 
 const AUTH_ANNOTATOR = {
   token: "fake-token-annotator",
@@ -150,11 +151,9 @@ async function mockCoreRoutes(page: Page, auth = AUTH_ANNOTATOR) {
 }
 
 async function login(page: Page, email: string) {
-  await page.goto("/auth");
-  await page.getByPlaceholder("Email").fill(email);
-  await page.getByPlaceholder(/Password/).fill("password123");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+  // Role comes from the mocked /auth/me, so pick the fixture matching the email.
+  const auth = email === AUTH_REVIEWER.annotator.email ? AUTH_REVIEWER : AUTH_ANNOTATOR;
+  await enterApp(page, auth);
   await expect
     .poll(async () => {
       const raw = await page.evaluate(() => localStorage.getItem("rlhf-next-store"));

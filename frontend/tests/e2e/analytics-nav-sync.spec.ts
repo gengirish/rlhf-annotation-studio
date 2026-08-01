@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { enterApp } from "./helpers/auth";
 
 /* ───── Mock data ───── */
 
@@ -94,7 +95,7 @@ async function mockAllRoutes(page: Page, opts: { useRichMetrics?: boolean; works
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, annotation_warnings: [] }) });
   });
 
-  await page.route("**/**/api/v1/tasks/packs", async (route) => {
+  await page.route(/\/api\/v1\/tasks\/packs(\?|$)/, async (route) => {
     if (route.request().method() !== "GET") {
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(MOCK_PACK) });
       return;
@@ -138,11 +139,7 @@ async function mockAllRoutes(page: Page, opts: { useRichMetrics?: boolean; works
 
 async function loginAndGoToDashboard(page: Page, opts: Parameters<typeof mockAllRoutes>[1] = {}) {
   await mockAllRoutes(page, opts);
-  await page.goto("/auth");
-  await page.getByPlaceholder("Email").fill(MOCK_AUTH.annotator.email);
-  await page.getByPlaceholder(/Password/).fill("password123");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+  await enterApp(page, MOCK_AUTH);
 }
 
 /* ═════════════════════════════════════════════

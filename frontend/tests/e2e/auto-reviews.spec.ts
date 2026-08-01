@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { enterApp } from "./helpers/auth";
 
 const MOCK_AUTH_ADMIN = {
   token: "fake-token-admin",
@@ -104,7 +105,7 @@ async function mockRoutes(page: Page, auth: typeof MOCK_AUTH_ADMIN, evaluations 
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ packs: [MOCK_PACK], has_more: false, total_packs: 1, limit: 50 }) });
   });
 
-  await page.route("**/**/api/v1/tasks/packs", async (route) => {
+  await page.route(/\/api\/v1\/tasks\/packs(\?|$)/, async (route) => {
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ packs: [MOCK_PACK], has_more: false, total_packs: 1, limit: 50 }) });
   });
 
@@ -144,11 +145,7 @@ async function mockRoutes(page: Page, auth: typeof MOCK_AUTH_ADMIN, evaluations 
 }
 
 async function loginAndGoToDashboard(page: Page, auth: typeof MOCK_AUTH_ADMIN) {
-  await page.goto("/auth");
-  await page.getByPlaceholder("Email").fill(auth.annotator.email);
-  await page.getByPlaceholder(/Password/).fill("password123");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+  await enterApp(page, auth);
 }
 
 test.describe("Auto Reviews page", () => {

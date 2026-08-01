@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { enterApp } from "./helpers/auth";
+
 /* ───── Mock data ───── */
 
 const MOCK_AUTH = {
@@ -176,7 +178,7 @@ async function mockAllRoutes(page: Page, opts: MockRouteOptions | typeof MOCK_AU
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, annotation_warnings: [] }) });
   });
 
-  await page.route("**/**/api/v1/tasks/packs", async (route) => {
+  await page.route(/\/api\/v1\/tasks\/packs(\?|$)/, async (route) => {
     if (route.request().method() !== "GET") {
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(MOCK_PACK) });
       return;
@@ -268,78 +270,23 @@ async function mockAllRoutes(page: Page, opts: MockRouteOptions | typeof MOCK_AU
 async function loginAndGoToDashboard(page: Page, opts: MockRouteOptions | typeof MOCK_AUTH = MOCK_AUTH) {
   const auth = "annotator" in opts ? opts : (opts.auth ?? MOCK_AUTH);
   await mockAllRoutes(page, opts);
-  await page.goto("/auth");
-  await page.getByPlaceholder("Email").fill(auth.annotator.email);
-  await page.getByPlaceholder(/Password/).fill("password123");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+  await enterApp(page, auth);
 }
 
 /* ═════════════════════════════════════════════
    AUTH PAGE
    ═════════════════════════════════════════════ */
 
-test.describe("Auth page", () => {
-  test("renders login and register buttons", async ({ page }) => {
+/*
+ * The email/password form that lived at /auth was replaced by Clerk. Its
+ * form-field tests are gone with it; signed-out behaviour (redirects, the
+ * legacy /auth hop, logout) is covered in auth-flows.spec.ts, which runs
+ * without a stored session.
+ */
+test.describe("Legacy auth route", () => {
+  test("redirects to the Clerk sign-in page", async ({ page }) => {
     await page.goto("/auth");
-    await expect(page.getByRole("heading", { name: "RLHF Annotation Studio" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Login" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Register" })).toBeVisible();
-  });
-
-  test("login mode shows email and password fields only", async ({ page }) => {
-    await page.goto("/auth");
-    await expect(page.getByPlaceholder("Email")).toBeVisible();
-    await expect(page.getByPlaceholder(/Password/)).toBeVisible();
-    await expect(page.getByPlaceholder("Full name")).not.toBeVisible();
-  });
-
-  test("register mode shows name, phone, and role fields", async ({ page }) => {
-    await page.goto("/auth");
-    await page.getByRole("button", { name: "Register" }).click();
-    await expect(page.getByPlaceholder("Full name")).toBeVisible();
-    await expect(page.getByPlaceholder("Phone (optional)")).toBeVisible();
-    await expect(page.locator("select[name='role']")).toBeVisible();
-    await expect(page.getByPlaceholder("Email")).toBeVisible();
-    await expect(page.getByPlaceholder(/Password/)).toBeVisible();
-  });
-
-  test("role dropdown has annotator, not admin", async ({ page }) => {
-    await page.goto("/auth");
-    await page.getByRole("button", { name: "Register" }).click();
-    const roleSelect = page.locator("select[name='role']");
-    const options = await roleSelect.locator("option").allTextContents();
-    expect(options).toContain("Annotator");
-    expect(options).not.toContain("Admin");
-  });
-
-  test("switching between login and register preserves email", async ({ page }) => {
-    await page.goto("/auth");
-    await page.getByPlaceholder("Email").fill("test@test.com");
-    await page.getByRole("button", { name: "Register" }).click();
-    await expect(page.getByPlaceholder("Full name")).toBeVisible();
-    await page.getByRole("button", { name: "Login" }).click();
-    await expect(page.getByPlaceholder("Full name")).not.toBeVisible();
-  });
-
-  test("failed login shows error toast", async ({ page }) => {
-    await mockAllRoutes(page, { loginFail: true });
-    await page.goto("/auth");
-    await page.getByPlaceholder("Email").fill("bad@example.com");
-    await page.getByPlaceholder(/Password/).fill("wrongpassword");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByText("Invalid email or password")).toBeVisible({ timeout: 10000 });
-  });
-
-  test("successful registration redirects to dashboard", async ({ page }) => {
-    await mockAllRoutes(page, { auth: MOCK_AUTH });
-    await page.goto("/auth");
-    await page.getByRole("button", { name: "Register" }).click();
-    await page.getByPlaceholder("Full name").fill("New User");
-    await page.getByPlaceholder("Email").fill("new@example.com");
-    await page.getByPlaceholder(/Password/).fill("password123");
-    await page.getByRole("button", { name: "Create account" }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/sign-in/, { timeout: 15000 });
   });
 });
 
@@ -680,11 +627,7 @@ test.describe("Review approve/reject flow", () => {
       }
       await route.fallback();
     });
-    await page.goto("/auth");
-    await page.getByPlaceholder("Email").fill(MOCK_AUTH_REVIEWER.annotator.email);
-    await page.getByPlaceholder(/Password/).fill("password123");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await enterApp(page, MOCK_AUTH_REVIEWER);
     await page.goto("/reviews");
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
     const pendingBtn = page.getByRole("button", { name: "Pending Review" });
@@ -715,11 +658,7 @@ test.describe("Review approve/reject flow", () => {
       }
       await route.fallback();
     });
-    await page.goto("/auth");
-    await page.getByPlaceholder("Email").fill(MOCK_AUTH_REVIEWER.annotator.email);
-    await page.getByPlaceholder(/Password/).fill("password123");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await enterApp(page, MOCK_AUTH_REVIEWER);
     await page.goto("/reviews");
     await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible({ timeout: 15000 });
     const pendingBtn = page.getByRole("button", { name: "Pending Review" });

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { enterApp, enterAppWithLocalStorage } from "./helpers/auth";
 
 /* ───── Mock data ───── */
 
@@ -82,7 +83,7 @@ async function mockAllRoutes(page: Page, opts: { auth?: typeof MOCK_AUTH; hasOrg
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, annotation_warnings: [] }) });
   });
 
-  await page.route("**/**/api/v1/tasks/packs", async (route) => {
+  await page.route(/\/api\/v1\/tasks\/packs(\?|$)/, async (route) => {
     if (route.request().method() !== "GET") {
       const body = JSON.parse(route.request().postData() || "{}");
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ...MOCK_PACK, ...body }) });
@@ -150,14 +151,13 @@ async function mockAllRoutes(page: Page, opts: { auth?: typeof MOCK_AUTH; hasOrg
 async function loginAndGoToDashboard(page: Page, opts: Parameters<typeof mockAllRoutes>[1] & { setOrgId?: boolean } = {}) {
   const auth = opts.auth ?? MOCK_AUTH;
   await mockAllRoutes(page, opts);
-  await page.goto("/auth");
   if (opts.setOrgId !== false && auth.annotator.org_id) {
-    await page.evaluate((orgId) => localStorage.setItem("rlhf_active_org_id", orgId), auth.annotator.org_id);
+    await enterAppWithLocalStorage(page, auth, {
+      rlhf_active_org_id: auth.annotator.org_id
+    });
+  } else {
+    await enterApp(page, auth);
   }
-  await page.getByPlaceholder("Email").fill(auth.annotator.email);
-  await page.getByPlaceholder(/Password/).fill("password123");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
 }
 
 /* ═════════════════════════════════════════════
@@ -397,12 +397,7 @@ test.describe("Settings invite flow", () => {
       }
       await route.fallback();
     });
-    await page.goto("/auth");
-    await page.evaluate(() => localStorage.setItem("rlhf_active_org_id", "org-001"));
-    await page.getByPlaceholder("Email").fill(MOCK_AUTH.annotator.email);
-    await page.getByPlaceholder(/Password/).fill("password123");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await enterAppWithLocalStorage(page, MOCK_AUTH, { rlhf_active_org_id: "org-001" });
     await page.goto("/settings");
     await expect(page.getByRole("heading", { name: "Team members" })).toBeVisible({ timeout: 30000 });
     await page.getByPlaceholder("teammate@example.com").fill("invitee@example.com");

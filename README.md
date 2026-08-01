@@ -102,6 +102,32 @@ python scripts/import_users_to_clerk.py --skip-test-accounts             # run
 suites; Clerk bills per user, so importing those is wasted spend. The script is
 idempotent and safe to re-run.
 
+#### End-to-end tests
+
+```bash
+cd backend && python scripts/create_e2e_clerk_user.py   # once, creates the Clerk test user
+cd frontend && npm run test:e2e
+```
+
+Because `clerkMiddleware` enforces auth on the server, the suite cannot fake its
+way into protected routes. Playwright runs three projects:
+
+| Project | What it does |
+|---------|--------------|
+| `setup` | Signs in one real Clerk user, saves the session to `frontend/.auth/` |
+| `e2e` | The main suite, reusing that session |
+| `signed-out` | `auth-flows.spec.ts`, deliberately with no session |
+
+Roles are still mocked — specs stub `/api/v1/auth/me` via
+`tests/e2e/helpers/auth.ts`, so a single Clerk account covers annotator,
+reviewer and admin paths.
+
+The test account must use a `+clerk_test@example.com` address and sign in with
+the `email_code` strategy: on a default Clerk instance, password is enabled as an
+attribute but **not** as a first factor, so password sign-in fails without an
+error. `frontend/.env.local` must also contain the Clerk keys, or the dev server
+returns 500 on every route.
+
 #### Live Deployment URLs
 
 | Service | URL |

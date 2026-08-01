@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { enterApp } from "./helpers/auth";
 
 const MOCK_AUTH_ADMIN = {
   token: "fake-token-admin",
@@ -52,11 +53,7 @@ async function mockBaseRoutes(page: Page) {
 
 async function loginAsAdmin(page: Page) {
   await mockBaseRoutes(page);
-  await page.goto("/auth");
-  await page.getByPlaceholder("Email").fill("admin@example.com");
-  await page.getByPlaceholder(/Password/).fill("password123");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+  await enterApp(page, MOCK_AUTH_ADMIN);
 }
 
 test.describe("Quality page", () => {

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { enterApp } from "./helpers/auth";
 
 /* ───── Mock data ───── */
 
@@ -80,7 +81,7 @@ async function mockAllRoutes(page: Page, tasks = [COMPARISON_TASK]) {
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, annotation_warnings: [] }) });
   });
 
-  await page.route("**/**/api/v1/tasks/packs", async (route) => {
+  await page.route(/\/api\/v1\/tasks\/packs(\?|$)/, async (route) => {
     if (route.request().method() !== "GET") {
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(MOCK_PACK) });
       return;
@@ -146,11 +147,7 @@ async function mockAllRoutes(page: Page, tasks = [COMPARISON_TASK]) {
 
 async function loginLoadPackAndOpenTask(page: Page, tasks = [COMPARISON_TASK]) {
   await mockAllRoutes(page, tasks);
-  await page.goto("/auth");
-  await page.getByPlaceholder("Email").fill(MOCK_AUTH.annotator.email);
-  await page.getByPlaceholder(/Password/).fill("password123");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+  await enterApp(page, MOCK_AUTH);
   await page.getByRole("button", { name: "Load and Start" }).first().click();
   await expect(page).toHaveURL(/\/task\/0/, { timeout: 15000 });
 }
@@ -227,11 +224,7 @@ test.describe("Responsive — mobile viewport (375px)", () => {
   test("mobile: dashboard stats grid adapts", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await mockAllRoutes(page);
-    await page.goto("/auth");
-    await page.getByPlaceholder("Email").fill(MOCK_AUTH.annotator.email);
-    await page.getByPlaceholder(/Password/).fill("password123");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await enterApp(page, MOCK_AUTH);
 
     const statsSection = page.locator("section").filter({ has: page.getByRole("heading", { name: "Tasks Loaded" }) }).first();
     await expect(statsSection).toBeVisible();
@@ -360,11 +353,7 @@ test.describe("Accessibility basics", () => {
     await expect(page.getByRole("heading", { name: "RLHF Annotation Studio" })).toBeVisible();
 
     await mockAllRoutes(page);
-    await page.goto("/auth");
-    await page.getByPlaceholder("Email").fill(MOCK_AUTH.annotator.email);
-    await page.getByPlaceholder(/Password/).fill("password123");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await enterApp(page, MOCK_AUTH);
     await expect(page.getByRole("heading", { name: /Dashboard/ })).toBeVisible();
 
     await page.getByRole("button", { name: "Load and Start" }).first().click();

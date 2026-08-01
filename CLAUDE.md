@@ -32,7 +32,9 @@ Backend work uses the venv at `backend/.venv` (gitignored). Create it with
 npm run dev | build | lint
 npm test                                                # vitest run
 npx vitest run tests/unit/some.test.ts                  # one file
-npm run test:e2e                                        # playwright
+npm run test:e2e                                        # playwright (see below)
+npx playwright test --project=signed-out                # signed-out specs only
+npx playwright test --project=setup                     # just the Clerk sign-in
 
 # Root convenience wrappers
 npm run frontend:dev | frontend:build | backend:test | test:all
@@ -133,6 +135,37 @@ State is per-process — more than one machine multiplies every limit.
 
 With `APP_ENV=production` the app refuses to start on a default `JWT_SECRET` or
 a wildcard `CORS_ORIGINS` rather than failing open.
+
+### E2E tests
+
+`clerkMiddleware` enforces auth server-side, so specs cannot mock their way into
+protected routes. Playwright therefore runs three projects:
+
+| Project | Purpose |
+|---------|---------|
+| `setup` | Signs in one real Clerk user, saves `frontend/.auth/user.json` |
+| `e2e` | Everything else, reusing that session via `storageState` |
+| `signed-out` | `auth-flows.spec.ts` only, deliberately with no session |
+
+Identity is still mocked: specs stub `/api/v1/auth/me` through
+`tests/e2e/helpers/auth.ts` (`enterApp`), so one Clerk account can act as
+annotator, reviewer or admin. Auth comes from the real session; **role comes from
+the mock**.
+
+Two traps, both of which fail *silently*:
+
+- **`E2E_CLERK_USER` must be a `+clerk_test@example.com` address.** Clerk accepts
+  a fixed verification code for these and sends no mail. Create one with
+  `cd backend && python scripts/create_e2e_clerk_user.py`.
+- **Sign-in uses `email_code`, not `password`.** This instance enables password
+  as an *attribute* but not as a *first factor*
+  (`user_settings.attributes.password.used_for_first_factor === false` in
+  `GET {frontend_api}/v1/environment`), so password sign-in returns without
+  creating a session and every downstream spec fails.
+
+Playwright does not read `.env.local` on its own — `playwright.config.ts` loads
+it with dotenv. Without the Clerk keys there, the dev server 500s on every route
+with `@clerk/nextjs: Missing secretKey`.
 
 ### Migrations
 

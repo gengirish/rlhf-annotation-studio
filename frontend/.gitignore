@@ -1,2 +1,8 @@
 .vercel
 .env*
+
+# Playwright. `.auth/` holds a real Clerk session (including __session cookies)
+# saved by tests/e2e/global.setup.ts — committing it would leak a live login.
+.auth/
+test-results/
+playwright-report/
