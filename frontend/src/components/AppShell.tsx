@@ -1,8 +1,9 @@
 "use client";
 
+import { useClerk } from "@clerk/nextjs";
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { type PropsWithChildren, useState } from "react";
 
 import { useAppStore } from "@/lib/state/store";
@@ -53,8 +54,8 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
 ];
 
 export function AppShell({ children }: PropsWithChildren) {
-  const router = useRouter();
   const pathname = usePathname();
+  const { signOut } = useClerk();
   const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
   const completed = useAppStore((s) =>
@@ -66,9 +67,12 @@ export function AppShell({ children }: PropsWithChildren) {
 
   const role = user?.role || "annotator";
 
-  function handleLogout() {
+  async function handleLogout() {
+    // Clearing local state alone is not enough: the Clerk session would survive,
+    // and ClerkSessionBridge would immediately re-hydrate the store from
+    // /auth/me, making logout look like a no-op. End the Clerk session too.
     logout();
-    router.push("/auth");
+    await signOut({ redirectUrl: "/" });
   }
 
   function isActive(href: string) {

@@ -164,12 +164,46 @@ export const useAppStore = create<AppState>()(
   )
 );
 
+// Set by ClerkSessionBridge once it has finished resolving the Clerk session —
+// either it populated the store from /auth/me, or there was nothing to load.
+// Pages gate their "not signed in, redirect" checks on this; without it they
+// fire while the bridge is still fetching and bounce the user to sign-in, which
+// Clerk answers by sending them straight back. That is a redirect loop.
+let sessionResolved = false;
+const sessionResolvedListeners = new Set<() => void>();
+
+export function markSessionResolved() {
+  if (sessionResolved) return;
+  sessionResolved = true;
+  sessionResolvedListeners.forEach((listener) => listener());
+  sessionResolvedListeners.clear();
+}
+
+/**
+ * True once persisted state has rehydrated *and* the Clerk session has been
+ * resolved. Auth guards must wait for both, or they race the bridge.
+ */
 export function useHasHydrated() {
   const [hydrated, setHydrated] = useState(false);
+  const [resolved, setResolved] = useState(sessionResolved);
+
   useEffect(() => {
     const unsub = useAppStore.persist.onFinishHydration(() => setHydrated(true));
     if (useAppStore.persist.hasHydrated()) setHydrated(true);
     return unsub;
   }, []);
-  return hydrated;
+
+  useEffect(() => {
+    if (sessionResolved) {
+      setResolved(true);
+      return;
+    }
+    const listener = () => setResolved(true);
+    sessionResolvedListeners.add(listener);
+    return () => {
+      sessionResolvedListeners.delete(listener);
+    };
+  }, []);
+
+  return hydrated && resolved;
 }

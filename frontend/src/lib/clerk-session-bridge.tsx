@@ -4,7 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useEffect, useRef } from "react";
 
 import { api } from "@/lib/api";
-import { useAppStore } from "@/lib/state/store";
+import { markSessionResolved, useAppStore } from "@/lib/state/store";
 
 /**
  * Populates the app store from the Clerk session.
@@ -23,16 +23,27 @@ export function ClerkSessionBridge() {
   const logout = useAppStore((s) => s.logout);
   const inFlight = useRef(false);
 
+  // Never leave guards waiting forever if Clerk fails to load at all.
+  useEffect(() => {
+    const timer = setTimeout(markSessionResolved, 8000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (!isLoaded) return;
 
     // Signed out of Clerk but stale local state remains — clear it.
     if (!isSignedIn) {
       if (sessionId) logout();
+      markSessionResolved();
       return;
     }
 
-    if (sessionId || inFlight.current) return;
+    if (sessionId) {
+      markSessionResolved();
+      return;
+    }
+    if (inFlight.current) return;
 
     inFlight.current = true;
     void (async () => {
@@ -56,6 +67,7 @@ export function ClerkSessionBridge() {
         // Leave the store empty; protected routes will send them to sign-in.
       } finally {
         inFlight.current = false;
+        markSessionResolved();
       }
     })();
   }, [isLoaded, isSignedIn, sessionId, setAuth, logout]);
